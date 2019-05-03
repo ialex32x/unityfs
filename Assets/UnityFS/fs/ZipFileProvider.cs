@@ -7,4 +7,8 @@ namespace UnityFS
     using UnityEngine;
 
     // 访问 zip 文件
+    public class ZipFileProvider : IFileProvider
+    {
+
+    }
 }

@@ -6,7 +6,7 @@ namespace UnityFS
 {
     using UnityEngine;
 
-    public class OrdinaryFIleProvider : IFileProvider
+    public interface IAssetProvider
     {
         
     }
