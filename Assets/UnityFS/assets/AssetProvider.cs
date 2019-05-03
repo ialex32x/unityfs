@@ -8,6 +8,6 @@ namespace UnityFS
 
     public interface IAssetProvider
     {
-        
+        UAsset GetAsset(string assetPath);
     }
 }

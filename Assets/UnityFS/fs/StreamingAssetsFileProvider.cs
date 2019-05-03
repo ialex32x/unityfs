@@ -10,5 +10,14 @@ namespace UnityFS
     //      所以考虑在生成初始包资源复制 StreamingAssets 时就计算生成所有相关信息, 存入 Resources 中
     public class StreamingAssetsFileProvider : IFileProvider
     {
+        public bool Exists(string filename)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] ReadAllBytes(string filename)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
