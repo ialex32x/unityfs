@@ -8,6 +8,7 @@ namespace UnityFS
 
     public interface IFileProvider
     {
-        
+        bool Exists(string filename);
+        byte[] ReadAllBytes(string filename);
     }
 }
