@@ -31,9 +31,6 @@ namespace UnityFS
             _assetPath = assetPath;
         }
 
-        // 同步加载资源, 如果加载成功则返回 Object, 否则返回 null
-        public abstract Object LoadSync();
-
         // 异步加载
         public abstract bool Load();
     }

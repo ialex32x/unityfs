@@ -24,6 +24,7 @@ namespace UnityFS
         public byte[] ReadAllBytes(string filename)
         {
             var fullPath = Path.Combine(_pathRoot, filename);
+            // var stream = new System.IO.FileStream(fullPath, System.IO.FileMode.Open);
             return File.ReadAllBytes(fullPath);
         }
     }

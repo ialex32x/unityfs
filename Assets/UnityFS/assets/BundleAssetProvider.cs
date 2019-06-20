@@ -28,11 +28,6 @@ namespace UnityFS
             {
                 throw new NotImplementedException();
             }
-
-            public override Object LoadSync()
-            {
-                throw new NotImplementedException();
-            }
         }
 
         // 资源路径 => 资源包 的快速映射

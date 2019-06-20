@@ -16,13 +16,8 @@ namespace UnityFS
             {
 
             }
-            
-            public override bool Load()
-            {
-                throw new NotImplementedException();
-            }
 
-            public override Object LoadSync()
+            public override bool Load()
             {
                 if (this._state == AssetState.None)
                 {
@@ -31,7 +26,7 @@ namespace UnityFS
                     #endif
                     this._state = AssetState.Loaded;
                 }
-                return this._object;
+                throw new NotImplementedException();
             }
         }
 
