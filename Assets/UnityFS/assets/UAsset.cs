@@ -6,22 +6,35 @@ namespace UnityFS
 {
     using UnityEngine;
 
-    public class UAsset
+    public enum AssetState
     {
-        private Object _object;
+        None,
+        Loading, 
+        Loaded, 
+    }
+
+    public abstract class UAsset
+    {
+        protected string _assetPath;
+        protected AssetState _state;
+        protected Object _object;
 
         public Action Loaded;
 
-        // 同步加载资源, 如果加载成功则返回 Object, 否则返回 null
-        public Object LoadSync()
+        public string assetPath
         {
-            throw new NotImplementedException();
+            get { return _assetPath; }
         }
 
-        // 异步加载
-        public bool Load()
+        public UAsset(string assetPath)
         {
-            throw new NotImplementedException();
+            _assetPath = assetPath;
         }
+
+        // 同步加载资源, 如果加载成功则返回 Object, 否则返回 null
+        public abstract Object LoadSync();
+
+        // 异步加载
+        public abstract bool Load();
     }
 }
