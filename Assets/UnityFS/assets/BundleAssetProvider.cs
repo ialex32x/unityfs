@@ -18,10 +18,11 @@ namespace UnityFS
             private AssetBundle _assetBundle;
             private BundleAssetProvider _provider;
             private Manifest.BundleInfo _info;
+            private List<UBundle> _denpendencies;
 
             public bool isLoaded
             {
-                get { return _loaded; }
+                get { return _loaded && _IsDependenciesLoaded(); }
             }
 
             public string name
@@ -58,8 +59,77 @@ namespace UnityFS
 
             private void Release()
             {
-                _assetBundle.Unload(true);
+                if (_denpendencies != null)
+                {
+                    for (int i = 0, size = _denpendencies.Count; i < size; i++)
+                    {
+                        _denpendencies[i].Loaded -= OnDependedBundleLoaded;
+                        _denpendencies[i].RemoveRef();
+                    }
+                    _denpendencies = null;
+                }
+                if (_assetBundle != null)
+                {
+                    _assetBundle.Unload(true);
+                }
                 _provider.Unload(this);
+            }
+
+            private bool _IsDependenciesLoaded()
+            {
+                if (_denpendencies != null)
+                {
+                    for (int i = 0, size = _denpendencies.Count; i < size; i++)
+                    {
+                        if (!_denpendencies[i]._IsDependenciesLoaded())
+                        {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            public void AddDependencies()
+            {
+                _AddDependencies(_info);
+            }
+
+            private void _AddDependencies(Manifest.BundleInfo info)
+            {
+                if (info.dependencies == null)
+                {
+                    return;
+                }
+                for (int i = 0, size = info.dependencies.Length; i < size; i++)
+                {
+                    var dep = info.dependencies[i];
+                    var depBundle = _provider.GetBundle(dep);
+                    _AddDependency(depBundle);
+                    _AddDependencies(_provider._manifest.bundles[dep]);
+                }
+            }
+
+            // 添加以来资源包
+            private void _AddDependency(UBundle bundle)
+            {
+                if (bundle != this)
+                {
+                    if (_denpendencies == null)
+                    {
+                        _denpendencies = new List<UBundle>();
+                    }
+                    else
+                    {
+                        if (_denpendencies.Contains(bundle))
+                        {
+                            return;
+                        }
+                    }
+                    bundle.AddRef();
+                    _denpendencies.Add(bundle);
+                    bundle.Loaded += OnDependedBundleLoaded;
+                }
             }
 
             public void Load(Stream stream)
@@ -78,6 +148,17 @@ namespace UnityFS
                 return _assetBundle;
             }
 
+            private void OnDependedBundleLoaded()
+            {
+                if (_loaded)
+                {
+                    if (Loaded != null && _IsDependenciesLoaded())
+                    {
+                        Loaded();
+                    }
+                }
+            }
+
             private void OnAssetBundleLoaded(AsyncOperation op)
             {
                 var request = op as AssetBundleCreateRequest;
@@ -86,7 +167,7 @@ namespace UnityFS
                     _assetBundle = request.assetBundle;
                 }
                 _loaded = true;
-                if (Loaded != null)
+                if (Loaded != null && _IsDependenciesLoaded())
                 {
                     Loaded();
                 }
@@ -123,6 +204,7 @@ namespace UnityFS
             {
                 if (_bundle != null)
                 {
+                    _bundle.Loaded -= OnBundleLoaded;
                     JobScheduler.DispatchMain(() =>
                     {
                         _bundle.RemoveRef();
@@ -191,6 +273,8 @@ namespace UnityFS
             if (!_bundles.TryGetValue(name, out bundle))
             {
                 bundle = new UBundle(this, _manifest.bundles[name]);
+                _bundles.Add(name, bundle);
+                bundle.AddDependencies();
                 var fs = _provider.OpenFile(name);
                 if (fs != null)
                 {
