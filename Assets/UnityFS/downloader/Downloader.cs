@@ -6,9 +6,8 @@ namespace UnityFS
 {
     using UnityEngine;
 
-    public interface IFileProvider
+    public interface IDownloader
     {
-        bool Exists(string filename);
-        byte[] ReadAllBytes(string filename);
+        void AddDownloadTask(DownloadTask task);
     }
 }

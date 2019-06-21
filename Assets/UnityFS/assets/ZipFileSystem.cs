@@ -8,26 +8,30 @@ namespace UnityFS
     using UnityEngine;
 
     // 访问 zip 文件
-    public class ZipFileProvider : IFileProvider
+    public class ZipFileSystem
     {
         private ZipFile _zipFile;
 
-        private ZipFileProvider(ZipFile zipFile)
+        private ZipFileSystem(ZipFile zipFile)
         {
             _zipFile = zipFile;
         }
 
-        public static ZipFileProvider CreateFromBytes(byte[] fileBytes) 
+        public static ZipFileSystem CreateFromBytes(byte[] fileBytes)
         {
             var zipFile = new ZipFile(new MemoryStream(fileBytes));
             zipFile.IsStreamOwner = true;
-            var provider = new ZipFileProvider(zipFile);
+            var provider = new ZipFileSystem(zipFile);
             return provider;
         }
 
-        public static ZipFileProvider CreateFromFile(string filename)
+        // stream 生命周期将由 zipfile 接管
+        public static ZipFileSystem CreateFromStream(Stream stream)
         {
-            throw new NotImplementedException();
+            var zipFile = new ZipFile(stream);
+            zipFile.IsStreamOwner = true;
+            var provider = new ZipFileSystem(zipFile);
+            return provider;
         }
 
         public bool Exists(string filename)
