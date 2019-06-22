@@ -29,8 +29,18 @@ namespace Examples
             }
 
             var fs = new FakeFileSystem();
-            var data = fs.ReadAllBytes("Assets/test.txt");
+            var data = fs.ReadAllBytes("Assets/Examples/Config/test.txt");
             Debug.Log(System.Text.Encoding.UTF8.GetString(data));
+            {
+                var asset = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube.prefab");
+                asset.completed += self =>
+                {
+                    var gameObject = Object.Instantiate(self.GetObject()) as GameObject;
+                    UnityFS.Utils.AssetHandle.Attach(gameObject, asset, 5.0f);
+                };
+                var loader = UnityFS.Utils.PrefabLoader.Instantiate("Assets/Examples/Prefabs/Cube.prefab");
+                loader.StartCoroutine(UnityFS.Utils.Helpers.DestroyAfter(loader.gameObject, 10.0f));
+            }
         }
     }
 }
