@@ -20,8 +20,8 @@ namespace UnityFS
 
         public Stream OpenFile(string filename)
         {
-            Manifest.FileInfo fileInfo;
-            if (_manifest.files.TryGetValue(filename, out fileInfo))
+            Manifest.BundleInfo bundleInfo;
+            if (_manifest.bundles.TryGetValue(filename, out bundleInfo))
             {
                 var fullPath = Path.Combine(_pathRoot, filename);
                 var metaPath = fullPath + ".meta";
@@ -30,7 +30,7 @@ namespace UnityFS
                     var json = File.ReadAllText(metaPath);
                     var metadata = JsonUtility.FromJson<Metadata>(json);
                     // quick but unsafe
-                    if (metadata.checksum == fileInfo.checksum && metadata.size == fileInfo.size)
+                    if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
                     {
                         var stream = System.IO.File.OpenRead(fullPath);
                         return stream;

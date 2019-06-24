@@ -18,17 +18,18 @@ namespace UnityFS
         // invoke in main thread
         private Action<DownloadTask> _callback;
 
-        public DownloadTask(Manifest.FileInfo fileInfo, int retry, Action<DownloadTask> callback)
+        public DownloadTask(Manifest.BundleInfo bundleInfo, int retry, Action<DownloadTask> callback)
         {
             this.retry = retry;
-            this.size = fileInfo.size;
-            this.priority = fileInfo.priority;
-            this.checksum = fileInfo.checksum;
+            this.size = bundleInfo.size;
+            this.priority = bundleInfo.priority;
+            this.checksum = bundleInfo.checksum;
             this.tempPath = "TODO"; // generate temp file path
             this.filePath = "TODO"; // 
             _callback = callback;
         }
 
+        // return stream of downloaded file
         public Stream OpenFile()
         {
             throw new NotImplementedException();

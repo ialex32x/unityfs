@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
+  m_Name: default
+  m_EditorClassIdentifier: 
+  bundles:
+  - startup: 0
+    priority: 0
+    name: test1
+    splitObjects: 0
+    type: 0
+    assets:
+    - target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
+      platforms: 3
+      types: 2
+      splitIndex: 0
+  - startup: 0
+    priority: 0
+    name: test2
+    splitObjects: 0
+    type: 0
+    assets:
+    - target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
+      platforms: 3
+      types: 256
+      splitIndex: 0

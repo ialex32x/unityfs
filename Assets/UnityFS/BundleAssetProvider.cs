@@ -282,7 +282,7 @@ namespace UnityFS
                 }
                 else
                 {
-                    var fileInfo = _manifest.files[name];
+                    var fileInfo = _manifest.bundles[name];
                     var task = new DownloadTask(fileInfo, -1, self =>
                     {
                         bundle.Load(self.OpenFile());
