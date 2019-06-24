@@ -42,7 +42,18 @@ namespace UnityFS.Editor
 
         void OnGUI()
         {
-            var treeViewRect = new Rect(5, 5, position.width - 10, position.height - 36);
+            var topRect = new Rect(5, 5, position.width - 10, 21);
+            GUILayout.BeginArea(topRect);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Add Bundle"))
+                {
+                    //TODO: add bundle 
+                }
+                GUILayout.FlexibleSpace();
+            }
+            GUILayout.EndArea();
+            var treeViewRect = new Rect(5, 28, position.width - 10, position.height - 56);
             _treeView.OnGUI(treeViewRect);
             var bottomRect = new Rect(5, treeViewRect.yMax + 5, treeViewRect.width, 21);
             GUILayout.BeginArea(bottomRect);
