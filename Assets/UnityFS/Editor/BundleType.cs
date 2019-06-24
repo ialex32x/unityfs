@@ -13,6 +13,12 @@ namespace UnityFS.Editor
         ZipArchive,
     }
 
+    public enum BundleLoad
+    {
+        Normal, 
+        Startup, 
+    }
+
     [Flags]
     public enum BundleAssetPlatforms
     {

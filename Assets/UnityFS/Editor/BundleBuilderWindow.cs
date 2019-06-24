@@ -48,7 +48,105 @@ namespace UnityFS.Editor
             GUILayout.BeginArea(bottomRect);
             using (new EditorGUILayout.HorizontalScope())
             {
+                if (GUILayout.Button("Delete"))
+                {
+                    var bundlePending = new List<BundleBuilderData.BundleInfo>();
+                    var targetPending = new List<BundleBuilderData.BundleAssetTarget>();
+                    foreach (var bundle in data.bundles)
+                    {
+                        if (_treeView.IsSelected(bundle.id))
+                        {
+                            bundlePending.Add(bundle);
+                        }
+                        else
+                        {
+                            foreach (var target in bundle.targets)
+                            {
+                                if (_treeView.IsSelected(target.id))
+                                {
+                                    targetPending.Add(target);
+                                }
+                            }
+                        }
+                    }
+                    if (bundlePending.Count == 0 && targetPending.Count == 0)
+                    {
+                        if (EditorUtility.DisplayDialog("删除", "没有选中任何资源.", "确定"))
+                        {
+                        }
+                    }
+                    else
+                    {
+                        if (EditorUtility.DisplayDialog("删除", $"确定删除 {bundlePending.Count} 个整资源包以及 {targetPending.Count} 项资源?", "删除", "取消"))
+                        {
+                            foreach (var bundle in bundlePending)
+                            {
+                                data.bundles.Remove(bundle);
+                            }
+                            foreach (var bundle in data.bundles)
+                            {
+                                foreach (var target in targetPending)
+                                {
+                                    bundle.targets.Remove(target);
+                                }
+                            }
+                            dirty = true;
+                            _treeView.Reload();
+                        }
+                    }
+                }
                 GUILayout.FlexibleSpace();
+                // if (GUILayout.Button("Expand All"))
+                // {
+                //     _treeView.ExpandAll();
+                // }
+                if (GUILayout.Button("Collapse All"))
+                {
+                    _treeView.CollapseAll();
+                }
+                GUILayout.Space(20f);
+                if (GUILayout.Button("Refresh"))
+                {
+                    _treeView.Reload();
+                }
+                if (GUILayout.Button("Show Bundle Assets"))
+                {
+                    BundleBuilderData.BundleInfo selectedBundle = null;
+                    foreach (var bundle in data.bundles)
+                    {
+                        if (_treeView.IsSelected(bundle.id))
+                        {
+                            selectedBundle = bundle;
+                            break;
+                        }
+                        foreach (var asset in bundle.targets)
+                        {
+                            if (_treeView.IsSelected(asset.id))
+                            {
+                                selectedBundle = bundle;
+                                break;
+                            }
+                        }
+                        if (selectedBundle != null)
+                        {
+                            break;
+                        }
+                    }
+                    if (selectedBundle != null)
+                    {
+                        if (BundleBuilder.Scan(data))
+                        {
+                            dirty = true;
+                        }
+                        var win = GetWindow<BundleAssetsWindow>();
+                        win.SetBundle(selectedBundle);
+                        win.Show();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("no bundle selected");
+                    }
+                }
                 if (GUILayout.Button("Build"))
                 {
                     if (BundleBuilder.Scan(data))
@@ -59,45 +157,6 @@ namespace UnityFS.Editor
                 }
             }
             GUILayout.EndArea();
-
-            // var leftPanelWidth = 360f;
-            // if (GUILayout.Button("Add Bundle", GUILayout.Width(leftPanelWidth)))
-            // {
-            //     data.bundles.Add(new BundleBuilderData.BundleInfo());
-            // }
-
-            // for (var bundleIndex = 0; bundleIndex < data.bundles.Count; bundleIndex++)
-            // {
-            //     var bundle = data.bundles[bundleIndex];
-            //     var name = string.IsNullOrEmpty(bundle.name) ? "(noname)" : bundle.name;
-
-            //     if (bundle == selected)
-            //     {
-            //     }
-            //     else
-            //     {
-            //     }
-            // }
-
-            // if (selected != null)
-            // {
-            //     EditorGUI.BeginChangeCheck();
-            //     selected.name = EditorGUILayout.TextField("Name", selected.name);
-            //     // selected.targets
-            //     if (EditorGUI.EndChangeCheck())
-            //     {
-            //         dirty = true;
-            //     }
-            // }
-
-            // if (GUILayout.Button("Build"))
-            // {
-            //     if (BundleBuilder.Scan(data))
-            //     {
-            //         dirty = true;
-            //     }
-            //     BundleBuilder.Build(data, "out/AssetBundles", EditorUserBuildSettings.activeBuildTarget);
-            // }
 
             if (dirty)
             {

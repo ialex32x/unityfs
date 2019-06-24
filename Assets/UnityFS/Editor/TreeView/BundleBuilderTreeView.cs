@@ -13,10 +13,12 @@ namespace UnityFS.Editor
     {
         private const float kRowHeights = 20f;
         private const float kToggleWidth = 18f;
+        static Texture2D kIconDelete = EditorGUIUtility.FindTexture("d_AS Badge Delete");
         static Texture2D[] s_TestIcons =
         {
-            EditorGUIUtility.FindTexture ("Folder Icon"),
-            EditorGUIUtility.FindTexture ("GameObject Icon"),
+            EditorGUIUtility.FindTexture("Favorite Icon"),
+            EditorGUIUtility.FindTexture("Folder Icon"),
+            EditorGUIUtility.FindTexture("GameObject Icon"),
         };
 
         private BundleBuilderData _data;
@@ -59,7 +61,7 @@ namespace UnityFS.Editor
                     contextMenuText = "Type",
                     headerTextAlignment = TextAlignment.Center,
                     sortedAscending = true,
-                    sortingArrowAlignment = TextAlignment.Right,
+                    sortingArrowAlignment = TextAlignment.Left,
                     width = 30,
                     minWidth = 30,
                     maxWidth = 60,
@@ -68,7 +70,7 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("-"),
+                    headerContent = new GUIContent("Assets"),
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Center,
@@ -79,8 +81,8 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("-"),
-                    headerTextAlignment = TextAlignment.Right,
+                    headerContent = new GUIContent("Type"),
+                    headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
                     width = 110,
@@ -89,8 +91,8 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("-"),
-                    headerTextAlignment = TextAlignment.Right,
+                    headerContent = new GUIContent("Load/Filter"),
+                    headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
                     width = 95,
@@ -100,8 +102,18 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("-"),
-                    headerTextAlignment = TextAlignment.Right,
+                    headerContent = new GUIContent("Priority"),
+                    headerTextAlignment = TextAlignment.Left,
+                    sortedAscending = true,
+                    sortingArrowAlignment = TextAlignment.Left,
+                    width = 70,
+                    minWidth = 60,
+                    autoResize = true
+                },
+                new MultiColumnHeaderState.Column
+                {
+                    headerContent = new GUIContent("Split"),
+                    headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
                     width = 70,
@@ -166,7 +178,7 @@ namespace UnityFS.Editor
                 }
                 else
                 {
-                    tv.children = CreateChildListForCollapsedParent();
+                    // tv.children = CreateChildListForCollapsedParent();
                 }
             }
         }
@@ -189,10 +201,40 @@ namespace UnityFS.Editor
             switch (column)
             {
                 case 0:
-                    GUI.DrawTexture(cellRect, s_TestIcons[0], ScaleMode.ScaleToFit);
+                    if (item.depth == 0)
+                    {
+                        GUI.DrawTexture(cellRect, s_TestIcons[0], ScaleMode.ScaleToFit);
+                    }
+                    // cellRect.xMin += 2;
+                    // cellRect.yMin += 2;
+                    // cellRect.xMax -= 2;
+                    // cellRect.xMax -= 2;
+                    // if (GUI.Button(cellRect, ""))
+                    // {
+                    //     Debug.Log("delete?");
+                    // }
+                    // GUI.DrawTexture(cellRect, kIconDelete, ScaleMode.ScaleToFit);
                     break;
                 case 1:
-                    GUI.DrawTexture(cellRect, s_TestIcons[0], ScaleMode.ScaleToFit);
+                    if (item.depth == 1)
+                    {
+                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        if (target.target != null)
+                        {
+                            if (target.target is GameObject)
+                            {
+
+                            }
+                            else
+                            {
+                                var assetPath = AssetDatabase.GetAssetPath(target.target);
+                                if (Directory.Exists(assetPath))
+                                {
+                                    GUI.DrawTexture(cellRect, s_TestIcons[1], ScaleMode.ScaleToFit);
+                                }
+                            }
+                        }
+                    }
                     break;
                 case 2:
                     // Do toggle
@@ -208,9 +250,14 @@ namespace UnityFS.Editor
                     args.rowRect = cellRect;
                     if (item.depth == 1)
                     {
-                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        var assetTarget = (item as BundleBuilderTreeViewTarget).assetTarget;
                         cellRect.xMin += indent + kToggleWidth + 2f;
-                        EditorGUI.ObjectField(cellRect, GUIContent.none, target.target, typeof(Object), false);
+                        var target = EditorGUI.ObjectField(cellRect, GUIContent.none, assetTarget.target, typeof(Object), false);
+                        if (target != assetTarget.target)
+                        {
+                            assetTarget.target = target;
+                            EditorUtility.SetDirty(_data);
+                        }
                     }
                     else
                     {
@@ -221,7 +268,12 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        EditorGUI.EnumPopup(cellRect, bundleInfo.type);
+                        var type = (BundleType)EditorGUI.EnumPopup(cellRect, bundleInfo.type);
+                        if (type != bundleInfo.type)
+                        {
+                            bundleInfo.type = type;
+                            EditorUtility.SetDirty(_data);
+                        }
                     }
                     else if (item.depth == 1)
                     {
@@ -232,7 +284,12 @@ namespace UnityFS.Editor
                             var assetPath = AssetDatabase.GetAssetPath(target.target);
                             if (Directory.Exists(assetPath))
                             {
-                                EditorGUI.EnumFlagsField(cellRect, target.types);
+                                var types = (BundleAssetTypes)EditorGUI.EnumFlagsField(cellRect, target.types);
+                                if (types != target.types)
+                                {
+                                    target.types = types;
+                                    EditorUtility.SetDirty(_data);
+                                }
                             }
                         }
                     }
@@ -241,18 +298,51 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        EditorGUI.ToggleLeft(cellRect, "Startup", bundleInfo.startup);
+                        var load = (BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
+                        if (load != bundleInfo.load)
+                        {
+                            bundleInfo.load = load;
+                            EditorUtility.SetDirty(_data);
+                        }
+                    }
+                    else if (item.depth == 1)
+                    {
+                        // var bundleInfo = (item.parent as BundleBuilderTreeViewBundle).bundleInfo;
+                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        if (target.target != null)
+                        {
+                            var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, target.platforms);
+                            if (platforms != target.platforms)
+                            {
+                                target.platforms = platforms;
+                                EditorUtility.SetDirty(_data);
+                            }
+                        }
                     }
                     break;
                 case 5:
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        EditorGUI.IntSlider(cellRect, bundleInfo.priority, 0, 10000);
+                        var priority = EditorGUI.IntSlider(cellRect, bundleInfo.priority, 0, 10000);
+                        if (priority != bundleInfo.priority)
+                        {
+                            bundleInfo.priority = priority;
+                            EditorUtility.SetDirty(_data);
+                        }
                     }
                     break;
-                default:
-                    GUI.TextField(cellRect, "STUB");
+                case 6:
+                    if (item.depth == 0)
+                    {
+                        var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
+                        var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
+                        if (splitObjects != bundleInfo.splitObjects)
+                        {
+                            bundleInfo.splitObjects = splitObjects;
+                            EditorUtility.SetDirty(_data);
+                        }
+                    }
                     break;
             }
         }
@@ -270,7 +360,13 @@ namespace UnityFS.Editor
             }
             if (args.performDrop)
             {
-
+                var draggedObjects = DragAndDrop.objectReferences;
+                var tv = args.parentItem;
+                if (tv.depth == 0)
+                {
+                    BundleBuilder.Add(_data, (tv as BundleBuilderTreeViewBundle).bundleInfo, draggedObjects);
+                    Reload();
+                }
             }
             return DragAndDropVisualMode.Move;
         }

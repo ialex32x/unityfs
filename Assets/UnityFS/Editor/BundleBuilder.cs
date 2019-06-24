@@ -187,7 +187,7 @@ namespace UnityFS.Editor
                     bundle.name = assetBundle;
                     bundle.checksum = checksum.hex;
                     bundle.size = (int)fileInfo.Length;
-                    bundle.startup = bundleInfo.startup;
+                    bundle.startup = bundleInfo.load == BundleLoad.Startup;
                     bundle.priority = bundleInfo.priority;
                     foreach (var asset in bundleInfo.assets)
                     {
@@ -205,6 +205,34 @@ namespace UnityFS.Editor
             var json = JsonUtility.ToJson(manifest);
             var manifestPath = Path.Combine(outputPath, "manifest.json");
             File.WriteAllText(manifestPath, json);
+        }
+
+        public static bool Contains(BundleBuilderData.BundleInfo bundleInfo, Object targetObject)
+        {
+            foreach (var target in bundleInfo.targets)
+            {
+                if (target.target == targetObject)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void Add(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, Object[] targetObjects)
+        {
+            foreach (var targetObject in targetObjects)
+            {
+                if (!Contains(bundleInfo, targetObject))
+                {
+                    bundleInfo.targets.Add(new BundleBuilderData.BundleAssetTarget()
+                    {
+                        id = ++data.id,
+                        target = targetObject,
+                    });
+                }
+            }
+            EditorUtility.SetDirty(data);
         }
     }
 }

@@ -32,13 +32,13 @@ namespace Examples
             var data = fs.ReadAllBytes("Assets/Examples/Config/test.txt");
             Debug.Log(System.Text.Encoding.UTF8.GetString(data));
             {
-                var asset = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube.prefab");
+                var asset = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 1.prefab");
                 asset.completed += self =>
                 {
                     var gameObject = Object.Instantiate(self.GetObject()) as GameObject;
                     UnityFS.Utils.AssetHandle.Attach(gameObject, asset, 5.0f);
                 };
-                var loader = UnityFS.Utils.PrefabLoader.Instantiate("Assets/Examples/Prefabs/Cube.prefab");
+                var loader = UnityFS.Utils.PrefabLoader.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab");
                 loader.StartCoroutine(UnityFS.Utils.Helpers.DestroyAfter(loader.gameObject, 10.0f));
             }
         }
