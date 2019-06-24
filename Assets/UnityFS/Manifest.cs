@@ -20,9 +20,9 @@ namespace UnityFS
             public int size;        // 文件大小
             public string checksum; // 文件校验值
             public string[] dependencies; // 依赖的 bundle
-            public Dictionary<string, string> assets; // asset path (virtual path) => asset name 
+            public List<string> assets = new List<string>(); // asset path (virtual path)
         }
 
-        public Dictionary<string, BundleInfo> bundles; // bundle 清单
+        public List<BundleInfo> bundles = new List<BundleInfo>(); // bundle 清单
     }
 }

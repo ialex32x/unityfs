@@ -36,11 +36,6 @@ namespace UnityFS
                 _info = info;
             }
 
-            public string GetAssetName(string assetPath)
-            {
-                return _info.assets[assetPath];
-            }
-
             // main thread only
             public void AddRef()
             {
@@ -106,7 +101,7 @@ namespace UnityFS
                     var dep = info.dependencies[i];
                     var depBundle = _provider.GetBundle(dep);
                     _AddDependency(depBundle);
-                    _AddDependencies(_provider._manifest.bundles[dep]);
+                    _AddDependencies(_provider._bundlesMap[dep]);
                 }
             }
 
@@ -217,8 +212,7 @@ namespace UnityFS
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
                 {
-                    var assetName = _bundle.GetAssetName(_assetPath);
-                    var request = assetBundle.LoadAssetAsync(assetName);
+                    var request = assetBundle.LoadAssetAsync(_assetPath);
                     request.completed += OnAssetLoaded;
                 }
                 else
@@ -237,6 +231,7 @@ namespace UnityFS
 
         // 资源路径 => 资源包 的快速映射
         private Dictionary<string, string> _assetPath2Bundle = new Dictionary<string, string>();
+        private Dictionary<string, Manifest.BundleInfo> _bundlesMap = new Dictionary<string, Manifest.BundleInfo>();
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private Manifest _manifest;
@@ -255,9 +250,10 @@ namespace UnityFS
         {
             foreach (var bundle in _manifest.bundles)
             {
-                foreach (var asset in bundle.Value.assets)
+                _bundlesMap[bundle.name] = bundle;
+                foreach (var assetPath in bundle.assets)
                 {
-                    _assetPath2Bundle[asset.Key] = bundle.Key;
+                    _assetPath2Bundle[assetPath] = bundle.name;
                 }
             }
         }
@@ -272,7 +268,7 @@ namespace UnityFS
             UBundle bundle;
             if (!_bundles.TryGetValue(name, out bundle))
             {
-                bundle = new UBundle(this, _manifest.bundles[name]);
+                bundle = new UBundle(this, _bundlesMap[name]);
                 _bundles.Add(name, bundle);
                 bundle.AddDependencies();
                 var fs = _provider.OpenFile(name);
@@ -282,7 +278,7 @@ namespace UnityFS
                 }
                 else
                 {
-                    var fileInfo = _manifest.bundles[name];
+                    var fileInfo = _bundlesMap[name];
                     var task = new DownloadTask(fileInfo, -1, self =>
                     {
                         bundle.Load(self.OpenFile());

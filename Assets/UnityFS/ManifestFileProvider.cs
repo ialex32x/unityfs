@@ -20,20 +20,23 @@ namespace UnityFS
 
         public Stream OpenFile(string filename)
         {
-            Manifest.BundleInfo bundleInfo;
-            if (_manifest.bundles.TryGetValue(filename, out bundleInfo))
+            for (int i = 0, size = _manifest.bundles.Count; i < size; i++)
             {
-                var fullPath = Path.Combine(_pathRoot, filename);
-                var metaPath = fullPath + ".meta";
-                if (File.Exists(fullPath) && File.Exists(metaPath))
+                var bundleInfo = _manifest.bundles[i];
+                if (bundleInfo.name == filename)
                 {
-                    var json = File.ReadAllText(metaPath);
-                    var metadata = JsonUtility.FromJson<Metadata>(json);
-                    // quick but unsafe
-                    if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
+                    var fullPath = Path.Combine(_pathRoot, filename);
+                    var metaPath = fullPath + ".meta";
+                    if (File.Exists(fullPath) && File.Exists(metaPath))
                     {
-                        var stream = System.IO.File.OpenRead(fullPath);
-                        return stream;
+                        var json = File.ReadAllText(metaPath);
+                        var metadata = JsonUtility.FromJson<Metadata>(json);
+                        // quick but unsafe
+                        if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
+                        {
+                            var stream = System.IO.File.OpenRead(fullPath);
+                            return stream;
+                        }
                     }
                 }
             }

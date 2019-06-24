@@ -9,23 +9,32 @@ namespace UnityFS.Editor
     public class BundleBuilderData : ScriptableObject
     {
         [Serializable]
+        public class BundleAssetTarget
+        {
+            public Object target;
+            public BundleAssetPlatforms platforms = BundleAssetPlatforms.Any;  // filter for platforms
+            public BundleAssetTypes types = BundleAssetTypes.Any;          // filter for directory object
+        }
+
+        [Serializable]
         public class BundleAsset
         {
             public Object target;
-            public BundleAssetPlatforms platforms;  // filter for platforms
-            public BundleAssetTypes types;          // filter for directory object
             public int splitIndex;
         }
 
         [Serializable]
         public class BundleInfo
         {
+            public string name;      // bundle filename
+            public BundleType type;
+
             public bool startup;
             public int priority;
-            public string name;      // bundle filename
             public int splitObjects; // 自动分包
-            public BundleType type;
-            public List<BundleAsset> assets = new List<BundleAsset>();
+            public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
+
+            public List<BundleAsset> assets = new List<BundleAsset>(); // 最终进入打包的所有资源对象
         }
 
         public List<BundleInfo> bundles = new List<BundleInfo>();

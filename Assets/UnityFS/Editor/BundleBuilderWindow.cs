@@ -36,10 +36,20 @@ namespace UnityFS.Editor
                 var bundle = data.bundles[bundleIndex];
                 EditorGUI.BeginChangeCheck();
                 bundle.name = EditorGUILayout.TextField("Name", bundle.name);
+                if (GUILayout.Button("Scan"))
+                {
+                    BundleBuilder.Scan(bundle);
+                    dirty = true;
+                }
                 if (EditorGUI.EndChangeCheck())
                 {
                     dirty = true;
                 }
+            }
+
+            if (GUILayout.Button("Build"))
+            {
+                BundleBuilder.Build(data, "out/AssetBundles", EditorUserBuildSettings.activeBuildTarget);
             }
 
             if (dirty)

@@ -26,7 +26,7 @@ namespace UnityFS.Editor
     public enum BundleAssetTypes
     {
         None = 0,
-        Unknown = 1 << 0,    // 
+        Any = 1 << 0,
         Prefab = 1 << 1,     // prefab object
         Animation = 1 << 2,  // animation object
         Material = 1 << 3,   // material object

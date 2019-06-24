@@ -13,23 +13,28 @@ MonoBehaviour:
   m_Name: default
   m_EditorClassIdentifier: 
   bundles:
-  - startup: 0
-    priority: 0
-    name: test1
-    splitObjects: 0
+  - name: test1.pkg
     type: 0
-    assets:
+    startup: 0
+    priority: 0
+    splitObjects: 0
+    targets:
     - target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
       platforms: 3
       types: 2
-      splitIndex: 0
-  - startup: 0
-    priority: 0
-    name: test2
-    splitObjects: 0
-    type: 0
     assets:
+    - target: {fileID: 6276737056871012079, guid: c12f6c61f41fcd24faf9384768877487,
+        type: 3}
+      splitIndex: 0
+  - name: test2.pkg
+    type: 0
+    startup: 0
+    priority: 0
+    splitObjects: 0
+    targets:
     - target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
       platforms: 3
-      types: 256
+      types: 1
+    assets:
+    - target: {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
       splitIndex: 0
