@@ -24,6 +24,27 @@ namespace UnityFS.Editor
                     AssetDatabase.CreateAsset(_data, BundleBuilderDataPath);
                     AssetDatabase.SaveAssets();
                 }
+                var dirty = false;
+                foreach (var bundle in _data.bundles)
+                {
+                    if (bundle.id == 0)
+                    {
+                        bundle.id = ++_data.id;
+                        dirty = true;
+                    }
+                    foreach (var target in bundle.targets)
+                    {
+                        if (target.id == 0)
+                        {
+                            target.id = ++_data.id;
+                            dirty = true;
+                        }
+                    }
+                }
+                if (dirty)
+                {
+                    EditorUtility.SetDirty(_data);
+                }
             }
             return _data;
         }
@@ -106,6 +127,19 @@ namespace UnityFS.Editor
                 builds.Add(build);
             }
             return builds;
+        }
+
+        public static bool Scan(BundleBuilderData data)
+        {
+            var dirty = false;
+            foreach (var bundle in data.bundles)
+            {
+                if (Scan(bundle))
+                {
+                    dirty = true;
+                }
+            }
+            return dirty;
         }
 
         public static void Build(BundleBuilderData data, string outputPath, BuildTarget targetPlatform)

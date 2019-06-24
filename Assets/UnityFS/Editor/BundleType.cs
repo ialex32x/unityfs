@@ -30,13 +30,14 @@ namespace UnityFS.Editor
         Prefab = 1 << 1,     // prefab object
         Animation = 1 << 2,  // animation object
         Material = 1 << 3,   // material object
-        Texture = 1 << 4,    // any texture object files
-        Javascript = 1 << 5, // *.js
-        Sourcemap = 1 << 6,  // *.js.map
-        Luascript = 1 << 7,  // *.lua
-        Text = 1 << 8,       // *.txt
+        Texture = 1 << 4,    // texture object
+        Audio = 1 << 5,     // audio object
+        Javascript = 1 << 6, // *.js
+        Sourcemap = 1 << 7,  // *.js.map
+        Luascript = 1 << 8,  // *.lua
         Xml = 1 << 9,        // *.xml
         Json = 1 << 10,      // *.json
-        Binary = 1 << 11,    // *.bytes (unity binary files)
+        Text = 1 << 11,       // *.txt
+        Binary = 1 << 12,    // *.bytes (unity binary files)
     }
 }

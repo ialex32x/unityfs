@@ -12,29 +12,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: default
   m_EditorClassIdentifier: 
+  id: 4
   bundles:
-  - name: test1.pkg
+  - id: 1
+    name: test1.pkg
     type: 0
+    enabled: 1
     startup: 0
     priority: 0
     splitObjects: 0
     targets:
-    - target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
+    - id: 2
+      enabled: 1
+      target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
       platforms: 3
       types: 2
     assets:
-    - target: {fileID: 6276737056871012079, guid: c12f6c61f41fcd24faf9384768877487,
+    - id: 0
+      target: {fileID: 6276737056871012079, guid: c12f6c61f41fcd24faf9384768877487,
         type: 3}
       splitIndex: 0
-  - name: test2.pkg
+  - id: 3
+    name: test2.pkg
     type: 0
+    enabled: 1
     startup: 0
     priority: 0
     splitObjects: 0
     targets:
-    - target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
+    - id: 4
+      enabled: 1
+      target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
       platforms: 3
       types: 1
     assets:
-    - target: {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
+    - id: 0
+      target: {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
       splitIndex: 0
