@@ -155,7 +155,9 @@ namespace UnityFS.Editor
                 Directory.CreateDirectory(outputPath);
             }
             var assetBundleManifest = BuildPipeline.BuildAssetBundles(outputPath, builds.ToArray(), BuildAssetBundleOptions.None, targetPlatform);
+            // BuildPipeline.BuildPlayer()
             BuildManifest(data, outputPath, assetBundleManifest);
+            Debug.Log($"build bundles finished {DateTime.Now}");
         }
 
         public static BundleBuilderData.BundleInfo GetBundleInfo(BundleBuilderData data, string bundleName)
