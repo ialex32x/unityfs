@@ -14,8 +14,9 @@ namespace UnityFS.Editor
             public int id;
             public bool enabled = true;
             public Object target;
-            public BundleAssetPlatforms platforms = BundleAssetPlatforms.Any;  // filter for platforms
-            public BundleAssetTypes types = BundleAssetTypes.Any;          // filter for directory object
+            public BundleAssetPlatforms platforms = ~BundleAssetPlatforms.None;  // filter for platforms
+            public BundleAssetTypes types = ~BundleAssetTypes.None; // (仅搜索目录时) 仅包含指定资源类型
+            public List<string> extensions = new List<string>();    // (仅搜索目录时) 额外包含指定后缀的文件
         }
 
         [Serializable]

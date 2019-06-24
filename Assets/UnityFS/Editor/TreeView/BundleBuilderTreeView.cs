@@ -14,12 +14,14 @@ namespace UnityFS.Editor
         private const float kRowHeights = 20f;
         private const float kToggleWidth = 18f;
         static Texture2D kIconDelete = EditorGUIUtility.FindTexture("d_AS Badge Delete");
-        static Texture2D[] s_TestIcons =
-        {
-            EditorGUIUtility.FindTexture("Favorite Icon"),
-            EditorGUIUtility.FindTexture("Folder Icon"),
-            EditorGUIUtility.FindTexture("GameObject Icon"),
-        };
+        static GUIContent kIconPrefab = EditorGUIUtility.IconContent("Prefab Icon");
+        static Texture2D kIconFolder = EditorGUIUtility.FindTexture("Folder Icon");
+        static Texture2D kIconFavorite = EditorGUIUtility.FindTexture("Favorite Icon");
+        static Texture2D kIconSceneAsset = EditorGUIUtility.FindTexture("BuildSettings.Editor");
+        static Texture2D kIconZipArchive = EditorGUIUtility.FindTexture("MetaFile Icon");
+        static GUIContent kIconTextAsset = EditorGUIUtility.IconContent("TextAsset Icon");
+        static GUIContent kIconTexture = EditorGUIUtility.IconContent("Texture Icon");
+        static GUIContent kIconMaterial = EditorGUIUtility.IconContent("Material Icon");
 
         private BundleBuilderData _data;
 
@@ -148,13 +150,20 @@ namespace UnityFS.Editor
                     var bundleName = string.IsNullOrEmpty(bundle.name) ? "(noname)" : bundle.name;
                     var bundleTV = new BundleBuilderTreeViewBundle(bundle.id, 0, bundleName, bundle);
                     rows.Add(bundleTV);
-                    if (IsExpanded(bundleTV.id))
+                    if (bundle.type == BundleType.SceneBundle)
                     {
-                        AddChildrenRecursive(rows, bundle, bundleTV);
+
                     }
                     else
                     {
-                        bundleTV.children = CreateChildListForCollapsedParent();
+                        if (IsExpanded(bundleTV.id))
+                        {
+                            AddChildrenRecursive(rows, bundle, bundleTV);
+                        }
+                        else
+                        {
+                            bundleTV.children = CreateChildListForCollapsedParent();
+                        }
                     }
                 }
                 SetupParentsAndChildrenFromDepths(root, rows);
@@ -203,7 +212,19 @@ namespace UnityFS.Editor
                 case 0:
                     if (item.depth == 0)
                     {
-                        GUI.DrawTexture(cellRect, s_TestIcons[0], ScaleMode.ScaleToFit);
+                        var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
+                        if (bundleInfo.type == BundleType.AssetBundle)
+                        {
+                            GUI.DrawTexture(cellRect, kIconFavorite, ScaleMode.ScaleToFit);
+                        }
+                        else if (bundleInfo.type == BundleType.SceneBundle)
+                        {
+                            GUI.DrawTexture(cellRect, kIconSceneAsset, ScaleMode.ScaleToFit);
+                        }
+                        else
+                        {
+                            GUI.DrawTexture(cellRect, kIconZipArchive, ScaleMode.ScaleToFit);
+                        }
                     }
                     // cellRect.xMin += 2;
                     // cellRect.yMin += 2;
@@ -223,14 +244,26 @@ namespace UnityFS.Editor
                         {
                             if (target.target is GameObject)
                             {
-
+                                GUI.DrawTexture(cellRect, kIconPrefab.image, ScaleMode.ScaleToFit);
+                            }
+                            else if (target.target is TextAsset)
+                            {
+                                GUI.DrawTexture(cellRect, kIconTextAsset.image, ScaleMode.ScaleToFit);
+                            }
+                            else if (target.target is Texture)
+                            {
+                                GUI.DrawTexture(cellRect, kIconTexture.image, ScaleMode.ScaleToFit);
+                            }
+                            else if (target.target is Material)
+                            {
+                                GUI.DrawTexture(cellRect, kIconMaterial.image, ScaleMode.ScaleToFit);
                             }
                             else
                             {
                                 var assetPath = AssetDatabase.GetAssetPath(target.target);
                                 if (Directory.Exists(assetPath))
                                 {
-                                    GUI.DrawTexture(cellRect, s_TestIcons[1], ScaleMode.ScaleToFit);
+                                    GUI.DrawTexture(cellRect, kIconFolder, ScaleMode.ScaleToFit);
                                 }
                             }
                         }
@@ -273,6 +306,7 @@ namespace UnityFS.Editor
                         {
                             bundleInfo.type = type;
                             EditorUtility.SetDirty(_data);
+                            Reload();
                         }
                     }
                     else if (item.depth == 1)
@@ -336,11 +370,18 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
-                        if (splitObjects != bundleInfo.splitObjects)
+                        if (bundleInfo.type == BundleType.AssetBundle)
                         {
-                            bundleInfo.splitObjects = splitObjects;
-                            EditorUtility.SetDirty(_data);
+                            var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
+                            if (splitObjects != bundleInfo.splitObjects)
+                            {
+                                bundleInfo.splitObjects = splitObjects;
+                                EditorUtility.SetDirty(_data);
+                            }
+                        }
+                        else if (bundleInfo.type == BundleType.SceneBundle)
+                        {
+
                         }
                     }
                     break;
