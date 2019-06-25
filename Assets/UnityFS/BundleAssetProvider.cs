@@ -234,15 +234,17 @@ namespace UnityFS
         private Dictionary<string, Manifest.BundleInfo> _bundlesMap = new Dictionary<string, Manifest.BundleInfo>();
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
+        private IList<string> _urls;
         private Manifest _manifest;
         private IFileProvider _provider;
         private IDownloader _downloader;
 
-        public BundleAssetProvider(Manifest manifest, IFileProvider provider, IDownloader downloader)
+        public BundleAssetProvider(Manifest manifest, IFileProvider provider, IDownloader downloader, IList<string> urls)
         {
             _manifest = manifest;
             _provider = provider;
             _downloader = downloader;
+            _urls = urls;
             this.Initialize();
         }
 
@@ -278,8 +280,8 @@ namespace UnityFS
                 }
                 else
                 {
-                    var fileInfo = _bundlesMap[name];
-                    var task = new DownloadTask(fileInfo, -1, self =>
+                    var bundleInfo = _bundlesMap[name];
+                    var task = new DownloadTask(bundleInfo, _urls, -1, self =>
                     {
                         bundle.Load(self.OpenFile());
                     });

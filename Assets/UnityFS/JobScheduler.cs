@@ -25,7 +25,6 @@ namespace UnityFS
         }
 
         private static List<Action> _actions = new List<Action>();
-        private static JobScheduler _instance;
 
         private static IEnumerator _Update()
         {
@@ -41,6 +40,11 @@ namespace UnityFS
                 }
                 yield return null;
             }
+        }
+
+        public static Coroutine DispatchCoroutine(IEnumerator co)
+        {
+            return _mb.StartCoroutine(co);
         }
 
         public static void DispatchMain(Action action)
