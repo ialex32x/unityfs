@@ -127,35 +127,31 @@ namespace UnityFS.Editor
                 }
                 if (GUILayout.Button("Show Bundle Assets"))
                 {
-                    BundleBuilderData.BundleInfo selectedBundle = null;
+                    var selectedBundles = new List<BundleBuilderData.BundleInfo>();
                     foreach (var bundle in data.bundles)
                     {
                         if (_treeView.IsSelected(bundle.id))
                         {
-                            selectedBundle = bundle;
-                            break;
+                            selectedBundles.Add(bundle);
+                            continue;
                         }
                         foreach (var asset in bundle.targets)
                         {
                             if (_treeView.IsSelected(asset.id))
                             {
-                                selectedBundle = bundle;
+                                selectedBundles.Add(bundle);
                                 break;
                             }
                         }
-                        if (selectedBundle != null)
-                        {
-                            break;
-                        }
                     }
-                    if (selectedBundle != null)
+                    if (selectedBundles.Count != 0)
                     {
                         if (BundleBuilder.Scan(data))
                         {
                             dirty = true;
                         }
                         var win = GetWindow<BundleAssetsWindow>();
-                        win.SetBundle(selectedBundle);
+                        win.SetBundles(selectedBundles);
                         win.Show();
                     }
                     else
