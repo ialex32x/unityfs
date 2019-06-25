@@ -344,8 +344,11 @@ namespace UnityFS.Editor
                 Directory.CreateDirectory(outputPath);
             }
             var json = JsonUtility.ToJson(manifest);
+            var jsonChecksum = Utils.Crc16.ComputeChecksum(System.Text.Encoding.UTF8.GetBytes(json)).ToString("x");
             var manifestPath = Path.Combine(outputPath, "manifest.json");
+            var manifestChecksumPath = Path.Combine(outputPath, "checksum.txt");
             File.WriteAllText(manifestPath, json);
+            File.WriteAllText(manifestChecksumPath, jsonChecksum);
         }
 
         // 是否包含指定名字的 bundle
