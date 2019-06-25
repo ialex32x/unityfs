@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: default
   m_EditorClassIdentifier: 
-  id: 18
+  id: 21
   bundles:
   - id: 1
     name: test1.pkg
@@ -28,24 +28,24 @@ MonoBehaviour:
       target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
       platforms: 3
       types: 2
-      extensions: []
+      extensions: 
     - id: 10
       enabled: 1
       target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,
         type: 3}
       platforms: -1
       types: -1
-      extensions: []
+      extensions: 
     - id: 13
       enabled: 1
       target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
       platforms: -1
       types: -1
-      extensions: []
+      extensions: 
   - id: 3
     name: test2.pkg
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
-    type: 2
+    type: 1
     enabled: 1
     load: 0
     priority: 2785
@@ -56,19 +56,19 @@ MonoBehaviour:
       target: {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
       platforms: 3
       types: 1
-      extensions: []
+      extensions: 
     - id: 6
       enabled: 1
       target: {fileID: 4900000, guid: 423169b27afc2744d9f06d44346b777e, type: 3}
       platforms: 3
       types: 1
-      extensions: []
+      extensions: 
     - id: 7
       enabled: 1
       target: {fileID: 4900000, guid: e6471453252543c48af648e48b08262a, type: 3}
       platforms: 3
       types: 1
-      extensions: []
+      extensions: 
   - id: 17
     name: bundle_17.pkg
     note: "\u5176\u4ED6\u5176\u4ED6"
@@ -83,4 +83,25 @@ MonoBehaviour:
       target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
       platforms: -1
       types: -1
-      extensions: []
+      extensions: 
+  - id: 19
+    name: bundle_19.pkg
+    note: 
+    type: 0
+    enabled: 1
+    load: 0
+    priority: 0
+    splitObjects: 0
+    targets:
+    - id: 20
+      enabled: 1
+      target: {fileID: 102900000, guid: 3753d2e5af63eac439ba9b0f36641e6d, type: 3}
+      platforms: -1
+      types: -1
+      extensions: 
+    - id: 21
+      enabled: 1
+      target: {fileID: 102900000, guid: b35be9c075bfa7d4990280e18b1ac7fb, type: 3}
+      platforms: -1
+      types: -1
+      extensions: 

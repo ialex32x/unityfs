@@ -89,8 +89,10 @@ namespace UnityFS.Editor
                 }
                 if (GUILayout.Button("Build"))
                 {
-                    BundleBuilder.Scan(data);
-                    BundleBuilder.Build(data, "out/AssetBundles", EditorUserBuildSettings.activeBuildTarget);
+                    EditorApplication.delayCall += () =>
+                    {
+                        BundleBuilder.Build(data, "out/AssetBundles", EditorUserBuildSettings.activeBuildTarget);
+                    };
                 }
             }
             GUILayout.EndArea();

@@ -144,14 +144,27 @@ namespace UnityFS.Editor
         // 生成打包 
         public static void Build(BundleBuilderData data, string outputPath, BuildTarget targetPlatform)
         {
+            BundleBuilder.Scan(data);
             var assetBundleBuilds = GenerateAssetBundleBuilds(data);
             var zipArchiveBuilds = GenerateZipArchiveBuilds(data);
+            // var sceneBundleBuilds = GenerateSceneBundleBuilds(data);
             if (!Directory.Exists(outputPath))
             {
                 Directory.CreateDirectory(outputPath);
             }
             AssetBundleManifest assetBundleManifest = null;
             ZipArchiveManifest zipArchiveManifest = null;
+            // UnityEditor.Build.Reporting.BuildReport report = null;
+            // if (sceneBundleBuilds.Length != 0)
+            // {
+            //     Debug.Log($"build {sceneBundleBuilds.Length} scene bundles");
+            //     var levels = new List<string>(sceneBundleBuilds.Length);
+            //     foreach (var build in sceneBundleBuilds)
+            //     {
+            //         levels.Add(build.scenePath);
+            //     }
+            //     report = BuildPipeline.BuildPlayer(levels.ToArray(), outputPath, targetPlatform, BuildOptions.BuildAdditionalStreamedScenes);
+            // }
             if (assetBundleBuilds.Length != 0)
             {
                 assetBundleManifest = BuildPipeline.BuildAssetBundles(outputPath, assetBundleBuilds, BuildAssetBundleOptions.None, targetPlatform);
@@ -160,9 +173,8 @@ namespace UnityFS.Editor
             {
                 zipArchiveManifest = BuildZipArchives(outputPath, zipArchiveBuilds, targetPlatform);
             }
-            // BuildPipeline.BuildPlayer()
             BuildManifest(data, outputPath, assetBundleManifest, zipArchiveManifest);
-            Debug.Log($"build bundles finished {DateTime.Now}");
+            Debug.Log($"build bundles finished {DateTime.Now}. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives.");
         }
 
         public static ZipArchiveManifest BuildZipArchives(string outputPath, BundleBuilderData.BundleInfo[] builds, BuildTarget targetPlatform)
@@ -217,6 +229,28 @@ namespace UnityFS.Editor
             archiveEntry.assets.Add(assetPath);
         }
 
+        // public static SceneBundleBuild[] GenerateSceneBundleBuilds(BundleBuilderData data)
+        // {
+        //     var list = new List<SceneBundleBuild>();
+        //     foreach (var bundle in data.bundles)
+        //     {
+        //         if (bundle.type == BundleType.SceneBundle)
+        //         {
+        //             var build = new SceneBundleBuild();
+        //             build.name = bundle.name;
+        //             foreach (var asset in bundle.assets)
+        //             {
+        //                 if (asset.target is SceneAsset)
+        //                 {
+        //                     build.scenePath = AssetDatabase.GetAssetPath(asset.target);
+        //                 }
+        //             }
+        //             list.Add(build);
+        //         }
+        //     }
+        //     return list.ToArray();
+        // }
+
         public static BundleBuilderData.BundleInfo[] GenerateZipArchiveBuilds(BundleBuilderData data)
         {
             var list = new List<BundleBuilderData.BundleInfo>();
@@ -244,7 +278,9 @@ namespace UnityFS.Editor
         }
 
         // 生成清单
-        public static void BuildManifest(BundleBuilderData data, string outputPath, AssetBundleManifest assetBundleManifest, ZipArchiveManifest zipArchiveManifest)
+        public static void BuildManifest(BundleBuilderData data, string outputPath,
+            AssetBundleManifest assetBundleManifest,
+            ZipArchiveManifest zipArchiveManifest)
         {
             var manifest = new Manifest();
             if (assetBundleManifest != null)
@@ -253,6 +289,7 @@ namespace UnityFS.Editor
                 foreach (var assetBundle in assetBundles)
                 {
                     var bundleInfo = GetBundleInfo(data, assetBundle);
+                    // Debug.Log(bundleInfo.name);
                     var assetBundlePath = Path.Combine(outputPath, assetBundle);
                     using (var stream = File.OpenRead(assetBundlePath))
                     {

@@ -16,7 +16,7 @@ namespace UnityFS.Editor
             public Object target;
             public BundleAssetPlatforms platforms = ~BundleAssetPlatforms.None;  // filter for platforms
             public BundleAssetTypes types = ~BundleAssetTypes.None; // (仅搜索目录时) 仅包含指定资源类型
-            public List<string> extensions = new List<string>();    // (仅搜索目录时) 额外包含指定后缀的文件
+            public string extensions = string.Empty;    // (仅搜索目录时) 额外包含指定后缀的文件
         }
 
         [Serializable]
@@ -58,5 +58,11 @@ namespace UnityFS.Editor
     public class ZipArchiveManifest
     {
         public List<ZipArchiveEntry> archives = new List<ZipArchiveEntry>();
+    }
+
+    public class SceneBundleBuild
+    {
+        public string name;
+        public string scenePath;
     }
 }

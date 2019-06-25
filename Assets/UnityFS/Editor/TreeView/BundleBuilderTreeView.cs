@@ -84,7 +84,7 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("Type"),
+                    headerContent = new GUIContent("Platform"),
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
@@ -151,20 +151,13 @@ namespace UnityFS.Editor
                     var bundleName = string.IsNullOrEmpty(bundle.name) ? "(noname)" : bundle.name;
                     var bundleTV = new BundleBuilderTreeViewBundle(bundle.id, 0, bundleName, bundle);
                     rows.Add(bundleTV);
-                    if (bundle.type == BundleType.SceneBundle)
+                    if (IsExpanded(bundleTV.id))
                     {
-
+                        AddChildrenRecursive(rows, bundle, bundleTV);
                     }
                     else
                     {
-                        if (IsExpanded(bundleTV.id))
-                        {
-                            AddChildrenRecursive(rows, bundle, bundleTV);
-                        }
-                        else
-                        {
-                            bundleTV.children = CreateChildListForCollapsedParent();
-                        }
+                        bundleTV.children = CreateChildListForCollapsedParent();
                     }
                 }
                 SetupParentsAndChildrenFromDepths(root, rows);
@@ -209,6 +202,7 @@ namespace UnityFS.Editor
             if (evt.type == EventType.ContextClick)
             {
                 var mousePos = evt.mousePosition;
+                treeViewRect.yMin += multiColumnHeader.height;
                 if (treeViewRect.Contains(mousePos))
                 {
                     var menu = new GenericMenu();
@@ -327,10 +321,10 @@ namespace UnityFS.Editor
                         {
                             GUI.DrawTexture(cellRect, kIconFavorite, ScaleMode.ScaleToFit);
                         }
-                        else if (bundleInfo.type == BundleType.SceneBundle)
-                        {
-                            GUI.DrawTexture(cellRect, kIconSceneAsset, ScaleMode.ScaleToFit);
-                        }
+                        // else if (bundleInfo.type == BundleType.SceneBundle)
+                        // {
+                        //     GUI.DrawTexture(cellRect, kIconSceneAsset, ScaleMode.ScaleToFit);
+                        // }
                         else
                         {
                             GUI.DrawTexture(cellRect, kIconZipArchive, ScaleMode.ScaleToFit);
@@ -358,6 +352,10 @@ namespace UnityFS.Editor
                             else if (target.target is Material)
                             {
                                 GUI.DrawTexture(cellRect, kIconMaterial.image, ScaleMode.ScaleToFit);
+                            }
+                            else if (target.target is SceneAsset)
+                            {
+                                GUI.DrawTexture(cellRect, kIconSceneAsset, ScaleMode.ScaleToFit);
                             }
                             else
                             {
@@ -413,7 +411,36 @@ namespace UnityFS.Editor
                 case 3:
                     if (item.depth == 0)
                     {
+                        // var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
+
+                    }
+                    else if (item.depth == 1)
+                    {
+                        // var bundleInfo = (item.parent as BundleBuilderTreeViewBundle).bundleInfo;
+                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        if (target.target != null)
+                        {
+                            var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, target.platforms);
+                            if (platforms != target.platforms)
+                            {
+                                target.platforms = platforms;
+                                EditorUtility.SetDirty(_data);
+                            }
+                        }
+                    }
+                    break;
+                case 4:
+                    if (item.depth == 0)
+                    {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
+                        cellRect.width *= 0.5f;
+                        var load = (BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
+                        if (load != bundleInfo.load)
+                        {
+                            bundleInfo.load = load;
+                            EditorUtility.SetDirty(_data);
+                        }
+                        cellRect.x += cellRect.width;
                         var type = (BundleType)EditorGUI.EnumPopup(cellRect, bundleInfo.type);
                         if (type != bundleInfo.type)
                         {
@@ -441,32 +468,6 @@ namespace UnityFS.Editor
                         }
                     }
                     break;
-                case 4:
-                    if (item.depth == 0)
-                    {
-                        var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        var load = (BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
-                        if (load != bundleInfo.load)
-                        {
-                            bundleInfo.load = load;
-                            EditorUtility.SetDirty(_data);
-                        }
-                    }
-                    else if (item.depth == 1)
-                    {
-                        // var bundleInfo = (item.parent as BundleBuilderTreeViewBundle).bundleInfo;
-                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        if (target.target != null)
-                        {
-                            var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, target.platforms);
-                            if (platforms != target.platforms)
-                            {
-                                target.platforms = platforms;
-                                EditorUtility.SetDirty(_data);
-                            }
-                        }
-                    }
-                    break;
                 case 5:
                     if (item.depth == 0)
                     {
@@ -476,6 +477,23 @@ namespace UnityFS.Editor
                         {
                             bundleInfo.priority = priority;
                             EditorUtility.SetDirty(_data);
+                        }
+                    }
+                    else if (item.depth == 1)
+                    {
+                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        if (target.target != null)
+                        {
+                            var assetPath = AssetDatabase.GetAssetPath(target.target);
+                            if (Directory.Exists(assetPath))
+                            {
+                                var extensions = EditorGUI.TextField(cellRect, target.extensions);
+                                if (extensions != target.extensions)
+                                {
+                                    target.extensions = extensions;
+                                    EditorUtility.SetDirty(_data);
+                                }
+                            }
                         }
                     }
                     break;
@@ -492,10 +510,9 @@ namespace UnityFS.Editor
                                 EditorUtility.SetDirty(_data);
                             }
                         }
-                        else if (bundleInfo.type == BundleType.SceneBundle)
-                        {
-
-                        }
+                        // else if (bundleInfo.type == BundleType.SceneBundle)
+                        // {
+                        // }
                     }
                     break;
             }

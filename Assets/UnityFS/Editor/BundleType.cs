@@ -9,8 +9,8 @@ namespace UnityFS.Editor
     public enum BundleType
     {
         AssetBundle,
-        SceneBundle,
         ZipArchive,
+        // SceneBundle,
     }
 
     public enum BundleLoad
