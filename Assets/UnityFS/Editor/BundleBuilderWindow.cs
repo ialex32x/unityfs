@@ -48,7 +48,12 @@ namespace UnityFS.Editor
             {
                 if (GUILayout.Button("Add Bundle"))
                 {
-                    //TODO: add bundle 
+                    data.bundles.Add(new BundleBuilderData.BundleInfo()
+                    {
+                        id = ++data.id,
+                        name = $"bundle_{data.id}.pkg",
+                    });
+                    _treeView.Reload();
                 }
                 GUILayout.FlexibleSpace();
             }
