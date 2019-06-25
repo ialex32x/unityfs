@@ -49,6 +49,7 @@ namespace UnityFS.Editor
             return _data;
         }
 
+        // 根据 targets 遍历产生所有实际资源列表 assets
         public static bool Scan(BundleBuilderData.BundleInfo bundle)
         {
             var assets = new List<Object>();
@@ -129,6 +130,7 @@ namespace UnityFS.Editor
             return builds;
         }
 
+        // 根据 targets 遍历产生所有实际资源列表 assets
         public static bool Scan(BundleBuilderData data)
         {
             var dirty = false;
@@ -139,9 +141,14 @@ namespace UnityFS.Editor
                     dirty = true;
                 }
             }
+            if (dirty)
+            {
+                EditorUtility.SetDirty(data);
+            }
             return dirty;
         }
 
+        // 生成打包 
         public static void Build(BundleBuilderData data, string outputPath, BuildTarget targetPlatform)
         {
             var builds = GenerateAssetBundleBuilds(data);
@@ -160,6 +167,7 @@ namespace UnityFS.Editor
             Debug.Log($"build bundles finished {DateTime.Now}");
         }
 
+        // 获取指定包名的包对象信息
         public static BundleBuilderData.BundleInfo GetBundleInfo(BundleBuilderData data, string bundleName)
         {
             foreach (var bundle in data.bundles)
@@ -172,6 +180,7 @@ namespace UnityFS.Editor
             return null;
         }
 
+        // 生成清单
         public static void BuildManifest(BundleBuilderData data, string outputPath, AssetBundleManifest assetBundleManifest)
         {
             var assetBundles = assetBundleManifest.GetAllAssetBundles();
@@ -209,6 +218,20 @@ namespace UnityFS.Editor
             File.WriteAllText(manifestPath, json);
         }
 
+        // 是否包含指定名字的 bundle
+        public static bool ContainsBundle(BundleBuilderData data, string bundleName)
+        {
+            foreach (var bundle in data.bundles)
+            {
+                if (bundle.name == bundleName)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 包中是否存在指定的目标资源 (只比对target, 不检查实际资源列表)
         public static bool Contains(BundleBuilderData.BundleInfo bundleInfo, Object targetObject)
         {
             foreach (var target in bundleInfo.targets)
@@ -221,6 +244,7 @@ namespace UnityFS.Editor
             return false;
         }
 
+        // 将指定资源添加到 bundle 的 targets 列表中
         public static void Add(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, Object[] targetObjects)
         {
             foreach (var targetObject in targetObjects)

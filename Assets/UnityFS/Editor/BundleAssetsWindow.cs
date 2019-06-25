@@ -11,6 +11,7 @@ namespace UnityFS.Editor
 
     public class BundleAssetsWindow : EditorWindow
     {
+        private BundleBuilderData _data;
         private IList<BundleBuilderData.BundleInfo> _bundles;
 
         void OnEnable()
@@ -18,8 +19,9 @@ namespace UnityFS.Editor
             titleContent = new GUIContent("Bundle Assets");
         }
 
-        public void SetBundles(IList<BundleBuilderData.BundleInfo> bundles)
+        public void SetBundles(BundleBuilderData data, IList<BundleBuilderData.BundleInfo> bundles)
         {
+            _data = data;
             _bundles = bundles;
         }
 
@@ -34,6 +36,12 @@ namespace UnityFS.Editor
             {
                 var bundleName = string.IsNullOrEmpty(bundle.name) ? "(null)" : bundle.name;
                 EditorGUILayout.HelpBox($"{bundleName}, {bundle.assets.Count} assets", MessageType.Info);
+                var note = EditorGUILayout.TextField("Note", bundle.note);
+                if (note != bundle.note)
+                {
+                    bundle.note = note;
+                    EditorUtility.SetDirty(_data);
+                }
                 foreach (var asset in bundle.assets)
                 {
                     EditorGUILayout.BeginHorizontal();

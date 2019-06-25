@@ -13,7 +13,7 @@ namespace UnityFS.Editor
     {
         private const float kRowHeights = 20f;
         private const float kToggleWidth = 18f;
-        static Texture2D kIconDelete = EditorGUIUtility.FindTexture("d_AS Badge Delete");
+        static Texture2D kIconDelete1 = EditorGUIUtility.FindTexture("d_AS Badge Delete");
         static GUIContent kIconPrefab = EditorGUIUtility.IconContent("Prefab Icon");
         static Texture2D kIconFolder = EditorGUIUtility.FindTexture("Folder Icon");
         static Texture2D kIconFavorite = EditorGUIUtility.FindTexture("Favorite Icon");
@@ -22,6 +22,7 @@ namespace UnityFS.Editor
         static GUIContent kIconTextAsset = EditorGUIUtility.IconContent("TextAsset Icon");
         static GUIContent kIconTexture = EditorGUIUtility.IconContent("Texture Icon");
         static GUIContent kIconMaterial = EditorGUIUtility.IconContent("Material Icon");
+        static GUIContent kIconDelete2 = EditorGUIUtility.IconContent("d_P4_DeletedLocal");
 
         private BundleBuilderData _data;
 
@@ -202,6 +203,115 @@ namespace UnityFS.Editor
             }
         }
 
+        public void OnContextMenu(Rect treeViewRect)
+        {
+            var evt = Event.current;
+            if (evt.type == EventType.ContextClick)
+            {
+                var mousePos = evt.mousePosition;
+                if (treeViewRect.Contains(mousePos))
+                {
+                    var menu = new GenericMenu();
+                    menu.AddItem(new GUIContent("查看"), false, OnContextMenuInspect);
+                    // menu.AddItem(new GUIContent("Not Implemented 2"), false, OnContextMenuTest);
+                    menu.AddSeparator("");
+                    menu.AddItem(new GUIContent("删除"), false, OnContextMenuDelete);
+                    menu.ShowAsContext();
+                    evt.Use();
+                }
+            }
+        }
+
+        private void OnContextMenuInspect()
+        {
+            ShowBundleAssets();
+        }
+
+        private void OnContextMenuDelete()
+        {
+            DeleteSelectedItems();
+        }
+
+        public void ShowBundleAssets()
+        {
+            var selectedBundles = new List<BundleBuilderData.BundleInfo>();
+            foreach (var bundle in _data.bundles)
+            {
+                if (this.IsSelected(bundle.id))
+                {
+                    selectedBundles.Add(bundle);
+                    continue;
+                }
+                foreach (var asset in bundle.targets)
+                {
+                    if (this.IsSelected(asset.id))
+                    {
+                        selectedBundles.Add(bundle);
+                        break;
+                    }
+                }
+            }
+            if (selectedBundles.Count != 0)
+            {
+                BundleBuilder.Scan(_data);
+                var win = EditorWindow.GetWindow<BundleAssetsWindow>();
+                win.SetBundles(_data, selectedBundles);
+                win.Show();
+            }
+            else
+            {
+                Debug.LogWarning("no bundle selected");
+            }
+        }
+
+        public void DeleteSelectedItems()
+        {
+            var bundlePending = new List<BundleBuilderData.BundleInfo>();
+            var targetPending = new List<BundleBuilderData.BundleAssetTarget>();
+            foreach (var bundle in _data.bundles)
+            {
+                if (this.IsSelected(bundle.id))
+                {
+                    bundlePending.Add(bundle);
+                }
+                else
+                {
+                    foreach (var target in bundle.targets)
+                    {
+                        if (this.IsSelected(target.id))
+                        {
+                            targetPending.Add(target);
+                        }
+                    }
+                }
+            }
+            if (bundlePending.Count == 0 && targetPending.Count == 0)
+            {
+                if (EditorUtility.DisplayDialog("删除", "没有选中任何资源.", "确定"))
+                {
+                }
+            }
+            else
+            {
+                if (EditorUtility.DisplayDialog("删除", $"确定删除选中的 {bundlePending.Count} 个整资源包以及 {targetPending.Count} 项资源?", "删除", "取消"))
+                {
+                    foreach (var bundle in bundlePending)
+                    {
+                        _data.bundles.Remove(bundle);
+                    }
+                    foreach (var bundle in _data.bundles)
+                    {
+                        foreach (var target in targetPending)
+                        {
+                            bundle.targets.Remove(target);
+                        }
+                    }
+                    EditorUtility.SetDirty(_data);
+                    this.Reload();
+                }
+            }
+        }
+
         private void CellGUI(Rect cellRect, BundleBuilderTreeViewItem item, int column, ref RowGUIArgs args)
         {
             // Center cell rect vertically (makes it easier to place controls, icons etc in the cells)
@@ -226,15 +336,6 @@ namespace UnityFS.Editor
                             GUI.DrawTexture(cellRect, kIconZipArchive, ScaleMode.ScaleToFit);
                         }
                     }
-                    // cellRect.xMin += 2;
-                    // cellRect.yMin += 2;
-                    // cellRect.xMax -= 2;
-                    // cellRect.xMax -= 2;
-                    // if (GUI.Button(cellRect, ""))
-                    // {
-                    //     Debug.Log("delete?");
-                    // }
-                    // GUI.DrawTexture(cellRect, kIconDelete, ScaleMode.ScaleToFit);
                     break;
                 case 1:
                     if (item.depth == 1)
@@ -281,10 +382,22 @@ namespace UnityFS.Editor
                     }
                     // Default icon and label
                     args.rowRect = cellRect;
-                    if (item.depth == 1)
+                    cellRect.xMin += indent + kToggleWidth + 2f;
+                    if (item.depth == 0)
+                    {
+                        var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
+                        if (string.IsNullOrEmpty(bundleInfo.note))
+                        {
+                            EditorGUI.LabelField(cellRect, bundleInfo.name);
+                        }
+                        else
+                        {
+                            EditorGUI.LabelField(cellRect, bundleInfo.note);
+                        }
+                    }
+                    else if (item.depth == 1)
                     {
                         var assetTarget = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        cellRect.xMin += indent + kToggleWidth + 2f;
                         var target = EditorGUI.ObjectField(cellRect, GUIContent.none, assetTarget.target, typeof(Object), false);
                         if (target != assetTarget.target)
                         {

@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: default
   m_EditorClassIdentifier: 
-  id: 9
+  id: 18
   bundles:
   - id: 1
     name: test1.pkg
+    note: "prefab\u6D4B\u8BD5\u5305"
     type: 0
     enabled: 1
     load: 0
@@ -27,6 +28,26 @@ MonoBehaviour:
       target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
       platforms: 3
       types: 2
+      extensions: []
+    - id: 10
+      enabled: 1
+      target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,
+        type: 3}
+      platforms: -1
+      types: -1
+      extensions: []
+    - id: 12
+      enabled: 1
+      target: {fileID: 2800000, guid: ad80bd1399b82cc4ba0c7f4d055ac1ce, type: 3}
+      platforms: -1
+      types: -1
+      extensions: []
+    - id: 13
+      enabled: 1
+      target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
+      platforms: -1
+      types: -1
+      extensions: []
     assets:
     - id: 0
       target: {fileID: 6276737056871012079, guid: df4858d82a3ad344d88e9ce52e8cbaa0,
@@ -64,8 +85,19 @@ MonoBehaviour:
       target: {fileID: 6276737056871012079, guid: ce7ab5d846e45ac4ca42d89d2dd9bbde,
         type: 3}
       splitIndex: 0
+    - id: 0
+      target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,
+        type: 3}
+      splitIndex: 0
+    - id: 0
+      target: {fileID: 2800000, guid: ad80bd1399b82cc4ba0c7f4d055ac1ce, type: 3}
+      splitIndex: 0
+    - id: 0
+      target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
+      splitIndex: 0
   - id: 3
     name: test2.pkg
+    note: "\u914D\u7F6E\u6587\u4EF6\u5305"
     type: 0
     enabled: 1
     load: 0
@@ -77,16 +109,19 @@ MonoBehaviour:
       target: {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
       platforms: 3
       types: 1
+      extensions: []
     - id: 6
       enabled: 1
       target: {fileID: 4900000, guid: 423169b27afc2744d9f06d44346b777e, type: 3}
       platforms: 3
       types: 1
+      extensions: []
     - id: 7
       enabled: 1
       target: {fileID: 4900000, guid: e6471453252543c48af648e48b08262a, type: 3}
       platforms: 3
       types: 1
+      extensions: []
     assets:
     - id: 0
       target: {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
@@ -97,3 +132,19 @@ MonoBehaviour:
     - id: 0
       target: {fileID: 4900000, guid: e6471453252543c48af648e48b08262a, type: 3}
       splitIndex: 0
+  - id: 17
+    name: bundle_17.pkg
+    note: "\u5176\u4ED6\u5176\u4ED6"
+    type: 0
+    enabled: 1
+    load: 0
+    priority: 0
+    splitObjects: 0
+    targets:
+    - id: 18
+      enabled: 1
+      target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
+      platforms: -1
+      types: -1
+      extensions: []
+    assets: []

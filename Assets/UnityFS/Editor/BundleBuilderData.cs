@@ -31,7 +31,8 @@ namespace UnityFS.Editor
         public class BundleInfo
         {
             public int id;
-            public string name;      // bundle filename
+            public string name; // bundle filename
+            public string note;
             public BundleType type;
             public bool enabled = true;
 
