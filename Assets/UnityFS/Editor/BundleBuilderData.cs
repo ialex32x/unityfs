@@ -41,10 +41,22 @@ namespace UnityFS.Editor
             public int splitObjects; // 自动分包
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
 
+            [NonSerialized]
             public List<BundleAsset> assets = new List<BundleAsset>(); // 最终进入打包的所有资源对象
         }
 
         public int id;
         public List<BundleInfo> bundles = new List<BundleInfo>();
+    }
+
+    public class ZipArchiveEntry
+    {
+        public string name;
+        public List<string> assets = new List<string>();
+    }
+
+    public class ZipArchiveManifest
+    {
+        public List<ZipArchiveEntry> archives = new List<ZipArchiveEntry>();
     }
 }
