@@ -317,7 +317,7 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        if (bundleInfo.type == BundleType.AssetBundle)
+                        if (bundleInfo.type == Manifest.BundleType.AssetBundle)
                         {
                             GUI.DrawTexture(cellRect, kIconFavorite, ScaleMode.ScaleToFit);
                         }
@@ -441,7 +441,7 @@ namespace UnityFS.Editor
                             EditorUtility.SetDirty(_data);
                         }
                         cellRect.x += cellRect.width;
-                        var type = (BundleType)EditorGUI.EnumPopup(cellRect, bundleInfo.type);
+                        var type = (Manifest.BundleType)EditorGUI.EnumPopup(cellRect, bundleInfo.type);
                         if (type != bundleInfo.type)
                         {
                             bundleInfo.type = type;
@@ -501,7 +501,7 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        if (bundleInfo.type == BundleType.AssetBundle)
+                        if (bundleInfo.type == Manifest.BundleType.AssetBundle)
                         {
                             var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
                             if (splitObjects != bundleInfo.splitObjects)

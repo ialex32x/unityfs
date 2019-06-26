@@ -28,7 +28,7 @@ namespace UnityFS
             {
                 var request = op as ResourceRequest;
                 _object = request.asset;
-                OnLoaded();
+                Complete();
             }
         }
 

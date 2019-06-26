@@ -6,11 +6,13 @@ namespace UnityFS
 {
     using UnityEngine;
 
+    // Unity 资源抽象
     public abstract class UAsset
     {
         protected string _assetPath;
-        protected bool _loaded;
         protected Object _object;
+
+        protected bool _loaded;
         private List<Action<UAsset>> _callbacks = new List<Action<UAsset>>();
 
         public event Action<UAsset> completed
@@ -55,13 +57,18 @@ namespace UnityFS
 
         protected void OnLoaded()
         {
-            _loaded = true;
             while (_callbacks.Count > 0)
             {
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
                 callback(this);
             }
+        }
+
+        protected void Complete()
+        {
+            _loaded = true;
+            OnLoaded();
         }
     }
 }

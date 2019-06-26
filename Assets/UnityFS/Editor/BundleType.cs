@@ -6,13 +6,6 @@ namespace UnityFS.Editor
 {
     using UnityEngine;
 
-    public enum BundleType
-    {
-        AssetBundle,
-        ZipArchive,
-        // SceneBundle,
-    }
-
     public enum BundleLoad
     {
         Startup,

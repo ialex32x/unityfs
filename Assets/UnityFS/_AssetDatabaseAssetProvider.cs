@@ -17,7 +17,7 @@ namespace UnityFS
 #if UNITY_EDITOR
                 _object = UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
 #endif
-                OnLoaded();
+                Complete();
             }
 
             ~EditorUAsset()

@@ -106,7 +106,7 @@ namespace UnityFS.Editor
             var builds = new List<AssetBundleBuild>();
             foreach (var bundle in data.bundles)
             {
-                if (bundle.type != BundleType.AssetBundle)
+                if (bundle.type != Manifest.BundleType.AssetBundle)
                 {
                     continue;
                 }
@@ -256,7 +256,7 @@ namespace UnityFS.Editor
             var list = new List<BundleBuilderData.BundleInfo>();
             foreach (var bundle in data.bundles)
             {
-                if (bundle.type == BundleType.ZipArchive)
+                if (bundle.type == Manifest.BundleType.ZipArchive)
                 {
                     list.Add(bundle);
                 }

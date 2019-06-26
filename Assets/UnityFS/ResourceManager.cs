@@ -11,24 +11,15 @@ namespace UnityFS
         // 资源加载器
         static IAssetProvider _assetProvider;
 
-        // 文件加载器
-        static IFileProvider _fileProvider;
-
-        // 下载器
-        static IDownloader _downloader;
-
-        public static void Initialize()
-        {
-        }
-
-        public static void SetAssetProvider(IAssetProvider assetProvider)
+        public static void Initialize(IAssetProvider assetProvider)
         {
             _assetProvider = assetProvider;
+            UnityFS.JobScheduler.Initialize();
         }
 
-        public static void SetFileProvider(IFileProvider fileProvider)
+        public static IList<string> URLs(params string[] urls)
         {
-            _fileProvider = fileProvider;
+            return new List<string>(urls);
         }
 
         public static UAsset LoadAsset(string assetPath)

@@ -1,139 +1,179 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace UnityFS
 {
     using UnityEngine;
 
-    // 资源包资源管理
+    /** 
+    资源包资源管理
+
+    主要接口: 
+    UBundle GetBundle(string bundleName)
+    IFileSystem GetFileSystem(string bundleName)
+    UAsset GetAsset(string assetPath)
+    */
     public class BundleAssetProvider : IAssetProvider
     {
-        protected class UBundle
+        public class ZipFileSystem : IFileSystem
         {
-            public Action Loaded;
+            private ZipArchiveUBundle _bundle;
+            private List<Action> _callbacks = new List<Action>();
 
-            private int _refCount;
-            private bool _loaded;
-            private AssetBundle _assetBundle;
-            private BundleAssetProvider _provider;
-            private Manifest.BundleInfo _info;
-            private List<UBundle> _denpendencies;
+            public event Action completed
+            {
+                add
+                {
+                    if (_bundle.isLoaded)
+                    {
+                        value();
+                    }
+                    else
+                    {
+                        _callbacks.Add(value);
+                    }
+                }
+
+                remove
+                {
+                    _callbacks.Remove(value);
+                }
+            }
 
             public bool isLoaded
             {
-                get { return _loaded && _IsDependenciesLoaded(); }
+                get { return _bundle.isLoaded; }
             }
 
-            public string name
+            public ZipFileSystem(ZipArchiveUBundle bundle)
             {
-                get { return _info.name; }
+                _bundle = bundle;
+                _bundle.AddRef();
+                _bundle.completed += OnBundleLoaded;
             }
 
-            public UBundle(BundleAssetProvider provider, Manifest.BundleInfo info)
+            ~ZipFileSystem()
+            {
+                JobScheduler.DispatchMain(() =>
+                {
+                    _bundle.completed -= OnBundleLoaded;
+                    _bundle.RemoveRef();
+                });
+            }
+
+            private void OnBundleLoaded(UBundle bundle)
+            {
+                while (_callbacks.Count > 0)
+                {
+                    var callback = _callbacks[0];
+                    _callbacks.RemoveAt(0);
+                    callback();
+                }
+            }
+
+            public bool Exists(string filename)
+            {
+                return _bundle.Exists(filename);
+            }
+
+            public byte[] ReadAllBytes(string filename)
+            {
+                return _bundle.ReadAllBytes(filename);
+            }
+        }
+
+        public class ZipArchiveUBundle : UBundle
+        {
+            private ZipFile _zipFile;
+            private BundleAssetProvider _provider;
+
+            public ZipArchiveUBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
+            : base(bundleInfo)
             {
                 _provider = provider;
-                _info = info;
             }
 
-            // main thread only
-            public void AddRef()
+            protected override void OnRelease()
             {
-                _refCount++;
-            }
-
-            // main thread only
-            public void RemoveRef()
-            {
-                _refCount--;
-                if (_refCount == 0)
+                base.OnRelease();
+                if (_zipFile != null)
                 {
-                    this.Release();
-                }
-            }
-
-            private void Release()
-            {
-                if (_denpendencies != null)
-                {
-                    for (int i = 0, size = _denpendencies.Count; i < size; i++)
-                    {
-                        _denpendencies[i].Loaded -= OnDependedBundleLoaded;
-                        _denpendencies[i].RemoveRef();
-                    }
-                    _denpendencies = null;
-                }
-                if (_assetBundle != null)
-                {
-                    _assetBundle.Unload(true);
+                    _zipFile.Close();
+                    _zipFile = null;
                 }
                 _provider.Unload(this);
             }
 
-            private bool _IsDependenciesLoaded()
+            public bool Exists(string filename)
             {
-                if (_denpendencies != null)
+                if (_zipFile != null)
                 {
-                    for (int i = 0, size = _denpendencies.Count; i < size; i++)
+                    var entry = _zipFile.FindEntry(filename, false);
+                    if (entry >= 0)
                     {
-                        if (!_denpendencies[i]._IsDependenciesLoaded())
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public byte[] ReadAllBytes(string filename)
+            {
+                if (_zipFile != null)
+                {
+                    var entry = _zipFile.GetEntry(filename);
+                    if (entry != null)
+                    {
+                        using (var stream = _zipFile.GetInputStream(entry))
                         {
-                            return false;
+                            var buffer = new byte[entry.Size];
+                            stream.Read(buffer, 0, buffer.Length);
+                            return buffer;
                         }
                     }
                 }
-                return true;
+                return null;
             }
 
-            public void AddDependencies()
+            public override void Load(Stream stream)
             {
-                _AddDependencies(_info);
-            }
-
-            private void _AddDependencies(Manifest.BundleInfo info)
-            {
-                if (info.dependencies == null)
+                _zipFile = new ZipFile(stream);
+                _zipFile.IsStreamOwner = true;
+                _loaded = true;
+                if (_IsDependenciesLoaded())
                 {
-                    return;
-                }
-                for (int i = 0, size = info.dependencies.Length; i < size; i++)
-                {
-                    var dep = info.dependencies[i];
-                    var depBundle = _provider.GetBundle(dep);
-                    _AddDependency(depBundle);
-                    _AddDependencies(_provider._bundlesMap[dep]);
+                    OnLoaded();
                 }
             }
+        }
 
-            // 添加以来资源包
-            private void _AddDependency(UBundle bundle)
+        // AssetBundle 资源包
+        protected class AssetBundleUBundle : UBundle
+        {
+            private AssetBundle _assetBundle;
+            private BundleAssetProvider _provider;
+
+            public AssetBundleUBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
+            : base(bundleInfo)
             {
-                if (bundle != this)
-                {
-                    if (_denpendencies == null)
-                    {
-                        _denpendencies = new List<UBundle>();
-                    }
-                    else
-                    {
-                        if (_denpendencies.Contains(bundle))
-                        {
-                            return;
-                        }
-                    }
-                    bundle.AddRef();
-                    _denpendencies.Add(bundle);
-                    bundle.Loaded += OnDependedBundleLoaded;
-                }
+                _provider = provider;
             }
 
-            public void Load(Stream stream)
+            protected override void OnRelease()
             {
-                if (_refCount == 0)
+                base.OnRelease();
+                if (_assetBundle != null)
                 {
-                    Debug.LogWarning("UBundle Load after released!!");
-                    return;
+                    _assetBundle.Unload(true);
+                    _assetBundle = null;
                 }
+                _provider.Unload(this);
+            }
+
+            public override void Load(Stream stream)
+            {
                 var request = AssetBundle.LoadFromStreamAsync(stream);
                 request.completed += OnAssetBundleLoaded;
             }
@@ -141,17 +181,6 @@ namespace UnityFS
             public AssetBundle GetAssetBundle()
             {
                 return _assetBundle;
-            }
-
-            private void OnDependedBundleLoaded()
-            {
-                if (_loaded)
-                {
-                    if (Loaded != null && _IsDependenciesLoaded())
-                    {
-                        Loaded();
-                    }
-                }
             }
 
             private void OnAssetBundleLoaded(AsyncOperation op)
@@ -162,53 +191,38 @@ namespace UnityFS
                     _assetBundle = request.assetBundle;
                 }
                 _loaded = true;
-                if (Loaded != null && _IsDependenciesLoaded())
-                {
-                    Loaded();
-                }
-            }
-        }
-
-        protected class BundleUAsset : UAsset
-        {
-            private UBundle _bundle;
-
-            public BundleUAsset(UBundle bundle, string assetPath)
-            : base(assetPath)
-            {
-                _bundle = bundle;
-                if (_bundle != null)
-                {
-                    _bundle.AddRef();
-                    if (_bundle.isLoaded)
-                    {
-                        OnBundleLoaded();
-                    }
-                    else
-                    {
-                        _bundle.Loaded += OnBundleLoaded;
-                    }
-                }
-                else
+                if (_IsDependenciesLoaded())
                 {
                     OnLoaded();
                 }
             }
+        }
 
-            ~BundleUAsset()
+        // 从 AssetBundle 资源包载入资源
+        protected class AssetBundleUAsset : UAsset
+        {
+            private AssetBundleUBundle _bundle;
+
+            public AssetBundleUAsset(AssetBundleUBundle bundle, string assetPath)
+            : base(assetPath)
             {
-                if (_bundle != null)
-                {
-                    _bundle.Loaded -= OnBundleLoaded;
-                    JobScheduler.DispatchMain(() =>
-                    {
-                        _bundle.RemoveRef();
-                    });
-                }
+                _bundle = bundle;
+                _bundle.AddRef();
+                _bundle.completed += OnBundleLoaded;
             }
 
-            private void OnBundleLoaded()
+            ~AssetBundleUAsset()
             {
+                JobScheduler.DispatchMain(() =>
+                {
+                    _bundle.completed -= OnBundleLoaded;
+                    _bundle.RemoveRef();
+                });
+            }
+
+            private void OnBundleLoaded(UBundle bundle)
+            {
+                // assert (bundle == _bundle)
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
                 {
@@ -217,7 +231,7 @@ namespace UnityFS
                 }
                 else
                 {
-                    OnLoaded(); // failed
+                    Complete(); // failed
                 }
             }
 
@@ -225,7 +239,7 @@ namespace UnityFS
             {
                 var request = op as AssetBundleRequest;
                 _object = request.asset;
-                OnLoaded();
+                Complete();
             }
         }
 
@@ -233,17 +247,19 @@ namespace UnityFS
         private Dictionary<string, string> _assetPath2Bundle = new Dictionary<string, string>();
         private Dictionary<string, Manifest.BundleInfo> _bundlesMap = new Dictionary<string, Manifest.BundleInfo>();
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
+        private Dictionary<string, WeakReference> _fileSystems = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private IList<string> _urls;
         private Manifest _manifest;
-        private IFileProvider _provider;
-        private IDownloader _downloader;
+        private int _runningTasks = 0;
+        private int _concurrentTasks = 3;
+        private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
+        private string _localPathRoot;
 
-        public BundleAssetProvider(Manifest manifest, IFileProvider provider, IDownloader downloader, IList<string> urls)
+        public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls)
         {
             _manifest = manifest;
-            _provider = provider;
-            _downloader = downloader;
+            _localPathRoot = _localPathRoot;
             _urls = urls;
             this.Initialize();
         }
@@ -260,43 +276,163 @@ namespace UnityFS
             }
         }
 
+        private Stream OpenFile(string filename)
+        {
+            Manifest.BundleInfo bundleInfo;
+            if (_bundlesMap.TryGetValue(filename, out bundleInfo))
+            {
+                var fullPath = Path.Combine(_localPathRoot, filename);
+                var metaPath = fullPath + ".meta";
+                if (File.Exists(fullPath) && File.Exists(metaPath))
+                {
+                    var json = File.ReadAllText(metaPath);
+                    var metadata = JsonUtility.FromJson<Metadata>(json);
+                    // quick but unsafe
+                    if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
+                    {
+                        var stream = System.IO.File.OpenRead(fullPath);
+                        return stream;
+                    }
+                }
+            }
+            return null;
+        }
+
         protected void Unload(UBundle bundle)
         {
             _bundles.Remove(bundle.name);
         }
 
-        protected UBundle GetBundle(string name)
+        private void _AddDependencies(UBundle bundle, string[] dependencies)
+        {
+            if (dependencies != null)
+            {
+                for (int i = 0, size = dependencies.Length; i < size; i++)
+                {
+                    var depBundleInfo = dependencies[i];
+                    var depBundle = GetBundle(depBundleInfo);
+                    if (bundle.AddDependency(depBundle))
+                    {
+                        _AddDependencies(bundle, depBundle.bundleInfo.dependencies);
+                    }
+                }
+            }
+        }
+
+        private void AddTask(DownloadTask newTask)
+        {
+            for (var node = _tasks.First; node != null; node = node.Next)
+            {
+                var task = node.Value;
+                if (!task.isRunning && !task.isDone)
+                {
+                    if (newTask.bundleInfo.priority > task.bundleInfo.priority)
+                    {
+                        _tasks.AddAfter(node, newTask);
+                        Schedule();
+                        return;
+                    }
+                }
+            }
+            _tasks.AddLast(newTask);
+            Schedule();
+        }
+
+        private void Schedule()
+        {
+            if (_runningTasks >= _concurrentTasks)
+            {
+                return;
+            }
+
+            for (var node = _tasks.First; node != null; node = node.Next)
+            {
+                var task = node.Value;
+                if (!task.isRunning && !task.isDone)
+                {
+                    _runningTasks++;
+                    task.Run();
+                    break;
+                }
+            }
+        }
+
+        public UBundle GetBundle(string bundleName)
         {
             UBundle bundle;
-            if (!_bundles.TryGetValue(name, out bundle))
+            if (!_bundles.TryGetValue(bundleName, out bundle))
             {
-                bundle = new UBundle(this, _bundlesMap[name]);
-                _bundles.Add(name, bundle);
-                bundle.AddDependencies();
-                var fs = _provider.OpenFile(name);
-                if (fs != null)
+                var bundleInfo = _bundlesMap[bundleName];
+                switch (bundleInfo.type)
                 {
-                    bundle.Load(fs);
+                    case Manifest.BundleType.AssetBundle:
+                        bundle = new AssetBundleUBundle(this, bundleInfo);
+                        break;
+                    case Manifest.BundleType.ZipArchive:
+                        bundle = new ZipArchiveUBundle(this, bundleInfo);
+                        break;
                 }
-                else
+
+                if (bundle != null)
                 {
-                    var bundleInfo = _bundlesMap[name];
-                    var task = new DownloadTask(bundleInfo, _urls, -1, self =>
+                    _bundles.Add(bundleName, bundle);
+                    _AddDependencies(bundle, bundle.bundleInfo.dependencies);
+                    var fs = OpenFile(bundleName);
+                    if (fs != null)
                     {
-                        bundle.Load(self.OpenFile());
-                    });
-                    _downloader.AddDownloadTask(task);
+                        bundle.Load(fs);
+                    }
+                    else
+                    {
+                        var task = new DownloadTask(bundle, _urls, -1, self =>
+                        {
+                            _tasks.Remove(self);
+                            _runningTasks--;
+                            Schedule();
+                            bundle.Load(self.OpenFile());
+                        });
+                        AddTask(task);
+                    }
                 }
             }
             return bundle;
         }
 
+        public IFileSystem GetFileSystem(string bundleName)
+        {
+            IFileSystem fileSystem = null;
+            WeakReference fileSystemRef;
+            if (_fileSystems.TryGetValue(bundleName, out fileSystemRef))
+            {
+                fileSystem = fileSystemRef.Target as IFileSystem;
+                if (fileSystem != null)
+                {
+                    return fileSystem;
+                }
+            }
+            var bundle = this.GetBundle(bundleName);
+            if (bundle != null)
+            {
+                bundle.AddRef();
+                var zipArchiveBundle = bundle as ZipArchiveUBundle;
+                if (zipArchiveBundle != null)
+                {
+                    fileSystem = new ZipFileSystem(zipArchiveBundle);
+                    _fileSystems[bundleName] = new WeakReference(fileSystem);
+                }
+                bundle.RemoveRef();
+                return fileSystem;
+            }
+            return null;
+        }
+
         public UAsset GetAsset(string assetPath)
         {
+            UAsset asset = null;
             WeakReference assetRef;
             if (_assets.TryGetValue(assetPath, out assetRef) && assetRef.IsAlive)
             {
-                var asset = assetRef.Target as UAsset;
+                asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
                     return asset;
@@ -306,11 +442,21 @@ namespace UnityFS
             if (_assetPath2Bundle.TryGetValue(assetPath, out bundleName))
             {
                 var bundle = this.GetBundle(bundleName);
-                var asset = new BundleUAsset(bundle, assetPath);
-                _assets[assetPath] = new WeakReference(asset);
-                return asset;
+                if (bundle != null)
+                {
+                    bundle.AddRef();
+                    var assetBundleUBundle = bundle as AssetBundleUBundle;
+                    if (assetBundleUBundle != null)
+                    {
+                        asset = new AssetBundleUAsset(assetBundleUBundle, assetPath);
+                        _assets[assetPath] = new WeakReference(asset);
+                    }
+                    bundle.RemoveRef();
+                    return asset;
+                }
+                // 不是 Unity 资源包, 不能实例化 AssetBundleUAsset
             }
-            var invalid = new BundleUAsset(null, assetPath);
+            var invalid = new FailureUAsset(assetPath);
             _assets[assetPath] = new WeakReference(invalid);
             return invalid;
         }

@@ -33,7 +33,7 @@ namespace UnityFS.Editor
             public int id;
             public string name; // bundle filename
             public string note;
-            public BundleType type;
+            public Manifest.BundleType type;
             public bool enabled = true;
 
             public BundleLoad load;
