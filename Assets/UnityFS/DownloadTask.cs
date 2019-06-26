@@ -103,7 +103,6 @@ namespace UnityFS
             while (true)
             {
                 var url = this.url;
-                UnityWebRequest req = null;
                 FileStream file;
                 var totalSize = this._bundle.size;
                 var partialSize = 0;
@@ -133,7 +132,7 @@ namespace UnityFS
                         file.Seek(partialSize, SeekOrigin.Begin);
                     }
                 }
-                req = UnityWebRequest.Get(url);
+                var req = UnityWebRequest.Get(url);
                 if (partialSize > 0)
                 {
                     req.SetRequestHeader("Range", $"bytes={partialSize}-{totalSize}");
