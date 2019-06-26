@@ -12,6 +12,8 @@ namespace Examples
 
         void Awake()
         {
+            Object.DontDestroyOnLoad(gameObject);
+            
             if (developMode)
             {
                 UnityFS.ResourceManager.Initialize(new UnityFS.AssetDatabaseAssetProvider());
@@ -43,6 +45,18 @@ namespace Examples
                 });
                 UnityFS.ResourceManager.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab")
                     .DestroyAfter(10.0f);
+
+                var scene = UnityFS.ResourceManager.LoadSceneAdditive("Assets/Examples/Scenes/test2.unity3d");
+                scene.completed += self =>
+                {
+                    Debug.Log("scene loaded");
+                };
+
+                StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
+                {
+                    scene.UnloadScene();
+                    scene = null;
+                }, 20f));
             };
         }
     }

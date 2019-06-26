@@ -32,17 +32,18 @@ namespace UnityFS
         public UAsset GetAsset(string assetPath)
         {
             WeakReference assetRef;
+            UAsset asset = null;
             if (_assets.TryGetValue(assetPath, out assetRef) && assetRef.IsAlive)
             {
-                var asset = assetRef.Target as UAsset;
+                asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
                     return asset;
                 }
             }
-            var invalid = new UFailureAsset(assetPath);
-            _assets[assetPath] = new WeakReference(invalid);
-            return invalid;
+            asset = new UAssetDatabaseAsset(assetPath);
+            _assets[assetPath] = new WeakReference(asset);
+            return asset;
         }
         
         public IFileSystem GetFileSystem(string bundleName)

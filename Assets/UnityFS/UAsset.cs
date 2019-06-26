@@ -67,8 +67,11 @@ namespace UnityFS
 
         protected void Complete()
         {
-            _loaded = true;
-            OnLoaded();
+            if (!_loaded)
+            {
+                _loaded = true;
+                OnLoaded();
+            }
         }
     }
 }

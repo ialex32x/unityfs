@@ -15,5 +15,10 @@ namespace UnityFS.Utils
             Object.Destroy(gameObject);
         }
 
+        public static IEnumerator InvokeAfter(Action action, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            action();
+        }
     }
 }
