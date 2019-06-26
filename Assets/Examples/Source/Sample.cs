@@ -41,7 +41,7 @@ namespace Examples
                 {
                     UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f);
                 });
-                UnityFS.Utils.PrefabLoader.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab")
+                UnityFS.ResourceManager.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab")
                     .DestroyAfter(10.0f);
             };
         }

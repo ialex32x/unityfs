@@ -33,6 +33,11 @@ namespace UnityFS
             asset.completed += callback;
         }
 
+        public static Utils.PrefabLoader Instantiate(string assetPath)
+        {
+            return Utils.PrefabLoader.Instantiate(assetPath);
+        }
+
         public static UBundle GetBundle(string bundleName)
         {
             var provider = _assetProvider as BundleAssetProvider;

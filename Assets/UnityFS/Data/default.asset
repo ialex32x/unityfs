@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: default
   m_EditorClassIdentifier: 
-  id: 23
+  id: 24
   bundles:
   - id: 1
     name: test1.pkg
@@ -96,6 +96,12 @@ MonoBehaviour:
     - id: 21
       enabled: 1
       target: {fileID: 102900000, guid: b35be9c075bfa7d4990280e18b1ac7fb, type: 3}
+      platforms: -1
+      types: -1
+      extensions: 
+    - id: 24
+      enabled: 1
+      target: {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
       platforms: -1
       types: -1
       extensions: 

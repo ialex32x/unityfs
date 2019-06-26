@@ -15,6 +15,7 @@ namespace UnityFS
             : base(assetPath)
             {
 #if UNITY_EDITOR
+                // Application.LoadLevelAdditiveAsync()
                 _object = UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
 #endif
                 Complete();
@@ -39,7 +40,7 @@ namespace UnityFS
                     return asset;
                 }
             }
-            var invalid = new FailureUAsset(assetPath);
+            var invalid = new UFailureAsset(assetPath);
             _assets[assetPath] = new WeakReference(invalid);
             return invalid;
         }
