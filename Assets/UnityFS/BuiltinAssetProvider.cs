@@ -9,9 +9,9 @@ namespace UnityFS
     // read from Resources (无法验证版本)
     public class BuiltinAssetProvider : IAssetProvider
     {
-        protected class BuiltinUAsset : UAsset
+        protected class UBuiltinAsset : UAsset
         {
-            public BuiltinUAsset(string assetPath)
+            public UBuiltinAsset(string assetPath)
             : base(assetPath)
             {
                 var resPath = assetPath;
@@ -32,6 +32,10 @@ namespace UnityFS
             }
         }
 
+        // protected class BuiltinSceneUAsset : UAsset
+        // {
+        // }
+
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
 
         public UAsset GetAsset(string assetPath)
@@ -45,11 +49,11 @@ namespace UnityFS
                     return asset;
                 }
             }
-            var invalid = new BuiltinUAsset(assetPath);
+            var invalid = new UBuiltinAsset(assetPath);
             _assets[assetPath] = new WeakReference(invalid);
             return invalid;
         }
-        
+
         public IFileSystem GetFileSystem(string bundleName)
         {
             return new OrdinaryFileSystem(null);

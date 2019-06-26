@@ -119,13 +119,13 @@ namespace UnityFS
         }
 
         // AssetBundle 资源包
-        protected class AssetBundleUBundle : UBundle
+        protected class UAssetBundleBundle : UBundle
         {
             private Stream _stream; // manage the stream lifecycle (dispose after assetbundle.unload)
             private AssetBundle _assetBundle;
             private BundleAssetProvider _provider;
 
-            public AssetBundleUBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
+            public UAssetBundleBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
             : base(bundleInfo)
             {
                 _provider = provider;
@@ -175,11 +175,11 @@ namespace UnityFS
         }
 
         // 从 AssetBundle 资源包载入资源
-        protected class AssetBundleUAsset : UAsset
+        protected class UAssetBundleAsset : UAsset
         {
-            private AssetBundleUBundle _bundle;
+            private UAssetBundleBundle _bundle;
 
-            public AssetBundleUAsset(AssetBundleUBundle bundle, string assetPath)
+            public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath)
             : base(assetPath)
             {
                 _bundle = bundle;
@@ -187,7 +187,7 @@ namespace UnityFS
                 _bundle.completed += OnBundleLoaded;
             }
 
-            ~AssetBundleUAsset()
+            ~UAssetBundleAsset()
             {
                 JobScheduler.DispatchMain(() =>
                 {
@@ -343,7 +343,7 @@ namespace UnityFS
                 switch (bundleInfo.type)
                 {
                     case Manifest.BundleType.AssetBundle:
-                        bundle = new AssetBundleUBundle(this, bundleInfo);
+                        bundle = new UAssetBundleBundle(this, bundleInfo);
                         break;
                     case Manifest.BundleType.ZipArchive:
                         bundle = new ZipArchiveUBundle(this, bundleInfo);
@@ -421,10 +421,10 @@ namespace UnityFS
                 if (bundle != null)
                 {
                     bundle.AddRef();
-                    var assetBundleUBundle = bundle as AssetBundleUBundle;
+                    var assetBundleUBundle = bundle as UAssetBundleBundle;
                     if (assetBundleUBundle != null)
                     {
-                        asset = new AssetBundleUAsset(assetBundleUBundle, assetPath);
+                        asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
                         _assets[assetPath] = new WeakReference(asset);
                     }
                     bundle.RemoveRef();

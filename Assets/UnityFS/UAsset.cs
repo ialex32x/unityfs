@@ -50,14 +50,6 @@ namespace UnityFS
             return _object;
         }
 
-        public GameObject Instantiate()
-        {
-            var prefab = _object as GameObject;
-            var go = Object.Instantiate<GameObject>(prefab);
-            Utils.AssetHandle.Attach(go, this);
-            return go;
-        }
-
         public UAsset(string assetPath)
         {
             _assetPath = assetPath;

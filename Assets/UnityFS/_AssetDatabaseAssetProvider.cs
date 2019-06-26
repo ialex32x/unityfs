@@ -9,9 +9,9 @@ namespace UnityFS
     // 仅编辑器运行时可用
     public class AssetDatabaseAssetProvider : IAssetProvider
     {
-        protected class EditorUAsset : UAsset
+        protected class UAssetDatabaseAsset : UAsset
         {
-            public EditorUAsset(string assetPath)
+            public UAssetDatabaseAsset(string assetPath)
             : base(assetPath)
             {
 #if UNITY_EDITOR
@@ -20,7 +20,7 @@ namespace UnityFS
                 Complete();
             }
 
-            ~EditorUAsset()
+            ~UAssetDatabaseAsset()
             {
                 Debug.LogFormat($"UAsset(AssetDatabase:{_assetPath}) released");
             }
@@ -39,7 +39,7 @@ namespace UnityFS
                     return asset;
                 }
             }
-            var invalid = new EditorUAsset(assetPath);
+            var invalid = new FailureUAsset(assetPath);
             _assets[assetPath] = new WeakReference(invalid);
             return invalid;
         }
