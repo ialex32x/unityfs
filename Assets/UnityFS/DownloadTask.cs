@@ -8,7 +8,7 @@ namespace UnityFS
     using UnityEngine;
     using UnityEngine.Networking;
 
-    public class DownloadTask
+    public class DownloadTask 
     {
         public int retry;       // 重试次数 (<0 时无限重试)
         public string tempPath; // 临时路径
@@ -61,16 +61,22 @@ namespace UnityFS
         // invoke in main thread
         private Action<DownloadTask> _callback;
 
-        public DownloadTask(UBundle bundle, IList<string> urls, int retry, Action<DownloadTask> callback)
+        private DownloadTask()
         {
-            this._urls = urls;
-            this._bundle = bundle;
-            this._bundle.AddRef();
-            this._callback = callback;
+        }
 
-            this.retry = retry;
-            this.tempPath = "TODO"; // TODO: generate temp file path
-            this.filePath = "TODO"; // 
+        public static DownloadTask Create(UBundle bundle, IList<string> urls, int retry, string localPathRoot, Action<DownloadTask> callback)
+        {
+            var task = new DownloadTask();
+            task._urls = urls;
+            task._bundle = bundle;
+            task._bundle.AddRef();
+            task._callback = callback;
+
+            task.retry = retry;
+            task.tempPath = Path.Combine(localPathRoot, bundle.name + ".part");
+            task.filePath = Path.Combine(localPathRoot, bundle.name);
+            return task;
         }
 
         public void Run()
@@ -97,10 +103,42 @@ namespace UnityFS
             while (true)
             {
                 var url = this.url;
-                var req = UnityWebRequest.Get(url);
-                var partialSize = 0;
+                UnityWebRequest req = null;
+                FileStream file;
                 var totalSize = this._bundle.size;
-                req.SetRequestHeader("Range", $"bytes={partialSize}-{totalSize}");
+                var partialSize = 0;
+                if (File.Exists(tempPath))
+                {
+                    var fileInfo = new FileInfo(tempPath);
+                    file = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                    partialSize = (int)fileInfo.Length;
+                    if (partialSize == totalSize)
+                    {
+                        if (CheckStream(file))
+                        {
+                            file.Close();
+                            this.Complete(null);
+                            yield break;
+                        }
+                        file.SetLength(0);
+                        partialSize = 0;
+                    }
+                    else if (partialSize > totalSize)
+                    {
+                        file.SetLength(0);
+                        partialSize = 0;
+                    }
+                    else
+                    {
+                        file.Seek(partialSize, SeekOrigin.Begin);
+                    }
+                }
+                req = UnityWebRequest.Get(url);
+                if (partialSize > 0)
+                {
+                    req.SetRequestHeader("Range", $"bytes={partialSize}-{totalSize}");
+                }
+                req.downloadHandler = new DownloadHandlerBuffer();
                 yield return req.SendWebRequest();
                 long contentLength;
                 if (!long.TryParse(req.GetResponseHeader("Content-Length"), out contentLength))
@@ -113,7 +151,21 @@ namespace UnityFS
                     continue;
                 }
                 //TODO: download content ...
+                // UnityWebRequest 可能没办法既控制buffer复用又支持续传, 还是要自己实现 
+                throw new NotImplementedException();
             }
+        }
+
+        private bool CheckStream(FileStream stream)
+        {
+            var crc = new Utils.Crc16();
+            stream.Seek(0, SeekOrigin.Begin);
+            crc.Update(stream);
+            if (crc.hex == this._bundle.checksum)
+            {
+                return true;
+            }
+            return false;
         }
 
         private void Complete(string error)
@@ -130,7 +182,7 @@ namespace UnityFS
         // return stream of downloaded file
         public Stream OpenFile()
         {
-            throw new NotImplementedException();
+            return File.OpenRead(filePath);
         }
     }
 }

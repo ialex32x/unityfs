@@ -121,6 +121,7 @@ namespace UnityFS
         // AssetBundle 资源包
         protected class AssetBundleUBundle : UBundle
         {
+            private Stream _stream; // manage the stream lifecycle (dispose after assetbundle.unload)
             private AssetBundle _assetBundle;
             private BundleAssetProvider _provider;
 
@@ -138,11 +139,17 @@ namespace UnityFS
                     _assetBundle.Unload(true);
                     _assetBundle = null;
                 }
+                if (_stream != null)
+                {
+                    _stream.Dispose();
+                    _stream = null;
+                }
                 _provider.Unload(this);
             }
 
             public override void Load(Stream stream)
             {
+                _stream = stream;
                 var request = AssetBundle.LoadFromStreamAsync(stream);
                 request.completed += OnAssetBundleLoaded;
             }
@@ -245,13 +252,14 @@ namespace UnityFS
             }
         }
 
+        // open file stream (file must be listed in manifest)
         private Stream OpenFile(string filename)
         {
             Manifest.BundleInfo bundleInfo;
             if (_bundlesMap.TryGetValue(filename, out bundleInfo))
             {
                 var fullPath = Path.Combine(_localPathRoot, filename);
-                var metaPath = fullPath + ".meta";
+                var metaPath = fullPath + Metadata.Ext;
                 if (File.Exists(fullPath) && File.Exists(metaPath))
                 {
                     var json = File.ReadAllText(metaPath);
@@ -288,7 +296,7 @@ namespace UnityFS
             }
         }
 
-        private void AddTask(DownloadTask newTask)
+        private void AddDownloadTask(DownloadTask newTask)
         {
             for (var node = _tasks.First; node != null; node = node.Next)
             {
@@ -353,14 +361,13 @@ namespace UnityFS
                     }
                     else
                     {
-                        var task = new DownloadTask(bundle, _urls, -1, self =>
+                        AddDownloadTask(DownloadTask.Create(bundle, _urls, -1, _localPathRoot, self =>
                         {
                             _tasks.Remove(self);
                             _runningTasks--;
                             Schedule();
                             bundle.Load(self.OpenFile());
-                        });
-                        AddTask(task);
+                        }));
                     }
                 }
             }

@@ -8,6 +8,8 @@ namespace UnityFS.Editor
 
     public class BundleBuilderData : ScriptableObject
     {
+        public const string Ext = ".pkg"; 
+
         [Serializable]
         public class BundleAssetTarget
         {

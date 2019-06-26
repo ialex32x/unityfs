@@ -19,7 +19,8 @@ namespace Examples
             else
             {
                 var manifest = new UnityFS.Manifest();  // TODO: STUB CODE
-                var localPathRoot = string.Empty;       // TODO: STUB CODE
+                var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
+                var localPathRoot = Path.Combine(dataPath, "packages");       // TODO: STUB CODE
                 var urls = UnityFS.ResourceManager.URLs(
                     "http://localhost:8080/"
                 );

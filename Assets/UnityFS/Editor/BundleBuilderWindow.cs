@@ -51,7 +51,7 @@ namespace UnityFS.Editor
                     data.bundles.Add(new BundleBuilderData.BundleInfo()
                     {
                         id = ++data.id,
-                        name = $"bundle_{data.id}.pkg",
+                        name = $"bundle_{data.id}{BundleBuilderData.Ext}",
                     });
                     _treeView.Reload();
                 }
