@@ -13,7 +13,7 @@ namespace UnityFS.Utils
 
         public static AssetHandle Attach(GameObject gameObject, UAsset asset)
         {
-            return Attach(gameObject, asset, 0.0f);
+            return Attach(gameObject, asset, 0f);
         }
 
         public static AssetHandle Attach(GameObject gameObject, UAsset asset, float ttl)
@@ -25,6 +25,17 @@ namespace UnityFS.Utils
                 handle.StartCoroutine(Helpers.DestroyAfter(gameObject, ttl));
             }
             return handle;
+        }
+
+        public static AssetHandle CreateInstance(UAsset asset)
+        {
+            return CreateInstance(asset, 0f);
+        }
+
+        public static AssetHandle CreateInstance(UAsset asset, float ttl)
+        {
+            var gameObject = Object.Instantiate(asset.GetObject()) as GameObject;
+            return UnityFS.Utils.AssetHandle.Attach(gameObject, asset, 5.0f);
         }
 
         void OnDestroy()

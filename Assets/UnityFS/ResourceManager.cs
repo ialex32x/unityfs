@@ -27,9 +27,25 @@ namespace UnityFS
             return _assetProvider.GetAsset(assetPath);
         }
 
-        public static Stream OpenFile(string filePath)
+        public static void LoadAsset(string assetPath, Action<UAsset> callback)
         {
-            return _fileProvider.OpenFile(filePath);
+            var asset = _assetProvider.GetAsset(assetPath);
+            asset.completed += callback;
+        }
+
+        public static UBundle GetBundle(string bundleName)
+        {
+            var provider = _assetProvider as BundleAssetProvider;
+            if (provider != null)
+            {
+                return provider.GetBundle(bundleName);
+            }
+            throw new InvalidOperationException();
+        }
+
+        public static IFileSystem GetFileSystem(string bundleName)
+        {
+            return _assetProvider.GetFileSystem(bundleName);
         }
     }
 }

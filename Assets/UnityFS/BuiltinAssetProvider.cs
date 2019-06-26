@@ -49,5 +49,10 @@ namespace UnityFS
             _assets[assetPath] = new WeakReference(invalid);
             return invalid;
         }
+        
+        public IFileSystem GetFileSystem(string bundleName)
+        {
+            return new OrdinaryFileSystem(null);
+        }
     }
 }

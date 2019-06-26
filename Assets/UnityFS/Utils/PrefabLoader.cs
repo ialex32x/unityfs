@@ -19,6 +19,11 @@ namespace UnityFS.Utils
             return loader;
         }
 
+        public void DestroyAfter(float seconds)
+        {
+            StartCoroutine(Helpers.DestroyAfter(gameObject, seconds));
+        }
+
         private void Load(string assetPath)
         {
             _asset = ResourceManager.LoadAsset(assetPath);

@@ -17,35 +17,9 @@ namespace UnityFS
     */
     public class BundleAssetProvider : IAssetProvider
     {
-        public class ZipFileSystem : IFileSystem
+        public class ZipFileSystem : AbstractFileSystem
         {
             private ZipArchiveUBundle _bundle;
-            private List<Action> _callbacks = new List<Action>();
-
-            public event Action completed
-            {
-                add
-                {
-                    if (_bundle.isLoaded)
-                    {
-                        value();
-                    }
-                    else
-                    {
-                        _callbacks.Add(value);
-                    }
-                }
-
-                remove
-                {
-                    _callbacks.Remove(value);
-                }
-            }
-
-            public bool isLoaded
-            {
-                get { return _bundle.isLoaded; }
-            }
 
             public ZipFileSystem(ZipArchiveUBundle bundle)
             {
@@ -65,20 +39,15 @@ namespace UnityFS
 
             private void OnBundleLoaded(UBundle bundle)
             {
-                while (_callbacks.Count > 0)
-                {
-                    var callback = _callbacks[0];
-                    _callbacks.RemoveAt(0);
-                    callback();
-                }
+                Complete();
             }
 
-            public bool Exists(string filename)
+            public override bool Exists(string filename)
             {
                 return _bundle.Exists(filename);
             }
 
-            public byte[] ReadAllBytes(string filename)
+            public override byte[] ReadAllBytes(string filename)
             {
                 return _bundle.ReadAllBytes(filename);
             }
@@ -259,7 +228,7 @@ namespace UnityFS
         public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls)
         {
             _manifest = manifest;
-            _localPathRoot = _localPathRoot;
+            _localPathRoot = localPathRoot;
             _urls = urls;
             this.Initialize();
         }
