@@ -13,6 +13,7 @@ namespace UnityFS
         public OrdinaryFileSystem(string rootPath)
         {
             _rootPath = rootPath;
+            _loaded = true;
         }
 
         public override bool Exists(string filename)
