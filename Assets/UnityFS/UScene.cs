@@ -87,6 +87,7 @@ namespace UnityFS
         {
             AsyncOperation op = null;
 #if UNITY_EDITOR
+            // EditorSceneManager.LoadSceneInPlayMode 没有像文档里说的那样正常工作... 
             _scene = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
 #else
             op = SceneManager.LoadSceneAsync(_asset.assetPath, _mode);
