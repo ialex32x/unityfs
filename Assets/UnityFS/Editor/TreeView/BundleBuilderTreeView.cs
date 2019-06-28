@@ -206,7 +206,7 @@ namespace UnityFS.Editor
                 if (treeViewRect.Contains(mousePos))
                 {
                     var menu = new GenericMenu();
-                    menu.AddItem(new GUIContent("查看"), false, OnContextMenuInspect);
+                    menu.AddItem(new GUIContent("查看资源报告"), false, OnContextMenuInspect);
                     // menu.AddItem(new GUIContent("Not Implemented 2"), false, OnContextMenuTest);
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent("删除"), false, OnContextMenuDelete);
@@ -218,7 +218,7 @@ namespace UnityFS.Editor
 
         private void OnContextMenuInspect()
         {
-            ShowBundleAssets();
+            ShowBundleReport();
         }
 
         private void OnContextMenuDelete()
@@ -226,7 +226,7 @@ namespace UnityFS.Editor
             DeleteSelectedItems();
         }
 
-        public void ShowBundleAssets()
+        public void ShowBundleReport()
         {
             var selectedBundles = new List<BundleBuilderData.BundleInfo>();
             foreach (var bundle in _data.bundles)

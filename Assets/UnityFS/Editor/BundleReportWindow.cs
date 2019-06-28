@@ -16,7 +16,7 @@ namespace UnityFS.Editor
 
         void OnEnable()
         {
-            titleContent = new GUIContent("Bundle Assets");
+            titleContent = new GUIContent("Bundle Report");
         }
 
         public void SetBundles(BundleBuilderData data, IList<BundleBuilderData.BundleInfo> bundles)

@@ -85,7 +85,7 @@ namespace UnityFS.Editor
                 }
                 if (GUILayout.Button("Show Bundle Assets"))
                 {
-                    _treeView.ShowBundleAssets();
+                    _treeView.ShowBundleReport();
                 }
                 if (GUILayout.Button("Build"))
                 {
