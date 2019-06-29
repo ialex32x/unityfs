@@ -1,14 +1,16 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace UnityFS
 {
     using UnityEngine;
     using UnityEngine.Networking;
 
-    public class DownloadTask 
+    public class DownloadTask
     {
         public int retry;       // 重试次数 (<0 时无限重试)
         public string tempPath; // 临时路径
@@ -82,7 +84,7 @@ namespace UnityFS
         public void Run()
         {
             _running = true;
-            JobScheduler.DispatchCoroutine(DownloadExec());
+            ThreadPool.QueueUserWorkItem(new WaitCallback(DownloadExec));
         }
 
         private bool Retry()
@@ -98,12 +100,12 @@ namespace UnityFS
             return true;
         }
 
-        private IEnumerator DownloadExec()
+        private void DownloadExec(object state)
         {
             while (true)
             {
-                var url = this.url;
                 FileStream file;
+                var crc = new Utils.Crc16();
                 var totalSize = this._bundle.size;
                 var partialSize = 0;
                 if (File.Exists(tempPath))
@@ -113,11 +115,12 @@ namespace UnityFS
                     partialSize = (int)fileInfo.Length;
                     if (partialSize == totalSize)
                     {
-                        if (CheckStream(file))
+                        crc.Update(file);
+                        if (crc.hex == _bundle.checksum)
                         {
                             file.Close();
                             this.Complete(null);
-                            yield break;
+                            return;
                         }
                         file.SetLength(0);
                         partialSize = 0;
@@ -129,26 +132,63 @@ namespace UnityFS
                     }
                     else
                     {
-                        file.Seek(partialSize, SeekOrigin.Begin);
+                        crc.Update(file);
+                        // file.Seek(partialSize, SeekOrigin.Begin);
                     }
                 }
-                var req = UnityWebRequest.Get(url);
+                else
+                {
+                    file = File.Open(tempPath, FileMode.Truncate, FileAccess.ReadWrite);
+                }
+                var uri = new Uri(this.url);
+                var req = (HttpWebRequest)WebRequest.Create(uri);
+                req.Method = WebRequestMethods.Http.Get;
+                req.ContentType = "application/octet-stream";
                 if (partialSize > 0)
                 {
-                    req.SetRequestHeader("Range", $"bytes={partialSize}-{totalSize}");
+                    req.AddRange(partialSize);
                 }
-                req.downloadHandler = new DownloadHandlerBuffer();
-                yield return req.SendWebRequest();
-                long contentLength;
-                if (!long.TryParse(req.GetResponseHeader("Content-Length"), out contentLength))
+                using (var rsp = req.GetResponse())
                 {
-                    if (!this.Retry())
+                    using (var stream = rsp.GetResponseStream())
                     {
-                        this.Complete("too many retry");
-                        yield break;
+                        var buffer = new byte[512];
+                        var recvAll = 0L;
+                        while (recvAll < rsp.ContentLength)
+                        {
+                            var recv = stream.Read(buffer, 0, buffer.Length);
+                            if (recv > 0)
+                            {
+                                recvAll += recv;
+                                file.Write(buffer, 0, recv);
+                                crc.Update(buffer, 0, recv);
+                            }
+                            else
+                            {
+                                throw new InvalidDataException();
+                            }
+                        }
+                        file.Flush();
+                        // check crc
                     }
-                    continue;
                 }
+                // var req = UnityWebRequest.Get(url);
+                // if (partialSize > 0)
+                // {
+                //     req.SetRequestHeader("Range", $"bytes={partialSize}-{totalSize}");
+                // }
+                // req.downloadHandler = new DownloadHandlerBuffer();
+                // yield return req.SendWebRequest();
+                // long contentLength;
+                // if (!long.TryParse(req.GetResponseHeader("Content-Length"), out contentLength))
+                // {
+                //     if (!this.Retry())
+                //     {
+                //         this.Complete("too many retry");
+                //         return;
+                //     }
+                //     continue;
+                // }
                 //TODO: download content ...
                 // UnityWebRequest 可能没办法既控制buffer复用又支持续传, 还是要自己实现 
                 throw new NotImplementedException();
@@ -174,7 +214,11 @@ namespace UnityFS
                 _error = error;
                 _isDone = true;
                 _running = false;
-                this._bundle.RemoveRef();
+                JobScheduler.DispatchMain(() =>
+                {
+                    this._bundle.RemoveRef();
+                    _callback(this);
+                });
             }
         }
 

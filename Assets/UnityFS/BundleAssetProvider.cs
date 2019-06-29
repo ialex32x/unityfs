@@ -296,7 +296,7 @@ namespace UnityFS
             }
         }
 
-        private void AddDownloadTask(DownloadTask newTask)
+        private DownloadTask AddDownloadTask(DownloadTask newTask)
         {
             for (var node = _tasks.First; node != null; node = node.Next)
             {
@@ -307,12 +307,13 @@ namespace UnityFS
                     {
                         _tasks.AddAfter(node, newTask);
                         Schedule();
-                        return;
+                        return newTask;
                     }
                 }
             }
             _tasks.AddLast(newTask);
             Schedule();
+            return newTask;
         }
 
         private void Schedule()
@@ -361,12 +362,14 @@ namespace UnityFS
                     }
                     else
                     {
+                        bundle.AddRef();
                         AddDownloadTask(DownloadTask.Create(bundle, _urls, -1, _localPathRoot, self =>
                         {
                             _tasks.Remove(self);
                             _runningTasks--;
                             Schedule();
                             bundle.Load(self.OpenFile());
+                            bundle.RemoveRef();
                         }));
                     }
                 }
