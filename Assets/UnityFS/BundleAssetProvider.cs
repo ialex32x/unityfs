@@ -147,6 +147,7 @@ namespace UnityFS
                 _provider.Unload(this);
             }
 
+            // stream 生命周期将被 UAssetBundleBundle 托管
             public override void Load(Stream stream)
             {
                 _stream = stream;
@@ -253,26 +254,46 @@ namespace UnityFS
         }
 
         // open file stream (file must be listed in manifest)
-        private Stream OpenFile(string filename)
+        private void OpenBundle(UBundle bundle)
         {
+            var filename = bundle.name;
             Manifest.BundleInfo bundleInfo;
             if (_bundlesMap.TryGetValue(filename, out bundleInfo))
             {
                 var fullPath = Path.Combine(_localPathRoot, filename);
                 var metaPath = fullPath + Metadata.Ext;
-                if (File.Exists(fullPath) && File.Exists(metaPath))
+                if (File.Exists(fullPath))
                 {
-                    var json = File.ReadAllText(metaPath);
-                    var metadata = JsonUtility.FromJson<Metadata>(json);
-                    // quick but unsafe
-                    if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
+                    if (File.Exists(metaPath))
                     {
-                        var stream = System.IO.File.OpenRead(fullPath);
-                        return stream;
+                        var json = File.ReadAllText(metaPath);
+                        var metadata = JsonUtility.FromJson<Metadata>(json);
+                        // quick but unsafe
+                        if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
+                        {
+                            var fileStream = System.IO.File.OpenRead(fullPath);
+                            bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
+                            return;
+                        }
+                        File.Delete(metaPath);
                     }
                 }
             }
-            return null;
+            // 无法打开现有文件, 下载新文件
+            bundle.AddRef();
+            AddDownloadTask(DownloadTask.Create(
+                bundle.name, bundle.checksum, bundle.size, bundle.priority,
+                _urls,
+                -1,
+                _localPathRoot,
+                self =>
+            {
+                _tasks.Remove(self);
+                _runningTasks--;
+                Schedule();
+                bundle.Load(self.OpenFile());
+                bundle.RemoveRef();
+            }));
         }
 
         protected void Unload(UBundle bundle)
@@ -303,7 +324,7 @@ namespace UnityFS
                 var task = node.Value;
                 if (!task.isRunning && !task.isDone)
                 {
-                    if (newTask.bundleInfo.priority > task.bundleInfo.priority)
+                    if (newTask.priority > task.priority)
                     {
                         _tasks.AddAfter(node, newTask);
                         Schedule();
@@ -355,23 +376,7 @@ namespace UnityFS
                 {
                     _bundles.Add(bundleName, bundle);
                     _AddDependencies(bundle, bundle.bundleInfo.dependencies);
-                    var fs = OpenFile(bundleName);
-                    if (fs != null)
-                    {
-                        bundle.Load(fs);
-                    }
-                    else
-                    {
-                        bundle.AddRef();
-                        AddDownloadTask(DownloadTask.Create(bundle, _urls, -1, _localPathRoot, self =>
-                        {
-                            _tasks.Remove(self);
-                            _runningTasks--;
-                            Schedule();
-                            bundle.Load(self.OpenFile());
-                            bundle.RemoveRef();
-                        }));
-                    }
+                    OpenBundle(bundle);
                 }
             }
             return bundle;

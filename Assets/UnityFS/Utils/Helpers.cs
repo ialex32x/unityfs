@@ -9,6 +9,8 @@ namespace UnityFS.Utils
 
     public static class Helpers
     {
+        // public static void CopyStream()
+        
         public static IEnumerator DestroyAfter(GameObject gameObject, float seconds)
         {
             yield return new WaitForSeconds(seconds);

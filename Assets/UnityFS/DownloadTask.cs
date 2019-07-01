@@ -12,11 +12,16 @@ namespace UnityFS
 
     public class DownloadTask
     {
-        public int retry;       // 重试次数 (<0 时无限重试)
-        public string tempPath; // 临时路径
-        public string filePath; // 最终路径
+        private int _retry;       // 重试次数 (<0 时无限重试)
+        private string _rootPath; // 目录路径
+        private string _tempPath; // 临时文件路径
+        private FileStream _fileStream = null;
 
-        private UBundle _bundle;
+        private string _name;
+        private string _checksum;
+        private int _size;
+        private int _priority;
+
         private bool _running;
         private int _urlIndex;
         private IList<string> _urls;
@@ -24,9 +29,13 @@ namespace UnityFS
         private bool _isDone;
         private string _error;
 
-        public Manifest.BundleInfo bundleInfo
+        // invoke in main thread
+        private Action<DownloadTask> _callback;
+        private Action<DownloadTask> _prepare;
+
+        public int priority
         {
-            get { return _bundle.bundleInfo; }
+            get { return _priority; }
         }
 
         // 运行中
@@ -54,30 +63,34 @@ namespace UnityFS
             {
                 if (_urls[_urlIndex].EndsWith("/"))
                 {
-                    return _urls[_urlIndex] + _bundle.name;
+                    return _urls[_urlIndex] + _name;
                 }
-                return _urls[_urlIndex] + "/" + _bundle.name;
+                return _urls[_urlIndex] + "/" + _name;
             }
         }
-
-        // invoke in main thread
-        private Action<DownloadTask> _callback;
 
         private DownloadTask()
         {
         }
 
-        public static DownloadTask Create(UBundle bundle, IList<string> urls, int retry, string localPathRoot, Action<DownloadTask> callback)
+        public static DownloadTask Create(
+            string name, string checksum, int size,
+            int priority,
+            IList<string> urls,
+            int retry,
+            string localPathRoot,
+            Action<DownloadTask> callback)
         {
             var task = new DownloadTask();
             task._urls = urls;
-            task._bundle = bundle;
-            task._bundle.AddRef();
             task._callback = callback;
-
-            task.retry = retry;
-            task.tempPath = Path.Combine(localPathRoot, bundle.name + ".part");
-            task.filePath = Path.Combine(localPathRoot, bundle.name);
+            task._name = name;
+            task._checksum = checksum;
+            task._size = size;
+            task._priority = priority;
+            task._retry = retry;
+            task._rootPath = localPathRoot;
+            task._tempPath = Path.Combine(localPathRoot, task._name + ".part");
             return task;
         }
 
@@ -89,7 +102,7 @@ namespace UnityFS
 
         private bool Retry()
         {
-            if (retry > 0 && (_urlIndex + 1) >= retry)
+            if (_retry > 0 && (_urlIndex + 1) >= _retry)
             {
                 return false;
             }
@@ -104,41 +117,46 @@ namespace UnityFS
         {
             while (true)
             {
-                FileStream file;
                 var crc = new Utils.Crc16();
-                var totalSize = this._bundle.size;
+                var totalSize = _size;
                 var partialSize = 0;
-                if (File.Exists(tempPath))
+                if (_fileStream == null)
                 {
-                    var fileInfo = new FileInfo(tempPath);
-                    file = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                    partialSize = (int)fileInfo.Length;
-                    if (partialSize == totalSize)
+                    if (File.Exists(_tempPath))
                     {
-                        crc.Update(file);
-                        if (crc.hex == _bundle.checksum)
+                        var fileInfo = new FileInfo(_tempPath);
+                        _fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                        partialSize = (int)fileInfo.Length;
+                        if (partialSize == totalSize)
                         {
-                            file.Close();
-                            this.Complete(null);
-                            return;
+                            crc.Update(_fileStream);
+                            if (crc.hex == _checksum)
+                            {
+                                this.Complete(null);
+                                return;
+                            }
+                            _fileStream.SetLength(0);
+                            partialSize = 0;
                         }
-                        file.SetLength(0);
-                        partialSize = 0;
-                    }
-                    else if (partialSize > totalSize)
-                    {
-                        file.SetLength(0);
-                        partialSize = 0;
+                        else if (partialSize > totalSize)
+                        {
+                            _fileStream.SetLength(0);
+                            partialSize = 0;
+                        }
+                        else
+                        {
+                            crc.Update(_fileStream);
+                            // file.Seek(partialSize, SeekOrigin.Begin);
+                        }
                     }
                     else
                     {
-                        crc.Update(file);
-                        // file.Seek(partialSize, SeekOrigin.Begin);
+                        _fileStream = File.Open(_tempPath, FileMode.Truncate, FileAccess.ReadWrite);
                     }
                 }
                 else
                 {
-                    file = File.Open(tempPath, FileMode.Truncate, FileAccess.ReadWrite);
+                    _fileStream.SetLength(0L);
                 }
                 var uri = new Uri(this.url);
                 var req = (HttpWebRequest)WebRequest.Create(uri);
@@ -160,7 +178,7 @@ namespace UnityFS
                             if (recv > 0)
                             {
                                 recvAll += recv;
-                                file.Write(buffer, 0, recv);
+                                _fileStream.Write(buffer, 0, recv);
                                 crc.Update(buffer, 0, recv);
                             }
                             else
@@ -168,17 +186,10 @@ namespace UnityFS
                                 throw new InvalidDataException();
                             }
                         }
-                        file.Flush();
+                        _fileStream.Flush();
                         // check crc
                     }
                 }
-                // var req = UnityWebRequest.Get(url);
-                // if (partialSize > 0)
-                // {
-                //     req.SetRequestHeader("Range", $"bytes={partialSize}-{totalSize}");
-                // }
-                // req.downloadHandler = new DownloadHandlerBuffer();
-                // yield return req.SendWebRequest();
                 // long contentLength;
                 // if (!long.TryParse(req.GetResponseHeader("Content-Length"), out contentLength))
                 // {
@@ -191,6 +202,7 @@ namespace UnityFS
                 // }
                 //TODO: download content ...
                 // UnityWebRequest 可能没办法既控制buffer复用又支持续传, 还是要自己实现 
+
                 throw new NotImplementedException();
             }
         }
@@ -200,7 +212,7 @@ namespace UnityFS
             var crc = new Utils.Crc16();
             stream.Seek(0, SeekOrigin.Begin);
             crc.Update(stream);
-            if (crc.hex == this._bundle.checksum)
+            if (crc.hex == this._checksum)
             {
                 return true;
             }
@@ -216,16 +228,15 @@ namespace UnityFS
                 _running = false;
                 JobScheduler.DispatchMain(() =>
                 {
-                    this._bundle.RemoveRef();
                     _callback(this);
                 });
             }
         }
 
         // return stream of downloaded file
-        public Stream OpenFile()
+        public Stream GetStream()
         {
-            return File.OpenRead(filePath);
+            return _fileStream;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace UnityFS
     using UnityEngine;
 
     // 资源包抽象 (AssetBundle | ZipArchive)
-    public abstract class UBundle
+    public abstract class UBundle : IRefCounted
     {
         protected int _refCount;
         protected Manifest.BundleInfo _info;
@@ -49,6 +49,11 @@ namespace UnityFS
         public int size
         {
             get { return _info.size; }
+        }
+
+        public int priority
+        {
+            get { return _info.priority; }
         }
 
         public string name
