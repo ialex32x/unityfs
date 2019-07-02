@@ -90,6 +90,7 @@ namespace UnityFS
             task._priority = priority;
             task._retry = retry;
             task._rootPath = localPathRoot;
+            //TODO: 改成直接写入目标文件 （确保meta删除)
             task._tempPath = Path.Combine(localPathRoot, task._name + ".part");
             return task;
         }
@@ -203,6 +204,7 @@ namespace UnityFS
                 //TODO: download content ...
                 // UnityWebRequest 可能没办法既控制buffer复用又支持续传, 还是要自己实现 
 
+                // 写入额外的 meta
                 throw new NotImplementedException();
             }
         }

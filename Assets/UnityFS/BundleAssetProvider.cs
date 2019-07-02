@@ -291,7 +291,7 @@ namespace UnityFS
                 _tasks.Remove(self);
                 _runningTasks--;
                 Schedule();
-                bundle.Load(self.OpenFile());
+                bundle.Load(self.GetStream());
                 bundle.RemoveRef();
             }));
         }
