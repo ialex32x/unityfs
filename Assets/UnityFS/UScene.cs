@@ -147,10 +147,6 @@ namespace UnityFS
 
     public class UEditorScene : UScene
     {
-#if UNITY_EDITOR
-        private Scene _scene;
-#endif
-
         public UEditorScene(UAsset asset)
         : base(asset)
         {
@@ -159,15 +155,16 @@ namespace UnityFS
         protected override AsyncOperation LoadSceneAsync()
         {
 #if UNITY_EDITOR
-            _scene = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
-#endif
+            return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
+#else
             return null;
+#endif
         }
 
         protected override AsyncOperation UnloadSceneAsync()
         {
 #if UNITY_EDITOR
-            return UnityEditor.SceneManagement.EditorSceneManager.UnloadSceneAsync(_scene);
+            return UnityEditor.SceneManagement.EditorSceneManager.UnloadSceneAsync(_asset.assetPath);
 #else
             return null;
 #endif
