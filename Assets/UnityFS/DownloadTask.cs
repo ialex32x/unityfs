@@ -16,6 +16,8 @@ namespace UnityFS
         public const string PartExt = ".part";
         public const int BufferSize = 1024 * 2;
 
+        private static bool _destroy = false;
+
         private bool _debug;
         private int _retry;        // 重试次数 (<0 时无限重试)
         private string _finalPath; // 最终存储路径
@@ -158,7 +160,7 @@ namespace UnityFS
         {
             lock (this)
             {
-                if (_isDone)
+                if (_isDone || _destroy)
                 {
                     return false;
                 }
@@ -292,7 +294,7 @@ namespace UnityFS
 
                 lock (this)
                 {
-                    if (_isDone)
+                    if (_isDone || _destroy)
                     {
                         success = false;
                     }
@@ -332,9 +334,9 @@ namespace UnityFS
                     break;
                 }
                 Thread.Sleep(1000);
-                PrintError($"[retry] download failed ({error})");
+                PrintError($"[retry] ({_destroy}) download failed ({error})");
             }
-            // PrintDebug("download task thread exited");
+            PrintDebug("download task thread exited");
         }
 
         private void _WriteMetadata(string metaPath)
@@ -356,6 +358,7 @@ namespace UnityFS
             var req = WebRequest.CreateHttp(uri);
             req.Method = WebRequestMethods.Http.Get;
             req.ContentType = BundleContentType;
+            req.ReadWriteTimeout = 10000;
             if (timeout > 0)
             {
                 req.Timeout = timeout * 1000;
@@ -379,7 +382,7 @@ namespace UnityFS
                             crc.Update(buffer, 0, recv);
                             _progress = Mathf.Clamp01((float)(recvAll + partialSize) / _size);
                             // Thread.Sleep(200); // 模拟低速下载
-                            // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
+                            PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                         }
                         else
                         {
@@ -388,6 +391,13 @@ namespace UnityFS
                     }
                 }
             }
+            PrintDebug($"download exited");
+        }
+
+        public static void Destroy()
+        {
+            _destroy = true;
+            // Debug.Log("destroy");
         }
 
         public void Abort()
@@ -416,7 +426,7 @@ namespace UnityFS
                     {
                         var cb = _callback;
                         _callback = null;
-                        JobScheduler.DispatchMain(() =>
+                        JobScheduler.DispatchMainAnyway(() =>
                         {
                             cb(this);
                         });

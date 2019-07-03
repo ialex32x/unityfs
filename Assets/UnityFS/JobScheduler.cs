@@ -18,7 +18,7 @@ namespace UnityFS
             {
                 _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 var go = new GameObject("_ResourceManager");
-                go.hideFlags = HideFlags.HideAndDontSave;
+                go.hideFlags = HideFlags.HideInHierarchy;
                 _mb = go.AddComponent<JobScheduler>();
                 _mb.StartCoroutine(_Update());
             }
@@ -66,6 +66,12 @@ namespace UnityFS
             {
                 _actions.Add(action);
             }
+        }
+
+        void OnDestroy()
+        {
+            // Debug.Log("destroy gameobject");
+            DownloadTask.Destroy();
         }
     }
 }
