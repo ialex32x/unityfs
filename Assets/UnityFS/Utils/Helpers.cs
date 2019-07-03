@@ -10,6 +10,13 @@ namespace UnityFS.Utils
 
     public static class Helpers
     {
+        // 基本流程:
+        // * 获取远程校验值 checksum.txt
+        // * 访问本地 manifest, 对比校验值 checksum
+        // * 确定最新 manifest
+        // * 创建 BundleAssetProvider
+        // * 加载代码包, 产生一个新的 (Zip)FileSystem 传递给脚本引擎 (Exists/ReadAllBytes)
+        // * 后续启动流程可由脚本接管
         public static void GetManifest(IList<string> urls, string localPathRoot, Action<Manifest> callback)
         {
             if (!Directory.Exists(localPathRoot))

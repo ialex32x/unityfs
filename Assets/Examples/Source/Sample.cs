@@ -24,12 +24,6 @@ namespace Examples
             else
 #endif
             {
-                // 获取远程校验值 checksum.txt
-                // 访问本地 manifest, 对比校验值 checksum
-                // 确定最新 manifest
-                // 创建 BundleAssetProvider
-                // 加载代码包, 产生一个新的 (Zip)FileSystem 传递给脚本引擎 (Exists/ReadAllBytes)
-                // 后续启动流程可由脚本接管
                 var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
                 var localPathRoot = Path.Combine(dataPath, "packages");
                 Debug.Log($"open localPathRoot: {localPathRoot}");
@@ -53,7 +47,7 @@ namespace Examples
             fs.completed += () =>
             {
                 // 可以在这里由脚本接管后续启动流程
-                // ScriptEngine.RunScript(fs.ReadAllBytes("Assets/Examples/Scripts/main.lua));
+                // ScriptEngine.RunScript(fs.ReadAllBytes("Assets/Examples/Scripts/main.lua"));
 
                 // 其他接口示意:
 
