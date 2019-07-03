@@ -31,7 +31,8 @@ namespace Examples
 
     public class Sample : MonoBehaviour
     {
-        public bool developMode;
+        public bool developMode;        // 编辑器模式 (直接从AssetDatabase加载, 无需打包)
+        public bool downloadStartups;   // 是否进行启动包预下载
 
         void Awake()
         {
@@ -50,15 +51,38 @@ namespace Examples
                 var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
                 var localPathRoot = Path.Combine(dataPath, "packages");
                 Debug.Log($"open localPathRoot: {localPathRoot}");
+
+                // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
+                // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
                 var urls = UnityFS.Utils.Helpers.URLs(
+                    // "http://localhost:8081/",
                     "http://localhost:8080/"
                 );
                 UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
                 {
-                    // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
-                    // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
-                    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls));
-                    OnUnityFSLoaded();
+                    // 可以进行预下载 (可选)
+                    if (downloadStartups)
+                    {
+                        var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
+                        UnityFS.Utils.Helpers.DownloadBundles(
+                            localPathRoot, startups, urls, 
+                            (i, all, task) =>
+                            {
+                                Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
+                            }, 
+                            () =>
+                            {
+                                Debug.Log("全部下载完毕");
+                                UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+                                OnUnityFSLoaded();
+                            }
+                        );
+                    }
+                    else
+                    {
+                        UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+                        OnUnityFSLoaded();
+                    }
                 });
             }
         }
@@ -66,7 +90,7 @@ namespace Examples
         private void OnUnityFSLoaded()
         {
             // 获取核心脚本代码包
-            var fs = UnityFS.ResourceManager.GetFileSystem("test2.pkg");
+            var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Config/test.txt");
             fs.completed += () =>
             {
                 // 可以在这里由脚本接管后续启动流程
