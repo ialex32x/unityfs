@@ -260,25 +260,12 @@ namespace UnityFS
             Manifest.BundleInfo bundleInfo;
             if (_bundlesMap.TryGetValue(filename, out bundleInfo))
             {
-                var fullPath = Path.Combine(_localPathRoot, filename);
-                var metaPath = fullPath + Metadata.Ext;
-                if (File.Exists(fullPath))
+                if (LoadBundleFile(bundle))
                 {
-                    if (File.Exists(metaPath))
-                    {
-                        var json = File.ReadAllText(metaPath);
-                        var metadata = JsonUtility.FromJson<Metadata>(json);
-                        // quick but unsafe
-                        if (metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
-                        {
-                            var fileStream = System.IO.File.OpenRead(fullPath);
-                            bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
-                            return;
-                        }
-                        File.Delete(metaPath);
-                    }
+                    return;
                 }
             }
+            
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
             AddDownloadTask(DownloadTask.Create(
@@ -291,9 +278,35 @@ namespace UnityFS
                 _tasks.Remove(self);
                 _runningTasks--;
                 Schedule();
-                bundle.Load(self.GetStream());
+                if (!LoadBundleFile(bundle))
+                {
+                    bundle.Load(null);
+                }
                 bundle.RemoveRef();
             }));
+        }
+
+        private bool LoadBundleFile(UBundle bundle)
+        {
+            var fullPath = Path.Combine(_localPathRoot, bundle.name);
+            var metaPath = fullPath + Metadata.Ext;
+            if (File.Exists(fullPath))
+            {
+                if (File.Exists(metaPath))
+                {
+                    var json = File.ReadAllText(metaPath);
+                    var metadata = JsonUtility.FromJson<Metadata>(json);
+                    // quick but unsafe
+                    if (metadata.checksum == bundle.checksum && metadata.size == bundle.size)
+                    {
+                        var fileStream = System.IO.File.OpenRead(fullPath);
+                        bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
+                        return true;
+                    }
+                    File.Delete(metaPath);
+                }
+            }
+            return false;
         }
 
         protected void Unload(UBundle bundle)

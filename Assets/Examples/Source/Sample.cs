@@ -34,7 +34,7 @@ namespace Examples
                 var localPathRoot = Path.Combine(dataPath, "packages");
                 // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
                 // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
-                var urls = UnityFS.ResourceManager.URLs(
+                var urls = UnityFS.Utils.Helpers.URLs(
                     "http://localhost:8080/"
                 );
                 UnityFS.ResourceManager.Initialize(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls));

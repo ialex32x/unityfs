@@ -17,11 +17,6 @@ namespace UnityFS
             UnityFS.JobScheduler.Initialize();
         }
 
-        public static IList<string> URLs(params string[] urls)
-        {
-            return new List<string>(urls);
-        }
-
         public static UScene LoadScene(string assetPath)
         {
             return new UScene(LoadAsset(assetPath)).Load();

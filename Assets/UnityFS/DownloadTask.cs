@@ -12,10 +12,12 @@ namespace UnityFS
 
     public class DownloadTask
     {
+        public const string BundleContentType = "application/octet-stream";
+        public const string PartExt = ".part";
+        public const int BufferSize = 1024 * 2;
+
         private int _retry;       // 重试次数 (<0 时无限重试)
         private string _rootPath; // 目录路径
-        private string _tempPath; // 临时文件路径
-        private FileStream _fileStream = null;
 
         private string _name;
         private string _checksum;
@@ -90,8 +92,6 @@ namespace UnityFS
             task._priority = priority;
             task._retry = retry;
             task._rootPath = localPathRoot;
-            //TODO: 改成直接写入目标文件 （确保meta删除)
-            task._tempPath = Path.Combine(localPathRoot, task._name + ".part");
             return task;
         }
 
@@ -114,111 +114,164 @@ namespace UnityFS
             return true;
         }
 
+        private void PrintError(string message)
+        {
+            // Debug.LogError(message);
+        }
+
         private void DownloadExec(object state)
         {
+            var finalPath = Path.Combine(_rootPath, _name);
+            var tempPath = finalPath + PartExt;
+            var metaPath = finalPath + Metadata.Ext;
+            var totalSize = _size;
+            FileStream fileStream = null;
             while (true)
             {
+                string error = null;
+                var buffer = new byte[BufferSize];
                 var crc = new Utils.Crc16();
-                var totalSize = _size;
                 var partialSize = 0;
-                if (_fileStream == null)
+                var success = true;
+                if (fileStream == null)
                 {
-                    if (File.Exists(_tempPath))
+                    try
                     {
-                        var fileInfo = new FileInfo(_tempPath);
-                        _fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                        partialSize = (int)fileInfo.Length;
-                        if (partialSize == totalSize)
+                        if (File.Exists(tempPath)) // 处理续传
                         {
-                            crc.Update(_fileStream);
-                            if (crc.hex == _checksum)
+                            var fileInfo = new FileInfo(tempPath);
+                            fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                            partialSize = (int)fileInfo.Length;
+                            if (partialSize > totalSize) // 目标文件超过期望大小, 直接废弃
                             {
-                                this.Complete(null);
-                                return;
+                                fileStream.SetLength(0);
+                                partialSize = 0;
                             }
-                            _fileStream.SetLength(0);
-                            partialSize = 0;
+                            else if (partialSize <= totalSize) // 续传
+                            {
+                                crc.Update(fileStream);
+                                PrintError($"partial check {partialSize} && {totalSize} ({crc.hex})");
+                            }
                         }
-                        else if (partialSize > totalSize)
+                        else // 创建下载文件
                         {
-                            _fileStream.SetLength(0);
-                            partialSize = 0;
-                        }
-                        else
-                        {
-                            crc.Update(_fileStream);
-                            // file.Seek(partialSize, SeekOrigin.Begin);
+                            fileStream = File.Open(tempPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                            fileStream.SetLength(0);
                         }
                     }
-                    else
+                    catch (Exception exception)
                     {
-                        _fileStream = File.Open(_tempPath, FileMode.Truncate, FileAccess.ReadWrite);
+                        PrintError($"file exception: {exception}");
+                        error = exception.ToString();
+                        success = false;
                     }
                 }
                 else
                 {
-                    _fileStream.SetLength(0L);
+                    fileStream.SetLength(0L);
                 }
-                var uri = new Uri(this.url);
-                var req = (HttpWebRequest)WebRequest.Create(uri);
-                req.Method = WebRequestMethods.Http.Get;
-                req.ContentType = "application/octet-stream";
-                if (partialSize > 0)
+
+                if (success && partialSize < totalSize)
                 {
-                    req.AddRange(partialSize);
-                }
-                using (var rsp = req.GetResponse())
-                {
-                    using (var stream = rsp.GetResponseStream())
+                    try
                     {
-                        var buffer = new byte[512];
-                        var recvAll = 0L;
-                        while (recvAll < rsp.ContentLength)
-                        {
-                            var recv = stream.Read(buffer, 0, buffer.Length);
-                            if (recv > 0)
-                            {
-                                recvAll += recv;
-                                _fileStream.Write(buffer, 0, recv);
-                                crc.Update(buffer, 0, recv);
-                            }
-                            else
-                            {
-                                throw new InvalidDataException();
-                            }
-                        }
-                        _fileStream.Flush();
-                        // check crc
+                        _HttpDownload(this.url, partialSize, buffer, crc, fileStream);
+                    }
+                    catch (Exception exception)
+                    {
+                        PrintError($"network exception: {exception}");
+                        error = exception.ToString();
+                        success = false;
                     }
                 }
-                // long contentLength;
-                // if (!long.TryParse(req.GetResponseHeader("Content-Length"), out contentLength))
-                // {
-                //     if (!this.Retry())
-                //     {
-                //         this.Complete("too many retry");
-                //         return;
-                //     }
-                //     continue;
-                // }
-                //TODO: download content ...
-                // UnityWebRequest 可能没办法既控制buffer复用又支持续传, 还是要自己实现 
 
-                // 写入额外的 meta
-                throw new NotImplementedException();
+                if (success && fileStream.Length != _size)
+                {
+                    PrintError($"filesize exception: {fileStream.Length} != {_size}");
+                    error = "wrong file size";
+                    success = false;
+                }
+                else if (success && crc.hex != _checksum)
+                {
+                    PrintError($"checksum exception: {crc.hex} != {_checksum}");
+                    error = "corrupted file";
+                    success = false;
+                }
+
+                if (success)
+                {
+                    try
+                    {
+                        // _WriteStream(buffer, fileStream, finalPath);
+                        fileStream.Close();
+                        fileStream = null;
+                        File.Copy(tempPath, finalPath, true);
+                        _WriteMetadata(metaPath);
+                        File.Delete(tempPath);
+                        Complete(null);
+                        break;
+                    }
+                    catch (Exception exception)
+                    {
+                        PrintError($"write exception: {exception}");
+                        error = exception.ToString();
+                        success = false;
+                    }
+                }
+
+                if (!Retry())
+                {
+                    Complete(error ?? "unknown error");
+                    break;
+                }
+                Thread.Sleep(100);
+                PrintError($"[retry] download failed ({error})");
             }
         }
 
-        private bool CheckStream(FileStream stream)
+        private void _WriteMetadata(string metaPath)
         {
-            var crc = new Utils.Crc16();
-            stream.Seek(0, SeekOrigin.Begin);
-            crc.Update(stream);
-            if (crc.hex == this._checksum)
+            // 写入额外的 meta
+            var meta = new Metadata()
             {
-                return true;
+                checksum = _checksum,
+                size = _size,
+            };
+            var json = JsonUtility.ToJson(meta);
+            File.WriteAllText(metaPath, json);
+        }
+
+        private void _HttpDownload(string url, int partialSize, byte[] buffer, Utils.Crc16 crc, Stream targetStream)
+        {
+            var uri = new Uri(url);
+            var req = (HttpWebRequest)WebRequest.Create(uri);
+            req.Method = WebRequestMethods.Http.Get;
+            req.ContentType = BundleContentType;
+            if (partialSize > 0)
+            {
+                req.AddRange(partialSize);
             }
-            return false;
+            using (var rsp = req.GetResponse())
+            {
+                using (var webStream = rsp.GetResponseStream())
+                {
+                    var recvAll = 0L;
+                    while (recvAll < rsp.ContentLength)
+                    {
+                        var recv = webStream.Read(buffer, 0, buffer.Length);
+                        if (recv > 0)
+                        {
+                            recvAll += recv;
+                            targetStream.Write(buffer, 0, recv);
+                            crc.Update(buffer, 0, recv);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         private void Complete(string error)
@@ -233,12 +286,6 @@ namespace UnityFS
                     _callback(this);
                 });
             }
-        }
-
-        // return stream of downloaded file
-        public Stream GetStream()
-        {
-            return _fileStream;
         }
     }
 }
