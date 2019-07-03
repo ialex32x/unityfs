@@ -99,7 +99,7 @@ namespace UnityFS.Editor
 
             if (dirty)
             {
-                EditorUtility.SetDirty(data);
+                data.MarkAsDirty();
                 dirty = false;
             }
         }

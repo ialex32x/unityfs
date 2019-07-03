@@ -5,10 +5,13 @@ using System.Collections.Generic;
 namespace UnityFS.Editor
 {
     using UnityEngine;
+    using UnityEditor;
 
-    public class BundleBuilderData : ScriptableObject
+    public class BundleBuilderData
+    : ScriptableObject
     {
-        public const string Ext = ".pkg"; 
+        public const string BundleBuilderDataPath = "Assets/unityfs.asset";
+        public const string Ext = ".pkg";
 
         [Serializable]
         public class BundleAssetTarget
@@ -49,6 +52,30 @@ namespace UnityFS.Editor
 
         public int id;
         public List<BundleInfo> bundles = new List<BundleInfo>();
+
+        public static BundleBuilderData Load()
+        {
+            // var data = new BundleBuilderData();
+            // EditorJsonUtility.FromJsonOverwrite(BundleBuilderDataPath, data);
+
+            var data = AssetDatabase.LoadMainAssetAtPath(BundleBuilderDataPath) as BundleBuilderData;
+            if (data == null)
+            {
+                data = ScriptableObject.CreateInstance<BundleBuilderData>();
+                AssetDatabase.CreateAsset(data, BundleBuilderDataPath);
+                AssetDatabase.SaveAssets();
+            }
+
+            return data;
+        }
+
+        public void MarkAsDirty()
+        {
+            EditorUtility.SetDirty(this);
+
+            // var json = EditorJsonUtility.ToJson(this, true);
+            // File.WriteAllText(BundleBuilderDataPath, json);
+        }
     }
 
     public class ZipArchiveEntry

@@ -300,7 +300,7 @@ namespace UnityFS.Editor
                             bundle.targets.Remove(target);
                         }
                     }
-                    EditorUtility.SetDirty(_data);
+                    _data.MarkAsDirty();
                     this.Reload();
                 }
             }
@@ -400,7 +400,7 @@ namespace UnityFS.Editor
                         if (target != assetTarget.target)
                         {
                             assetTarget.target = target;
-                            EditorUtility.SetDirty(_data);
+                            _data.MarkAsDirty();
                         }
                     }
                     else
@@ -424,7 +424,7 @@ namespace UnityFS.Editor
                             if (platforms != target.platforms)
                             {
                                 target.platforms = platforms;
-                                EditorUtility.SetDirty(_data);
+                                _data.MarkAsDirty();
                             }
                         }
                     }
@@ -438,14 +438,14 @@ namespace UnityFS.Editor
                         if (load != bundleInfo.load)
                         {
                             bundleInfo.load = load;
-                            EditorUtility.SetDirty(_data);
+                            _data.MarkAsDirty();
                         }
                         cellRect.x += cellRect.width;
                         var type = (Manifest.BundleType)EditorGUI.EnumPopup(cellRect, bundleInfo.type);
                         if (type != bundleInfo.type)
                         {
                             bundleInfo.type = type;
-                            EditorUtility.SetDirty(_data);
+                            _data.MarkAsDirty();
                             Reload();
                         }
                     }
@@ -462,7 +462,7 @@ namespace UnityFS.Editor
                                 if (types != target.types)
                                 {
                                     target.types = types;
-                                    EditorUtility.SetDirty(_data);
+                                    _data.MarkAsDirty();
                                 }
                             }
                         }
@@ -476,7 +476,7 @@ namespace UnityFS.Editor
                         if (priority != bundleInfo.priority)
                         {
                             bundleInfo.priority = priority;
-                            EditorUtility.SetDirty(_data);
+                            _data.MarkAsDirty();
                         }
                     }
                     else if (item.depth == 1)
@@ -491,7 +491,7 @@ namespace UnityFS.Editor
                                 if (extensions != target.extensions)
                                 {
                                     target.extensions = extensions;
-                                    EditorUtility.SetDirty(_data);
+                                    _data.MarkAsDirty();
                                 }
                             }
                         }
@@ -507,7 +507,7 @@ namespace UnityFS.Editor
                             if (splitObjects != bundleInfo.splitObjects)
                             {
                                 bundleInfo.splitObjects = splitObjects;
-                                EditorUtility.SetDirty(_data);
+                                _data.MarkAsDirty();
                             }
                         }
                         // else if (bundleInfo.type == BundleType.SceneBundle)

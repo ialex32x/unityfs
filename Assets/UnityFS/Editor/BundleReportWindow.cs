@@ -40,7 +40,7 @@ namespace UnityFS.Editor
                 if (note != bundle.note)
                 {
                     bundle.note = note;
-                    EditorUtility.SetDirty(_data);
+                    _data.MarkAsDirty();
                 }
                 foreach (var asset in bundle.assets)
                 {

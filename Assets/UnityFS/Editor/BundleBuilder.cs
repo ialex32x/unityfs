@@ -10,21 +10,13 @@ namespace UnityFS.Editor
 
     public class BundleBuilder
     {
-        public const string BundleBuilderDataPath = "Assets/UnityFS/Data/default.asset";
-
         private static BundleBuilderData _data;
 
         public static BundleBuilderData GetData()
         {
             if (_data == null)
             {
-                _data = AssetDatabase.LoadMainAssetAtPath(BundleBuilderDataPath) as BundleBuilderData;
-                if (_data == null)
-                {
-                    _data = ScriptableObject.CreateInstance<BundleBuilderData>();
-                    AssetDatabase.CreateAsset(_data, BundleBuilderDataPath);
-                    AssetDatabase.SaveAssets();
-                }
+                _data = BundleBuilderData.Load();
                 var dirty = false;
                 foreach (var bundle in _data.bundles)
                 {
@@ -44,7 +36,7 @@ namespace UnityFS.Editor
                 }
                 if (dirty)
                 {
-                    EditorUtility.SetDirty(_data);
+                    _data.MarkAsDirty();
                 }
             }
             return _data;
@@ -408,7 +400,7 @@ namespace UnityFS.Editor
                     });
                 }
             }
-            EditorUtility.SetDirty(data);
+            data.MarkAsDirty();
         }
     }
 }
