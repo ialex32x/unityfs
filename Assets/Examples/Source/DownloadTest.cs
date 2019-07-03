@@ -16,12 +16,13 @@ namespace Examples
                 );
             var task = UnityFS.DownloadTask.Create(
                 "bundle_19.pkg",
-                "96f1",
-                104437,
+                "96f1", // hash check
+                104437, // size check
                 0,
                 urls,
                 "D:\\",
-                3,
+                3,  // retry
+                10, // timeout
                 self =>
             {
                 Debug.Log($"complete {self.error}");

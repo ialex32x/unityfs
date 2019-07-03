@@ -32,7 +32,7 @@ namespace Examples
                 // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
                 // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
                 var urls = UnityFS.Utils.Helpers.URLs(
-                    "http://localhost:8081/",
+                    // "http://localhost:8081/",
                     "http://localhost:8080/"
                 );
                 UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
@@ -45,7 +45,7 @@ namespace Examples
                             UnityFS.Utils.Helpers.DownloadBundles(
                                 localPathRoot, startups, urls, (i, all, task) =>
                                 {
-                                    Debug.Log($"下载中 {startups[i].name}({task.url}) {task.progress} ({i}/{all})");
+                                    Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
                                 }, () =>
                                 {
                                     Debug.Log("全部下载完毕");

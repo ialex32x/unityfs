@@ -23,7 +23,7 @@ namespace UnityFS.Utils
             {
                 Directory.CreateDirectory(localPathRoot);
             }
-            UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, urls, localPathRoot, 0, checksumTask =>
+            UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, urls, localPathRoot, 0, 10, checksumTask =>
             {
                 var checksum = File.ReadAllText(checksumTask.path);
                 Debug.Log($"read checksum {checksum}");
@@ -35,7 +35,7 @@ namespace UnityFS.Utils
                 }
                 else
                 {
-                    UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, urls, localPathRoot, 0, manifestTask =>
+                    UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, urls, localPathRoot, 0, 10, manifestTask =>
                     {
                         var manifestJson = File.ReadAllText(manifestTask.path);
                         manifest = JsonUtility.FromJson<Manifest>(manifestJson);
@@ -101,8 +101,9 @@ namespace UnityFS.Utils
             for (int i = 0, size = bundles.Length; i < size; i++)
             {
                 var bundleInfo = bundles[i];
-                var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, null);
+                var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, 10, null);
                 var progress = -1.0f;
+                task.SetDebugMode(true).Run();
                 while (!task.isDone)
                 {
                     if (progress != task.progress)

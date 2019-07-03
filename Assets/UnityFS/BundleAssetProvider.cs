@@ -142,6 +142,7 @@ namespace UnityFS
                 }
                 if (_stream != null)
                 {
+                    _stream.Close();
                     _stream.Dispose();
                     _stream = null;
                 }
@@ -286,6 +287,7 @@ namespace UnityFS
                 _urls,
                 _localPathRoot,
                 -1,
+                10, 
                 self =>
             {
                 _tasks.Remove(self);

@@ -25,6 +25,7 @@ namespace UnityFS
         private int _size;
         private int _priority;
         private float _progress;
+        private int _timeout; // in seconds
 
         private bool _running;
         private int _urlIndex;
@@ -106,9 +107,10 @@ namespace UnityFS
             IList<string> urls,
             string filePathRoot,
             int retry,
+            int timeout,
             Action<DownloadTask> callback)
         {
-            return Create(bundleInfo.name, bundleInfo.checksum, bundleInfo.size, bundleInfo.priority, urls, filePathRoot, retry, callback);
+            return Create(bundleInfo.name, bundleInfo.checksum, bundleInfo.size, bundleInfo.priority, urls, filePathRoot, retry, timeout, callback);
         }
 
         public static DownloadTask Create(
@@ -117,6 +119,7 @@ namespace UnityFS
             IList<string> urls,
             string filePathRoot,
             int retry,
+            int timeout,
             Action<DownloadTask> callback)
         {
             var task = new DownloadTask();
@@ -127,6 +130,7 @@ namespace UnityFS
             task._size = size;
             task._priority = priority;
             task._retry = retry;
+            task._timeout = timeout;
             task._finalPath = Path.Combine(filePathRoot, name);
             task.SetUrl();
             return task;
@@ -249,7 +253,7 @@ namespace UnityFS
                 {
                     try
                     {
-                        _HttpDownload(this.url, partialSize, buffer, crc, fileStream);
+                        _HttpDownload(this.url, partialSize, buffer, crc, fileStream, _timeout);
                     }
                     catch (Exception exception)
                     {
@@ -345,13 +349,17 @@ namespace UnityFS
             File.WriteAllText(metaPath, json);
         }
 
-        private void _HttpDownload(string url, int partialSize, byte[] buffer, Utils.Crc16 crc, Stream targetStream)
+        private void _HttpDownload(string url, int partialSize, byte[] buffer, Utils.Crc16 crc, Stream targetStream, int timeout)
         {
             PrintDebug($"downloading from {url}");
             var uri = new Uri(url);
-            var req = (HttpWebRequest)WebRequest.Create(uri);
+            var req = WebRequest.CreateHttp(uri);
             req.Method = WebRequestMethods.Http.Get;
             req.ContentType = BundleContentType;
+            if (timeout > 0)
+            {
+                req.Timeout = timeout * 1000;
+            }
             if (partialSize > 0)
             {
                 req.AddRange(partialSize);
@@ -370,7 +378,8 @@ namespace UnityFS
                             targetStream.Write(buffer, 0, recv);
                             crc.Update(buffer, 0, recv);
                             _progress = Mathf.Clamp01((float)(recvAll + partialSize) / _size);
-                            PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
+                            // Thread.Sleep(200); // 模拟低速下载
+                            // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                         }
                         else
                         {
