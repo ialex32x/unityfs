@@ -41,18 +41,18 @@ namespace Examples
                     if (downloadStartups)
                     {
                         var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
-                        StartCoroutine(
-                            UnityFS.Utils.Helpers.DownloadBundles(
-                                localPathRoot, startups, urls, (i, all, task) =>
-                                {
-                                    Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
-                                }, () =>
-                                {
-                                    Debug.Log("全部下载完毕");
-                                    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
-                                    OnUnityFSLoaded();
-                                }
-                            )
+                        UnityFS.Utils.Helpers.DownloadBundles(
+                            localPathRoot, startups, urls, 
+                            (i, all, task) =>
+                            {
+                                Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
+                            }, 
+                            () =>
+                            {
+                                Debug.Log("全部下载完毕");
+                                UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+                                OnUnityFSLoaded();
+                            }
                         );
                     }
                     else

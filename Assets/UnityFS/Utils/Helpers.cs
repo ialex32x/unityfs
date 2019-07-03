@@ -74,11 +74,16 @@ namespace UnityFS.Utils
 
         public static Manifest.BundleInfo[] CollectStartupBundles(Manifest manifest, string localPathRoot)
         {
+            return CollectBundles(manifest, localPathRoot, info => info.startup);
+        }
+
+        public static Manifest.BundleInfo[] CollectBundles(Manifest manifest, string localPathRoot, Func<Manifest.BundleInfo, bool> filter)
+        {
             var pending = new List<Manifest.BundleInfo>();
             for (int i = 0, size = manifest.bundles.Count; i < size; i++)
             {
                 var bundleInfo = manifest.bundles[i];
-                if (bundleInfo.startup)
+                if (filter(bundleInfo))
                 {
                     var fullPath = Path.Combine(localPathRoot, bundleInfo.name);
                     if (!IsBundleFileValid(fullPath, bundleInfo))
@@ -89,9 +94,19 @@ namespace UnityFS.Utils
             }
             return pending.ToArray();
         }
+        
+        public static void DownloadBundles(
+            string localPathRoot,
+            Manifest.BundleInfo[] bundles,
+            IList<string> urls,
+            Action<int, int, ITask> onProgress,
+            Action onComplete)
+        {
+            JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, urls, onProgress, onComplete));
+        }
 
         // 当前任务数, 总任务数, 当前任务进度
-        public static IEnumerator DownloadBundles(
+        public static IEnumerator DownloadBundlesCo(
             string localPathRoot,
             Manifest.BundleInfo[] bundles,
             IList<string> urls,
