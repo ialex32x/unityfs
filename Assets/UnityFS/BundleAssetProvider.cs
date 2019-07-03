@@ -265,14 +265,14 @@ namespace UnityFS
                     return;
                 }
             }
-            
+
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
             AddDownloadTask(DownloadTask.Create(
                 bundle.name, bundle.checksum, bundle.size, bundle.priority,
                 _urls,
-                -1,
                 _localPathRoot,
+                -1,
                 self =>
             {
                 _tasks.Remove(self);
@@ -389,22 +389,25 @@ namespace UnityFS
             UBundle bundle;
             if (!_bundles.TryGetValue(bundleName, out bundle))
             {
-                var bundleInfo = _bundlesMap[bundleName];
-                switch (bundleInfo.type)
+                Manifest.BundleInfo bundleInfo;
+                if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
                 {
-                    case Manifest.BundleType.AssetBundle:
-                        bundle = new UAssetBundleBundle(this, bundleInfo);
-                        break;
-                    case Manifest.BundleType.ZipArchive:
-                        bundle = new ZipArchiveUBundle(this, bundleInfo);
-                        break;
-                }
+                    switch (bundleInfo.type)
+                    {
+                        case Manifest.BundleType.AssetBundle:
+                            bundle = new UAssetBundleBundle(this, bundleInfo);
+                            break;
+                        case Manifest.BundleType.ZipArchive:
+                            bundle = new ZipArchiveUBundle(this, bundleInfo);
+                            break;
+                    }
 
-                if (bundle != null)
-                {
-                    _bundles.Add(bundleName, bundle);
-                    _AddDependencies(bundle, bundle.bundleInfo.dependencies);
-                    OpenBundle(bundle);
+                    if (bundle != null)
+                    {
+                        _bundles.Add(bundleName, bundle);
+                        _AddDependencies(bundle, bundle.bundleInfo.dependencies);
+                        OpenBundle(bundle);
+                    }
                 }
             }
             return bundle;
@@ -432,10 +435,19 @@ namespace UnityFS
                     fileSystem = new ZipFileSystem(zipArchiveBundle);
                     _fileSystems[bundleName] = new WeakReference(fileSystem);
                 }
+                else
+                {
+                    Debug.LogError($"bundle {bundleName} ({bundle.GetType()}) type error.");
+                }
                 bundle.RemoveRef();
-                return fileSystem;
+                if (fileSystem != null)
+                {
+                    return fileSystem;
+                }
             }
-            return null;
+            var invalid = new FailureFileSystem(bundleName);
+            _fileSystems[bundleName] = new WeakReference(invalid);
+            return invalid;
         }
 
         public UAsset GetAsset(string assetPath)

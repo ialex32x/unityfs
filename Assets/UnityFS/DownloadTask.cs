@@ -17,8 +17,8 @@ namespace UnityFS
         public const int BufferSize = 1024 * 2;
 
         private bool _debug;
-        private int _retry;       // 重试次数 (<0 时无限重试)
-        private string _rootPath; // 目录路径
+        private int _retry;        // 重试次数 (<0 时无限重试)
+        private string _finalPath; // 最终存储路径
 
         private string _name;
         private string _checksum;
@@ -34,11 +34,20 @@ namespace UnityFS
 
         // invoke in main thread
         private Action<DownloadTask> _callback;
-        private Action<DownloadTask> _prepare;
 
         public int priority
         {
             get { return _priority; }
+        }
+
+        public string checksum
+        {
+            get { return _checksum; }
+        }
+
+        public int size
+        {
+            get { return _size; }
         }
 
         // 运行中
@@ -57,6 +66,11 @@ namespace UnityFS
                     return _isDone;
                 }
             }
+        }
+
+        public string finalPath
+        {
+            get { return _finalPath; }
         }
 
         // 错误信息 (null 表示没有错误)
@@ -86,8 +100,8 @@ namespace UnityFS
             string name, string checksum, int size,
             int priority,
             IList<string> urls,
+            string filePathRoot,
             int retry,
-            string localPathRoot,
             Action<DownloadTask> callback)
         {
             var task = new DownloadTask();
@@ -98,7 +112,7 @@ namespace UnityFS
             task._size = size;
             task._priority = priority;
             task._retry = retry;
-            task._rootPath = localPathRoot;
+            task._finalPath = Path.Combine(filePathRoot, name);
             return task;
         }
 
@@ -128,9 +142,10 @@ namespace UnityFS
             return true;
         }
 
-        public void SetDebugMode(bool debug)
+        public DownloadTask SetDebugMode(bool debug)
         {
             _debug = debug;
+            return this;
         }
 
         private void PrintError(string message)
@@ -145,17 +160,15 @@ namespace UnityFS
         {
             if (_debug)
             {
-                Debug.Log(message);
+                Debug.Log($"[task:{_name}] {message}");
             }
         }
 
         private void DownloadExec(object state)
         {
             var buffer = new byte[BufferSize];
-            var finalPath = Path.Combine(_rootPath, _name);
-            var tempPath = finalPath + PartExt;
-            var metaPath = finalPath + Metadata.Ext;
-            var totalSize = _size;
+            var tempPath = _finalPath + PartExt;
+            var metaPath = _finalPath + Metadata.Ext;
             var retry = 0;
             FileStream fileStream = null;
 
@@ -174,15 +187,15 @@ namespace UnityFS
                             var fileInfo = new FileInfo(tempPath);
                             fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
                             partialSize = (int)fileInfo.Length;
-                            if (partialSize > totalSize) // 目标文件超过期望大小, 直接废弃
+                            if (partialSize > _size) // 目标文件超过期望大小, 直接废弃
                             {
                                 fileStream.SetLength(0);
                                 partialSize = 0;
                             }
-                            else if (partialSize <= totalSize) // 续传
+                            else if (partialSize <= _size) // 续传
                             {
                                 crc.Update(fileStream);
-                                PrintDebug($"partial check {partialSize} && {totalSize} ({crc.hex})");
+                                PrintDebug($"partial check {partialSize} && {_size} ({crc.hex})");
                             }
                         }
                         else // 创建下载文件
@@ -203,7 +216,7 @@ namespace UnityFS
                     fileStream.SetLength(0L);
                 }
 
-                if (success && partialSize < totalSize)
+                if (success && (_size <= 0 || partialSize < _size))
                 {
                     try
                     {
@@ -219,15 +232,29 @@ namespace UnityFS
 
                 if (success && fileStream.Length != _size)
                 {
-                    PrintError($"filesize exception: {fileStream.Length} != {_size}");
-                    error = "wrong file size";
-                    success = false;
+                    if (_size > 0)
+                    {
+                        PrintError($"filesize exception: {fileStream.Length} != {_size}");
+                        error = "wrong file size";
+                        success = false;
+                    }
+                    else
+                    {
+                        _size = (int)fileStream.Length;
+                    }
                 }
                 else if (success && crc.hex != _checksum)
                 {
-                    PrintError($"checksum exception: {crc.hex} != {_checksum}");
-                    error = "corrupted file";
-                    success = false;
+                    if (_checksum != null)
+                    {
+                        PrintError($"checksum exception: {crc.hex} != {_checksum}");
+                        error = "corrupted file";
+                        success = false;
+                    }
+                    else
+                    {
+                        _checksum = crc.hex;
+                    }
                 }
 
                 lock (this)
@@ -245,10 +272,11 @@ namespace UnityFS
                         // _WriteStream(buffer, fileStream, finalPath);
                         fileStream.Close();
                         fileStream = null;
-                        File.Copy(tempPath, finalPath, true);
+                        File.Copy(tempPath, _finalPath, true);
                         _WriteMetadata(metaPath);
                         File.Delete(tempPath);
                         Complete(null);
+                        PrintDebug("download succeeded");
                         break;
                     }
                     catch (Exception exception)
@@ -267,12 +295,13 @@ namespace UnityFS
                         fileStream = null;
                     }
                     Complete(error ?? "unknown error");
+                    PrintError($"[stop] download failed ({error})");
                     break;
                 }
                 Thread.Sleep(100);
                 PrintError($"[retry] download failed ({error})");
             }
-            PrintDebug("download task thread exited");
+            // PrintDebug("download task thread exited");
         }
 
         private void _WriteMetadata(string metaPath)

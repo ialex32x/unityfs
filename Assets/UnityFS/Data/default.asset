@@ -48,7 +48,7 @@ MonoBehaviour:
     type: 1
     enabled: 1
     load: 0
-    priority: 2785
+    priority: 3223
     splitObjects: 0
     targets:
     - id: 22

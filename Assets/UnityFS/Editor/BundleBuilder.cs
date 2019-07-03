@@ -297,6 +297,7 @@ namespace UnityFS.Editor
                         var checksum = new Utils.Crc16();
                         checksum.Update(stream);
                         var bundle = new Manifest.BundleInfo();
+                        bundle.type = Manifest.BundleType.AssetBundle;
                         bundle.name = assetBundle;
                         bundle.checksum = checksum.hex;
                         bundle.size = (int)fileInfo.Length;
@@ -324,6 +325,7 @@ namespace UnityFS.Editor
                         var checksum = new Utils.Crc16();
                         checksum.Update(stream);
                         var bundle = new Manifest.BundleInfo();
+                        bundle.type = Manifest.BundleType.ZipArchive;
                         bundle.name = zipArchive.name;
                         bundle.checksum = checksum.hex;
                         bundle.size = (int)fileInfo.Length;
@@ -344,7 +346,7 @@ namespace UnityFS.Editor
                 Directory.CreateDirectory(outputPath);
             }
             var json = JsonUtility.ToJson(manifest);
-            var jsonChecksum = Utils.Crc16.ComputeChecksum(System.Text.Encoding.UTF8.GetBytes(json)).ToString("x");
+            var jsonChecksum = Utils.Crc16.ToString(Utils.Crc16.ComputeChecksum(System.Text.Encoding.UTF8.GetBytes(json)));
             var manifestPath = Path.Combine(outputPath, "manifest.json");
             var manifestChecksumPath = Path.Combine(outputPath, "checksum.txt");
             File.WriteAllText(manifestPath, json);

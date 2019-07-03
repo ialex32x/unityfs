@@ -12,7 +12,7 @@ namespace UnityFS.Utils
 
         public ushort value { get { return _checksum; } }
 
-        public string hex { get { return _checksum.ToString("x"); } }
+        public string hex { get { return ToString(_checksum); } }
 
         public Crc16()
         {
@@ -21,6 +21,11 @@ namespace UnityFS.Utils
         public void Clear()
         {
             _checksum = 0;
+        }
+
+        public static string ToString(ushort value)
+        {
+            return value.ToString("x").PadLeft(4, '0');
         }
 
         public ushort Update(Stream stream)

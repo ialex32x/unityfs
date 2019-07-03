@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -9,29 +10,59 @@ namespace UnityFS.Utils
 
     public static class Helpers
     {
-        public static bool OpenManifest(string filePath, string checksum, out Manifest manifest)
+        public static void GetManifest(IList<string> urls, string localPathRoot, Action<Manifest> callback)
         {
+            if (!Directory.Exists(localPathRoot))
+            {
+                Directory.CreateDirectory(localPathRoot);
+            }
+            UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, urls, localPathRoot, 0, checksumTask =>
+            {
+                var checksum = File.ReadAllText(checksumTask.finalPath);
+                Debug.Log($"read checksum {checksum}");
+                var manifestPath = Path.Combine(localPathRoot, "manifest.json");
+                Manifest manifest = null;
+                if (OpenManifestFile(manifestPath, checksum, out manifest))
+                {
+                    callback(manifest);
+                }
+                else
+                {
+                    UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, urls, localPathRoot, 0, manifestTask =>
+                    {
+                        var manifestJson = File.ReadAllText(manifestTask.finalPath);
+                        manifest = JsonUtility.FromJson<Manifest>(manifestJson);
+                        callback(manifest);
+                    }).SetDebugMode(true).Run();
+                }
+            }).SetDebugMode(true).Run();
+        }
+
+        // 打开指定的清单文件 (带校验)
+        public static bool OpenManifestFile(string filePath, string checksum, out Manifest manifest)
+        {
+            if (File.Exists(filePath))
+            {
+                using (var fs = File.OpenRead(filePath))
+                {
+                    var crc = new Crc16();
+                    crc.Update(fs);
+                    if (crc.hex == checksum)
+                    {
+                        fs.Seek(0, SeekOrigin.Begin);
+                        var bytes = new byte[fs.Position];
+                        var read = fs.Read(bytes, 0, bytes.Length);
+                        if (read == bytes.Length)
+                        {
+                            var json = Encoding.UTF8.GetString(bytes);
+                            manifest = JsonUtility.FromJson<Manifest>(json);
+                            return manifest != null;
+                        }
+                    }
+                }
+            }
             manifest = null;
             return false;
-            // var fullPath = Path.Combine(_localPathRoot, bundle.name);
-            // var metaPath = fullPath + Metadata.Ext;
-            // if (File.Exists(fullPath))
-            // {
-            //     if (File.Exists(metaPath))
-            //     {
-            //         var json = File.ReadAllText(metaPath);
-            //         var metadata = JsonUtility.FromJson<Metadata>(json);
-            //         // quick but unsafe
-            //         if (metadata.checksum == bundle.checksum && metadata.size == bundle.size)
-            //         {
-            //             var fileStream = System.IO.File.OpenRead(fullPath);
-            //             bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
-            //             return true;
-            //         }
-            //         File.Delete(metaPath);
-            //     }
-            // }
-            // return false;
         }
 
         public static IList<string> URLs(params string[] urls)

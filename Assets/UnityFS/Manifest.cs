@@ -10,6 +10,7 @@ namespace UnityFS
     [Serializable]
     public class Manifest
     {
+        [Serializable]
         public enum BundleType
         {
             AssetBundle,

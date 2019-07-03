@@ -14,10 +14,12 @@ namespace Examples
         {
             Object.DontDestroyOnLoad(gameObject);
 
+            UnityFS.ResourceManager.Initialize();
 #if UNITY_EDITOR
             if (developMode)
             {
-                UnityFS.ResourceManager.Initialize(new UnityFS.AssetDatabaseAssetProvider());
+                UnityFS.ResourceManager.Open(new UnityFS.AssetDatabaseAssetProvider());
+                OnUnityFSLoaded();
             }
             else
 #endif
@@ -28,20 +30,26 @@ namespace Examples
                 // 创建 BundleAssetProvider
                 // 加载代码包, 产生一个新的 (Zip)FileSystem 传递给脚本引擎 (Exists/ReadAllBytes)
                 // 后续启动流程可由脚本接管
-
-                var manifest = new UnityFS.Manifest();  // TODO: STUB CODE
                 var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
                 var localPathRoot = Path.Combine(dataPath, "packages");
-                // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
-                // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
+                Debug.Log($"open localPathRoot: {localPathRoot}");
                 var urls = UnityFS.Utils.Helpers.URLs(
                     "http://localhost:8080/"
                 );
-                UnityFS.ResourceManager.Initialize(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls));
+                UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
+                {
+                    // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
+                    // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
+                    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls));
+                    OnUnityFSLoaded();
+                });
             }
+        }
 
+        private void OnUnityFSLoaded()
+        {
             // 获取核心脚本代码包
-            var fs = UnityFS.ResourceManager.GetFileSystem("main.pkg");
+            var fs = UnityFS.ResourceManager.GetFileSystem("test2.pkg");
             fs.completed += () =>
             {
                 // 可以在这里由脚本接管后续启动流程

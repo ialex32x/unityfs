@@ -85,17 +85,13 @@ namespace UnityFS
 
         private IEnumerator _LoadAsync()
         {
-            AsyncOperation op = null;
 #if UNITY_EDITOR
             // EditorSceneManager.LoadSceneInPlayMode 没有像文档里说的那样正常工作... 
             _scene = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
 #else
-            op = SceneManager.LoadSceneAsync(_asset.assetPath, _mode);
+            var op = SceneManager.LoadSceneAsync(_asset.assetPath, _mode);
+            yield return op;
 #endif
-            if (op != null)
-            {
-                yield return op;
-            }
             if (_state == SceneState.Loading)
             {
                 _state = SceneState.Loaded;
@@ -109,12 +105,7 @@ namespace UnityFS
             else if (_state == SceneState.Unloading)
             {
                 Debug.LogWarning("未加载完成时已经请求卸载场景");
-#if UNITY_EDITOR
-                yield return UnityEditor.SceneManagement.EditorSceneManager.UnloadSceneAsync(_scene);
-#else
-                yield return SceneManager.UnloadSceneAsync(_asset.assetPath);
-#endif
-                _state = SceneState.Ready;
+                yield return _UnloadAsync();
             }
         }
 

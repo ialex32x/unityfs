@@ -11,10 +11,14 @@ namespace UnityFS
         // 资源加载器
         static IAssetProvider _assetProvider;
 
-        public static void Initialize(IAssetProvider assetProvider)
+        public static void Initialize()
+        {
+            UnityFS.JobScheduler.Initialize();
+        }
+
+        public static void Open(IAssetProvider assetProvider)
         {
             _assetProvider = assetProvider;
-            UnityFS.JobScheduler.Initialize();
         }
 
         public static UScene LoadScene(string assetPath)
