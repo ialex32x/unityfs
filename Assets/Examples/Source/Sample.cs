@@ -72,7 +72,7 @@ namespace Examples
                 // 当所有对象均不引用一个 AssetBundle 时, 将自动卸载对应 AssetBundle
 
                 // 加载场景
-                var scene = UnityFS.ResourceManager.LoadSceneAdditive("Assets/Examples/Scenes/test2.unity3d");
+                var scene = UnityFS.ResourceManager.LoadSceneAdditive("Assets/Examples/Scenes/test2.unity");
                 scene.completed += self =>
                 {
                     Debug.Log("scene loaded");

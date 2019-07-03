@@ -69,6 +69,7 @@ namespace UnityFS
         {
             if (!_loaded)
             {
+                // Debug.Log($"asset loaded {_assetPath}");
                 _loaded = true;
                 OnLoaded();
             }

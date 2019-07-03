@@ -111,6 +111,7 @@ namespace UnityFS
                 _zipFile = new ZipFile(stream);
                 _zipFile.IsStreamOwner = true;
                 _loaded = true;
+                // Debug.Log($"ziparchive loaded {name}");
                 if (_IsDependenciesLoaded())
                 {
                     OnLoaded();
@@ -168,6 +169,7 @@ namespace UnityFS
                     _assetBundle = request.assetBundle;
                 }
                 _loaded = true;
+                // Debug.Log($"assetbundle loaded {name}");
                 if (_IsDependenciesLoaded())
                 {
                     OnLoaded();
@@ -178,7 +180,7 @@ namespace UnityFS
         // 从 AssetBundle 资源包载入资源
         protected class UAssetBundleAsset : UAsset
         {
-            private UAssetBundleBundle _bundle;
+            protected UAssetBundleBundle _bundle;
 
             public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath)
             : base(assetPath)
@@ -197,7 +199,22 @@ namespace UnityFS
                 });
             }
 
-            private void OnBundleLoaded(UBundle bundle)
+            protected virtual void OnBundleLoaded(UBundle bundle)
+            {
+                // assert (bundle == _bundle)
+                Complete(); // failed
+            }
+        }
+
+        // 从 AssetBundle 资源包载入资源
+        protected class UAssetBundleConcreteAsset : UAssetBundleAsset
+        {
+            public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath)
+            : base(bundle, assetPath)
+            {
+            }
+
+            protected override void OnBundleLoaded(UBundle bundle)
             {
                 // assert (bundle == _bundle)
                 var assetBundle = _bundle.GetAssetBundle();
@@ -415,12 +432,12 @@ namespace UnityFS
 
         public UScene LoadScene(string assetPath)
         {
-            return new UScene(GetAsset(assetPath)).Load();
+            return new UScene(GetAsset(assetPath, false)).Load();
         }
 
         public UScene LoadSceneAdditive(string assetPath)
         {
-            return new UScene(GetAsset(assetPath)).LoadAdditive();
+            return new UScene(GetAsset(assetPath, false)).LoadAdditive();
         }
 
         public IFileSystem GetFileSystem(string bundleName)
@@ -462,6 +479,11 @@ namespace UnityFS
 
         public UAsset GetAsset(string assetPath)
         {
+            return GetAsset(assetPath, true);
+        }
+
+        private UAsset GetAsset(string assetPath, bool concrete)
+        {
             UAsset asset = null;
             WeakReference assetRef;
             if (_assets.TryGetValue(assetPath, out assetRef) && assetRef.IsAlive)
@@ -482,7 +504,14 @@ namespace UnityFS
                     var assetBundleUBundle = bundle as UAssetBundleBundle;
                     if (assetBundleUBundle != null)
                     {
-                        asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
+                        if (concrete)
+                        {
+                            asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath);
+                        }
+                        else
+                        {
+                            asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
+                        }
                         _assets[assetPath] = new WeakReference(asset);
                     }
                     bundle.RemoveRef();
