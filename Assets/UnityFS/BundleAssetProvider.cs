@@ -413,6 +413,16 @@ namespace UnityFS
             return bundle;
         }
 
+        public UScene LoadScene(string assetPath)
+        {
+            return new UScene(GetAsset(assetPath)).Load();
+        }
+
+        public UScene LoadSceneAdditive(string assetPath)
+        {
+            return new UScene(GetAsset(assetPath)).LoadAdditive();
+        }
+
         public IFileSystem GetFileSystem(string bundleName)
         {
             IFileSystem fileSystem = null;

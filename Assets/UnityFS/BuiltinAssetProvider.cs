@@ -60,6 +60,16 @@ namespace UnityFS
             return new OrdinaryFileSystem(null);
         }
 
+        public UScene LoadScene(string assetPath)
+        {
+            return new UEditorScene(GetAsset(assetPath)).Load();
+        }
+
+        public UScene LoadSceneAdditive(string assetPath)
+        {
+            return new UEditorScene(GetAsset(assetPath)).LoadAdditive();
+        }
+
         public void Close()
         {
         }

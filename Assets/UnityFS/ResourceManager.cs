@@ -23,12 +23,12 @@ namespace UnityFS
 
         public static UScene LoadScene(string assetPath)
         {
-            return new UScene(LoadAsset(assetPath)).Load();
+            return _assetProvider.LoadScene(assetPath);
         }
 
         public static UScene LoadSceneAdditive(string assetPath)
         {
-            return new UScene(LoadAsset(assetPath)).LoadAdditive();
+            return _assetProvider.LoadSceneAdditive(assetPath);
         }
 
         public static UAsset LoadAsset(string assetPath)

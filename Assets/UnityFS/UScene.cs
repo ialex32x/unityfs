@@ -18,13 +18,10 @@ namespace UnityFS
             Unloading,
         }
 
-        private UAsset _asset;
-        private LoadSceneMode _mode;
+        protected UAsset _asset;
+        protected LoadSceneMode _mode;
         private SceneState _state = SceneState.Ready;
 
-#if UNITY_EDITOR
-        private Scene _scene;
-#endif
         private List<Action<UScene>> _callbacks = new List<Action<UScene>>();
 
         public event Action<UScene> completed
@@ -83,15 +80,20 @@ namespace UnityFS
             return this;
         }
 
+        protected virtual AsyncOperation LoadSceneAsync()
+        {
+            return SceneManager.LoadSceneAsync(_asset.assetPath, _mode);
+        }
+
+        protected virtual AsyncOperation UnloadSceneAsync()
+        {
+            return SceneManager.UnloadSceneAsync(_asset.assetPath);
+        }
+
         private IEnumerator _LoadAsync()
         {
-#if UNITY_EDITOR
-            // EditorSceneManager.LoadSceneInPlayMode 没有像文档里说的那样正常工作... 
-            _scene = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
-#else
-            var op = SceneManager.LoadSceneAsync(_asset.assetPath, _mode);
-            yield return op;
-#endif
+            yield return LoadSceneAsync();
+
             if (_state == SceneState.Loading)
             {
                 _state = SceneState.Loaded;
@@ -105,17 +107,17 @@ namespace UnityFS
             else if (_state == SceneState.Unloading)
             {
                 Debug.LogWarning("未加载完成时已经请求卸载场景");
-                yield return _UnloadAsync();
+                var e = _UnloadAsync();
+                while (e.MoveNext())
+                {
+                    yield return e.Current;
+                }
             }
         }
 
         private IEnumerator _UnloadAsync()
         {
-#if UNITY_EDITOR
-            yield return UnityEditor.SceneManagement.EditorSceneManager.UnloadSceneAsync(_scene);
-#else
-            yield return SceneManager.UnloadSceneAsync(_asset.assetPath);
-#endif
+            yield return UnloadSceneAsync();
             _state = SceneState.Ready;
         }
 
@@ -141,5 +143,35 @@ namespace UnityFS
                 }
             }
         }
+    }
+
+    public class UEditorScene : UScene
+    {
+#if UNITY_EDITOR
+        private Scene _scene;
+#endif
+
+        public UEditorScene(UAsset asset)
+        : base(asset)
+        {
+        }
+
+        protected override AsyncOperation LoadSceneAsync()
+        {
+#if UNITY_EDITOR
+            _scene = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
+#endif
+            return null;
+        }
+
+        protected override AsyncOperation UnloadSceneAsync()
+        {
+#if UNITY_EDITOR
+            return UnityEditor.SceneManagement.EditorSceneManager.UnloadSceneAsync(_scene);
+#else
+            return null;
+#endif
+        }
+
     }
 }
