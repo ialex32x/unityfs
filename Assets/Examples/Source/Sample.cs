@@ -67,7 +67,7 @@ namespace Examples
         private void OnUnityFSLoaded()
         {
             // 获取核心脚本代码包
-            var fs = UnityFS.ResourceManager.GetFileSystem("test2.pkg");
+            var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Config/test.txt");
             fs.completed += () =>
             {
                 // 可以在这里由脚本接管后续启动流程

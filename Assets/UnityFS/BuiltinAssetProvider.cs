@@ -60,6 +60,11 @@ namespace UnityFS
             return null;
         }
         
+        public string Find(string assetPath)
+        {
+            return "builtin";
+        }
+
         public void ForEachTask(Action<ITask> callback)
         {
         }

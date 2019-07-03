@@ -51,6 +51,11 @@ namespace UnityFS
             return null;
         }
         
+        public string Find(string assetPath)
+        {
+            return "assetdatabase";
+        }
+
         public void ForEachTask(Action<ITask> callback)
         {
         }

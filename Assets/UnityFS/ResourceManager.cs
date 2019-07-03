@@ -57,6 +57,17 @@ namespace UnityFS
             return Utils.PrefabLoader.Instantiate(assetPath);
         }
 
+        // 返回文件所在 FileSystem
+        public static IFileSystem FindFileSystem(string assetPath)
+        {
+            var bundleName = _assetProvider.Find(assetPath);
+            if (!string.IsNullOrEmpty(bundleName))
+            {
+                return GetFileSystem(bundleName);
+            }
+            return null;
+        }
+
         public static IFileSystem GetFileSystem(string bundleName)
         {
             return _assetProvider.GetFileSystem(bundleName);

@@ -287,7 +287,7 @@ namespace UnityFS
                 _urls,
                 _localPathRoot,
                 -1,
-                10, 
+                10,
                 self =>
             {
                 _tasks.Remove(self);
@@ -487,6 +487,16 @@ namespace UnityFS
         public UAsset GetAsset(string assetPath)
         {
             return GetAsset(assetPath, true);
+        }
+
+        public string Find(string assetPath)
+        {
+            string bundleName;
+            if (_assetPath2Bundle.TryGetValue(assetPath, out bundleName))
+            {
+                return bundleName;
+            }
+            return null;
         }
 
         private UAsset GetAsset(string assetPath, bool concrete)

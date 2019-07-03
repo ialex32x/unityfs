@@ -8,6 +8,8 @@ namespace UnityFS
 
     public interface IAssetProvider
     {
+        // 查找资源, 返回其所在的包
+        string Find(string assetPath);
         void ForEachTask(Action<ITask> callback);
 
         UScene LoadScene(string assetPath);
