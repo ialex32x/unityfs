@@ -8,10 +8,13 @@ namespace UnityFS
 
     public interface IAssetProvider
     {
+        void ForEachTask(Action<ITask> callback);
+
         UScene LoadScene(string assetPath);
         UScene LoadSceneAdditive(string assetPath);
-        
+
         IFileSystem GetFileSystem(string bundleName);
+        UBundle GetBundle(string bundleName);
         UAsset GetAsset(string assetPath);
         void Close();
     }

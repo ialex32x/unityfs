@@ -31,6 +31,16 @@ namespace UnityFS
             return _assetProvider.LoadSceneAdditive(assetPath);
         }
 
+        public static UBundle LoadBundle(string bundleName)
+        {
+            return _assetProvider.GetBundle(bundleName);
+        }
+
+        public static void ForEachTask(Action<ITask> callback)
+        {
+            _assetProvider.ForEachTask(callback);
+        }
+
         public static UAsset LoadAsset(string assetPath)
         {
             return _assetProvider.GetAsset(assetPath);
@@ -45,16 +55,6 @@ namespace UnityFS
         public static Utils.PrefabLoader Instantiate(string assetPath)
         {
             return Utils.PrefabLoader.Instantiate(assetPath);
-        }
-
-        public static UBundle GetBundle(string bundleName)
-        {
-            var provider = _assetProvider as BundleAssetProvider;
-            if (provider != null)
-            {
-                return provider.GetBundle(bundleName);
-            }
-            throw new InvalidOperationException();
         }
 
         public static IFileSystem GetFileSystem(string bundleName)

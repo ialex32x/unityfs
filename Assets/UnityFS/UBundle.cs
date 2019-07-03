@@ -12,8 +12,9 @@ namespace UnityFS
         protected int _refCount;
         protected Manifest.BundleInfo _info;
 
-        protected bool _loaded;
         protected List<UBundle> _denpendencies;
+
+        protected bool _loaded;
         private List<Action<UBundle>> _callbacks = new List<Action<UBundle>>();
 
         public event Action<UBundle> completed
@@ -102,7 +103,7 @@ namespace UnityFS
 
         public bool isLoaded
         {
-            get { return _loaded && _IsDependenciesLoaded(); }
+            get { return IsLoaded() && _IsDependenciesLoaded(); }
         }
 
         protected bool _IsDependenciesLoaded()
@@ -118,6 +119,11 @@ namespace UnityFS
                 }
             }
             return true;
+        }
+
+        public virtual bool IsLoaded()
+        {
+            return _loaded;
         }
 
         // 添加依赖资源包

@@ -45,7 +45,16 @@ namespace UnityFS
             _assets[assetPath] = new WeakReference(asset);
             return asset;
         }
+
+        public UBundle GetBundle(string bundleName)
+        {
+            return null;
+        }
         
+        public void ForEachTask(Action<ITask> callback)
+        {
+        }
+
         public IFileSystem GetFileSystem(string bundleName)
         {
             return new OrdinaryFileSystem(null);

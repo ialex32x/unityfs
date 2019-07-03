@@ -10,7 +10,7 @@ namespace UnityFS
     using UnityEngine;
     using UnityEngine.Networking;
 
-    public class DownloadTask
+    public class DownloadTask : ITask
     {
         public const string BundleContentType = "application/octet-stream";
         public const string PartExt = ".part";
@@ -24,9 +24,11 @@ namespace UnityFS
         private string _checksum;
         private int _size;
         private int _priority;
+        private float _progress;
 
         private bool _running;
         private int _urlIndex;
+        private string _url;
         private IList<string> _urls;
 
         private bool _isDone;
@@ -35,9 +37,19 @@ namespace UnityFS
         // invoke in main thread
         private Action<DownloadTask> _callback;
 
+        public string name
+        {
+            get { return _name; }
+        }
+
         public int priority
         {
             get { return _priority; }
+        }
+
+        public float progress
+        {
+            get { return _progress; }
         }
 
         public string checksum
@@ -68,7 +80,7 @@ namespace UnityFS
             }
         }
 
-        public string finalPath
+        public string path
         {
             get { return _finalPath; }
         }
@@ -82,18 +94,21 @@ namespace UnityFS
         // 当前请求的url
         public string url
         {
-            get
-            {
-                if (_urls[_urlIndex].EndsWith("/"))
-                {
-                    return _urls[_urlIndex] + _name;
-                }
-                return _urls[_urlIndex] + "/" + _name;
-            }
+            get { return _url; }
         }
 
         private DownloadTask()
         {
+        }
+
+        public static DownloadTask Create(
+            Manifest.BundleInfo bundleInfo,
+            IList<string> urls,
+            string filePathRoot,
+            int retry,
+            Action<DownloadTask> callback)
+        {
+            return Create(bundleInfo.name, bundleInfo.checksum, bundleInfo.size, bundleInfo.priority, urls, filePathRoot, retry, callback);
         }
 
         public static DownloadTask Create(
@@ -113,6 +128,7 @@ namespace UnityFS
             task._priority = priority;
             task._retry = retry;
             task._finalPath = Path.Combine(filePathRoot, name);
+            task.SetUrl();
             return task;
         }
 
@@ -120,6 +136,18 @@ namespace UnityFS
         {
             _running = true;
             ThreadPool.QueueUserWorkItem(new WaitCallback(DownloadExec));
+        }
+
+        private void SetUrl()
+        {
+            if (_urls[_urlIndex].EndsWith("/"))
+            {
+                _url = _urls[_urlIndex] + _name;
+            }
+            else
+            {
+                _url = _urls[_urlIndex] + "/" + _name;
+            }
         }
 
         private bool Retry(int retry)
@@ -138,6 +166,7 @@ namespace UnityFS
             if (_urlIndex < _urls.Count - 1)
             {
                 ++_urlIndex;
+                SetUrl();
             }
             return true;
         }
@@ -206,8 +235,8 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        PrintError($"file exception: {exception}");
-                        error = exception.ToString();
+                        // PrintError($"file exception: {exception}");
+                        error = $"file exception: {exception}";
                         success = false;
                     }
                 }
@@ -224,8 +253,8 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        PrintError($"network exception: {exception}");
-                        error = exception.ToString();
+                        // PrintError($"network exception: {exception}");
+                        error = $"network exception: {exception}";
                         success = false;
                     }
                 }
@@ -234,8 +263,8 @@ namespace UnityFS
                 {
                     if (_size > 0)
                     {
-                        PrintError($"filesize exception: {fileStream.Length} != {_size}");
-                        error = "wrong file size";
+                        // PrintError($"filesize exception: {fileStream.Length} != {_size}");
+                        error = $"wrong file size: {fileStream.Length} != {_size}";
                         success = false;
                     }
                     else
@@ -247,8 +276,8 @@ namespace UnityFS
                 {
                     if (_checksum != null)
                     {
-                        PrintError($"checksum exception: {crc.hex} != {_checksum}");
-                        error = "corrupted file";
+                        // PrintError($"checksum exception: {crc.hex} != {_checksum}");
+                        error = $"corrupted file: {crc.hex} != {_checksum}";
                         success = false;
                     }
                     else
@@ -281,8 +310,8 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        PrintError($"write exception: {exception}");
-                        error = exception.ToString();
+                        // PrintError($"write exception: {exception}");
+                        error = $"write exception: {exception}";
                         success = false;
                     }
                 }
@@ -298,7 +327,7 @@ namespace UnityFS
                     PrintError($"[stop] download failed ({error})");
                     break;
                 }
-                Thread.Sleep(100);
+                Thread.Sleep(1000);
                 PrintError($"[retry] download failed ({error})");
             }
             // PrintDebug("download task thread exited");
@@ -318,6 +347,7 @@ namespace UnityFS
 
         private void _HttpDownload(string url, int partialSize, byte[] buffer, Utils.Crc16 crc, Stream targetStream)
         {
+            PrintDebug($"downloading from {url}");
             var uri = new Uri(url);
             var req = (HttpWebRequest)WebRequest.Create(uri);
             req.Method = WebRequestMethods.Http.Get;
@@ -339,6 +369,8 @@ namespace UnityFS
                             recvAll += recv;
                             targetStream.Write(buffer, 0, recv);
                             crc.Update(buffer, 0, recv);
+                            _progress = Mathf.Clamp01((float)(recvAll + partialSize) / _size);
+                            PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                         }
                         else
                         {
@@ -371,10 +403,15 @@ namespace UnityFS
                     _error = error;
                     _isDone = true;
                     _running = false;
-                    JobScheduler.DispatchMain(() =>
+                    if (_callback != null)
                     {
-                        _callback(this);
-                    });
+                        var cb = _callback;
+                        _callback = null;
+                        JobScheduler.DispatchMain(() =>
+                        {
+                            cb(this);
+                        });
+                    }
                 }
             }
         }

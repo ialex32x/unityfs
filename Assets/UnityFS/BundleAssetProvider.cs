@@ -250,11 +250,12 @@ namespace UnityFS
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
         private string _localPathRoot;
 
-        public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls)
+        public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls, int concurrent)
         {
             _manifest = manifest;
             _localPathRoot = localPathRoot;
             _urls = urls;
+            _concurrentTasks = Math.Max(1, Math.Min(concurrent, 4));
             this.Initialize();
         }
 
@@ -274,15 +275,10 @@ namespace UnityFS
         private void OpenBundle(UBundle bundle)
         {
             var filename = bundle.name;
-            Manifest.BundleInfo bundleInfo;
-            if (_bundlesMap.TryGetValue(filename, out bundleInfo))
+            if (LoadBundleFile(bundle, _localPathRoot))
             {
-                if (LoadBundleFile(bundle))
-                {
-                    return;
-                }
+                return;
             }
-
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
             AddDownloadTask(DownloadTask.Create(
@@ -295,7 +291,7 @@ namespace UnityFS
                 _tasks.Remove(self);
                 _runningTasks--;
                 Schedule();
-                if (!LoadBundleFile(bundle))
+                if (!LoadBundleFile(bundle, _localPathRoot))
                 {
                     bundle.Load(null);
                 }
@@ -303,32 +299,32 @@ namespace UnityFS
             }));
         }
 
-        private bool LoadBundleFile(UBundle bundle)
+        private bool LoadBundleFile(UBundle bundle, string localPathRoot)
         {
-            var fullPath = Path.Combine(_localPathRoot, bundle.name);
-            var metaPath = fullPath + Metadata.Ext;
-            if (File.Exists(fullPath))
+            var fullPath = Path.Combine(localPathRoot, bundle.name);
+            var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
+            if (fileStream != null)
             {
-                if (File.Exists(metaPath))
-                {
-                    var json = File.ReadAllText(metaPath);
-                    var metadata = JsonUtility.FromJson<Metadata>(json);
-                    // quick but unsafe
-                    if (metadata.checksum == bundle.checksum && metadata.size == bundle.size)
-                    {
-                        var fileStream = System.IO.File.OpenRead(fullPath);
-                        bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
-                        return true;
-                    }
-                    File.Delete(metaPath);
-                }
+                bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
+                return true;
             }
             return false;
+        }
+
+        private void PrintException(Exception exception)
+        {
+            Debug.LogError(exception);
+        }
+
+        private void PrintLog(string message)
+        {
+            Debug.Log(message);
         }
 
         protected void Unload(UBundle bundle)
         {
             _bundles.Remove(bundle.name);
+            PrintLog($"bundle unloaded {bundle.name}");
         }
 
         private void _AddDependencies(UBundle bundle, string[] dependencies)
@@ -344,6 +340,15 @@ namespace UnityFS
                         _AddDependencies(bundle, depBundle.bundleInfo.dependencies);
                     }
                 }
+            }
+        }
+
+        public void ForEachTask(Action<ITask> callback)
+        {
+            for (var node = _tasks.First; node != null; node = node.Next)
+            {
+                var task = node.Value;
+                callback(task);
             }
         }
 

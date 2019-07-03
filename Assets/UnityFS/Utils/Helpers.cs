@@ -25,7 +25,7 @@ namespace UnityFS.Utils
             }
             UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, urls, localPathRoot, 0, checksumTask =>
             {
-                var checksum = File.ReadAllText(checksumTask.finalPath);
+                var checksum = File.ReadAllText(checksumTask.path);
                 Debug.Log($"read checksum {checksum}");
                 var manifestPath = Path.Combine(localPathRoot, "manifest.json");
                 Manifest manifest = null;
@@ -37,7 +37,7 @@ namespace UnityFS.Utils
                 {
                     UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, urls, localPathRoot, 0, manifestTask =>
                     {
-                        var manifestJson = File.ReadAllText(manifestTask.finalPath);
+                        var manifestJson = File.ReadAllText(manifestTask.path);
                         manifest = JsonUtility.FromJson<Manifest>(manifestJson);
                         callback(manifest);
                     }).SetDebugMode(true).Run();
@@ -70,6 +70,95 @@ namespace UnityFS.Utils
             }
             manifest = null;
             return false;
+        }
+
+        public static Manifest.BundleInfo[] CollectStartupBundles(Manifest manifest, string localPathRoot)
+        {
+            var pending = new List<Manifest.BundleInfo>();
+            for (int i = 0, size = manifest.bundles.Count; i < size; i++)
+            {
+                var bundleInfo = manifest.bundles[i];
+                if (bundleInfo.startup)
+                {
+                    var fullPath = Path.Combine(localPathRoot, bundleInfo.name);
+                    if (!IsBundleFileValid(fullPath, bundleInfo))
+                    {
+                        pending.Add(bundleInfo);
+                    }
+                }
+            }
+            return pending.ToArray();
+        }
+
+        // 当前任务数, 总任务数, 当前任务进度
+        public static IEnumerator DownloadBundles(
+            string localPathRoot,
+            Manifest.BundleInfo[] bundles,
+            IList<string> urls,
+            Action<int, int, ITask> onProgress,
+            Action onComplete)
+        {
+            for (int i = 0, size = bundles.Length; i < size; i++)
+            {
+                var bundleInfo = bundles[i];
+                var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, null);
+                var progress = -1.0f;
+                while (!task.isDone)
+                {
+                    if (progress != task.progress)
+                    {
+                        progress = task.progress;
+                        onProgress(i, size, task);
+                    }
+                    yield return null;
+                }
+            }
+            onComplete();
+        }
+
+        // 检查本地 bundle 是否有效
+        public static bool IsBundleFileValid(string fullPath, Manifest.BundleInfo bundleInfo)
+        {
+            try
+            {
+                var metaPath = fullPath + Metadata.Ext;
+                if (File.Exists(fullPath))
+                {
+                    if (File.Exists(metaPath))
+                    {
+                        var json = File.ReadAllText(metaPath);
+                        var metadata = JsonUtility.FromJson<Metadata>(json);
+                        // quick but unsafe
+                        if (metadata != null && metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
+                        {
+                            return true;
+                        }
+                        File.Delete(metaPath);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(exception);
+            }
+            return false;
+        }
+
+        public static FileStream GetBundleStream(string fullPath, Manifest.BundleInfo bundleInfo)
+        {
+            try
+            {
+                if (IsBundleFileValid(fullPath, bundleInfo))
+                {
+                    var fileStream = System.IO.File.OpenRead(fullPath);
+                    return fileStream;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(exception);
+            }
+            return null;
         }
 
         public static IList<string> URLs(params string[] urls)
