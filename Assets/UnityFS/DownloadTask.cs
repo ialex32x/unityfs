@@ -16,6 +16,7 @@ namespace UnityFS
         public const string PartExt = ".part";
         public const int BufferSize = 1024 * 2;
 
+        private bool _debug;
         private int _retry;       // 重试次数 (<0 时无限重试)
         private string _rootPath; // 目录路径
 
@@ -101,9 +102,9 @@ namespace UnityFS
             ThreadPool.QueueUserWorkItem(new WaitCallback(DownloadExec));
         }
 
-        private bool Retry()
+        private bool Retry(int retry)
         {
-            if (_retry > 0 && (_urlIndex + 1) >= _retry)
+            if (_retry > 0 && retry >= _retry)
             {
                 return false;
             }
@@ -114,22 +115,40 @@ namespace UnityFS
             return true;
         }
 
+        public void SetDebugMode(bool debug)
+        {
+            _debug = debug;
+        }
+
         private void PrintError(string message)
         {
-            // Debug.LogError(message);
+            if (_debug)
+            {
+                Debug.LogError(message);
+            }
+        }
+
+        private void PrintDebug(string message)
+        {
+            if (_debug)
+            {
+                Debug.Log(message);
+            }
         }
 
         private void DownloadExec(object state)
         {
+            var buffer = new byte[BufferSize];
             var finalPath = Path.Combine(_rootPath, _name);
             var tempPath = finalPath + PartExt;
             var metaPath = finalPath + Metadata.Ext;
             var totalSize = _size;
+            var retry = 0;
             FileStream fileStream = null;
+
             while (true)
             {
                 string error = null;
-                var buffer = new byte[BufferSize];
                 var crc = new Utils.Crc16();
                 var partialSize = 0;
                 var success = true;
@@ -150,7 +169,7 @@ namespace UnityFS
                             else if (partialSize <= totalSize) // 续传
                             {
                                 crc.Update(fileStream);
-                                PrintError($"partial check {partialSize} && {totalSize} ({crc.hex})");
+                                PrintDebug($"partial check {partialSize} && {totalSize} ({crc.hex})");
                             }
                         }
                         else // 创建下载文件
@@ -219,7 +238,7 @@ namespace UnityFS
                     }
                 }
 
-                if (!Retry())
+                if (!Retry(++retry))
                 {
                     Complete(error ?? "unknown error");
                     break;
