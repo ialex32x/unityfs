@@ -357,9 +357,9 @@ namespace UnityFS
                 return;
             }
 
-            for (var node = _tasks.First; node != null; node = node.Next)
+            for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
             {
-                var task = node.Value;
+                var task = taskNode.Value;
                 if (!task.isRunning && !task.isDone)
                 {
                     _runningTasks++;
@@ -367,6 +367,21 @@ namespace UnityFS
                     break;
                 }
             }
+        }
+
+        public void Close()
+        {
+            Abort();
+        }
+
+        public void Abort()
+        {
+            for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
+            {
+                var task = taskNode.Value;
+                task.Abort();
+            }
+            _tasks.Clear();
         }
 
         public UBundle GetBundle(string bundleName)

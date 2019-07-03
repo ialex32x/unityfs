@@ -59,5 +59,9 @@ namespace UnityFS
         {
             return new OrdinaryFileSystem(null);
         }
+
+        public void Close()
+        {
+        }
     }
 }

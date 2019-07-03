@@ -47,6 +47,14 @@ namespace UnityFS
             return _mb.StartCoroutine(co);
         }
 
+        public static void DispatchMainAnyway(Action action)
+        {
+            lock (_actions)
+            {
+                _actions.Add(action);
+            }
+        }
+
         public static void DispatchMain(Action action)
         {
             if (_mainThreadId == System.Threading.Thread.CurrentThread.ManagedThreadId)

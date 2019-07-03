@@ -50,7 +50,13 @@ namespace UnityFS
         // 是否已完成 
         public bool isDone
         {
-            get { return _isDone; }
+            get
+            {
+                lock (this)
+                {
+                    return _isDone;
+                }
+            }
         }
 
         // 错误信息 (null 表示没有错误)
@@ -104,6 +110,13 @@ namespace UnityFS
 
         private bool Retry(int retry)
         {
+            lock (this)
+            {
+                if (_isDone)
+                {
+                    return false;
+                }
+            }
             if (_retry > 0 && retry >= _retry)
             {
                 return false;
@@ -217,6 +230,14 @@ namespace UnityFS
                     success = false;
                 }
 
+                lock (this)
+                {
+                    if (_isDone)
+                    {
+                        success = false;
+                    }
+                }
+
                 if (success)
                 {
                     try
@@ -240,12 +261,18 @@ namespace UnityFS
 
                 if (!Retry(++retry))
                 {
+                    if (fileStream != null)
+                    {
+                        fileStream.Close();
+                        fileStream = null;
+                    }
                     Complete(error ?? "unknown error");
                     break;
                 }
                 Thread.Sleep(100);
                 PrintError($"[retry] download failed ({error})");
             }
+            PrintDebug("download task thread exited");
         }
 
         private void _WriteMetadata(string metaPath)
@@ -293,17 +320,33 @@ namespace UnityFS
             }
         }
 
+        public void Abort()
+        {
+            lock (this)
+            {
+                if (!_isDone)
+                {
+                    _error = "aborted";
+                    _isDone = true;
+                    _running = false;
+                }
+            }
+        }
+
         private void Complete(string error)
         {
-            if (!_isDone)
+            lock (this)
             {
-                _error = error;
-                _isDone = true;
-                _running = false;
-                JobScheduler.DispatchMain(() =>
+                if (!_isDone)
                 {
-                    _callback(this);
-                });
+                    _error = error;
+                    _isDone = true;
+                    _running = false;
+                    JobScheduler.DispatchMain(() =>
+                    {
+                        _callback(this);
+                    });
+                }
             }
         }
     }
