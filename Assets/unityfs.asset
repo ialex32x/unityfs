@@ -21,14 +21,14 @@ MonoBehaviour:
     platforms: -1
     enabled: 1
     load: 0
-    priority: 7730
-    splitObjects: 41
+    priority: 7769
+    splitObjects: 2
     targets:
     - id: 2
       enabled: 1
       target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
-      types: 8
-      extensions: .mat
+      types: -1
+      extensions: 
     - id: 10
       enabled: 1
       target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,

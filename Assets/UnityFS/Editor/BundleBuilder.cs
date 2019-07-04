@@ -60,6 +60,7 @@ namespace UnityFS.Editor
             var extensions = target.extensions?.Split(';');
             var filter = new AssetFilter()
             {
+                size = bundle.splitObjects,
                 extensions = extensions,
                 types = target.types,
             };
@@ -138,10 +139,36 @@ namespace UnityFS.Editor
             {
                 if (!ContainsAsset(data, asset))
                 {
-                    bundle.assets.Add(new BundleBuilderData.BundleAsset()
+                    var index = 0;
+                    BundleBuilderData.BundleSplit split = null;
+                    if (bundle.splits.Count > 0)
                     {
-                        target = asset,
-                    });
+                        index = bundle.splits.Count - 1;
+                        split = bundle.splits[index];
+                    }
+                    if (split == null || filter.size >= 1 && split.assets.Count >= filter.size)
+                    {
+                        split = new BundleBuilderData.BundleSplit();
+                        index = bundle.splits.Count;
+                        if (filter.size == 0)
+                        {
+                            split.name = bundle.name;
+                        }
+                        else
+                        {
+                            var dot = bundle.name.LastIndexOf('.');
+                            if (dot >= 0)
+                            {
+                                split.name = bundle.name.Substring(0, dot) + "_" + index + bundle.name.Substring(dot);
+                            }
+                            else
+                            {
+                                split.name = bundle.name + "_" + index;
+                            }
+                        }
+                        bundle.splits.Add(split);
+                    }
+                    split.assets.Add(asset);
                 }
             }
         }
@@ -155,19 +182,31 @@ namespace UnityFS.Editor
                 {
                     continue;
                 }
-                var build = new AssetBundleBuild();
-                build.assetBundleName = bundle.name;
-                var assetNames = new List<string>();
-                var assetPaths = new List<string>();
-                foreach (var asset in bundle.assets)
+                for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
                 {
-                    var assetPath = AssetDatabase.GetAssetPath(asset.target);
-                    assetNames.Add(assetPath);
-                    assetPaths.Add(assetPath);
+                    var bundleSplit = bundle.splits[splitIndex];
+                    var assetNames = new List<string>();
+                    for (var assetIndex = 0; assetIndex < bundleSplit.assets.Count; assetIndex++)
+                    {
+                        var asset = bundleSplit.assets[assetIndex];
+                        var assetPath = AssetDatabase.GetAssetPath(asset);
+                        assetNames.Add(assetPath);
+                    }
+                    if (assetNames.Count != 0)
+                    {
+                        var names = assetNames.ToArray();
+                        var build = new AssetBundleBuild();
+                        build.assetBundleName = bundleSplit.name;
+                        build.assetNames = names;
+                        build.addressableNames = names;
+                        builds.Add(build);
+                        // Debug.Log($"{build.assetBundleName}: {build.assetNames.Length}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"empty build split {bundle.name}_{splitIndex}");
+                    }
                 }
-                build.assetNames = assetNames.ToArray();
-                build.addressableNames = assetPaths.ToArray();
-                builds.Add(build);
             }
             return builds.ToArray();
         }
@@ -177,7 +216,7 @@ namespace UnityFS.Editor
         {
             foreach (var bundle in data.bundles)
             {
-                bundle.assets.Clear();
+                bundle.splits.Clear();
             }
             foreach (var bundle in data.bundles)
             {
@@ -222,7 +261,60 @@ namespace UnityFS.Editor
                 zipArchiveManifest = BuildZipArchives(outputPath, zipArchiveBuilds, targetPlatform);
             }
             BuildManifest(data, outputPath, assetBundleManifest, zipArchiveManifest);
+            Cleanup(outputPath, assetBundleManifest, zipArchiveManifest);
             Debug.Log($"build bundles finished {DateTime.Now}. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives.");
+        }
+
+        private static void Cleanup(string outputPath, AssetBundleManifest assetBundleManifest, ZipArchiveManifest zipArchiveManifest)
+        {
+            foreach (var file in Directory.GetFiles(outputPath))
+            {
+                var fi = new FileInfo(file);
+                var match = false;
+                if (
+                    fi.Name == "AssetBundles" ||
+                    fi.Name == "AssetBundles.manifest" ||
+                    fi.Name == "checksum.txt" ||
+                    fi.Name == "manifest.json"
+                )
+                {
+                    match = true;
+                }
+                if (!match)
+                {
+                    foreach (var assetBundle in assetBundleManifest.GetAllAssetBundles())
+                    {
+                        if (fi.Name == assetBundle || fi.Name == assetBundle + ".manifest")
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                if (!match)
+                {
+                    foreach (var zipArchive in zipArchiveManifest.archives)
+                    {
+                        if (fi.Name == zipArchive.name)
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                if (!match)
+                {
+                    // Debug.LogWarning("delete unused file: " + fi.Name);
+                    try
+                    {
+                        fi.Delete();
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogError(exception);
+                    }
+                }
+            }
         }
 
         public static ZipArchiveManifest BuildZipArchives(string outputPath, BundleBuilderData.BundleInfo[] builds, BuildTarget targetPlatform)
@@ -239,9 +331,12 @@ namespace UnityFS.Editor
                 using (var zip = new ZipOutputStream(File.OpenWrite(filename)))
                 {
                     zip.IsStreamOwner = true;
-                    foreach (var asset in bundle.assets)
+                    foreach (var split in bundle.splits)
                     {
-                        BuildZipArchiveObject(zip, asset.target, archiveEntry);
+                        foreach (var asset in split.assets)
+                        {
+                            BuildZipArchiveObject(zip, asset, archiveEntry);
+                        }
                     }
                     zip.Close();
                 }
@@ -325,6 +420,26 @@ namespace UnityFS.Editor
             return null;
         }
 
+        // 获取指定包名的包对象信息
+        public static bool TryGetBundleSplit(BundleBuilderData data, string bundleName, out BundleBuilderData.BundleInfo bundleInfo, out BundleBuilderData.BundleSplit bundleSplit)
+        {
+            foreach (var bundle in data.bundles)
+            {
+                foreach (var split in bundle.splits)
+                {
+                    if (split.name == bundleName)
+                    {
+                        bundleInfo = bundle;
+                        bundleSplit = split;
+                        return true;
+                    }
+                }
+            }
+            bundleInfo = null;
+            bundleSplit = null;
+            return false;
+        }
+
         // 生成清单
         public static void BuildManifest(BundleBuilderData data, string outputPath,
             AssetBundleManifest assetBundleManifest,
@@ -336,28 +451,32 @@ namespace UnityFS.Editor
                 var assetBundles = assetBundleManifest.GetAllAssetBundles();
                 foreach (var assetBundle in assetBundles)
                 {
-                    var bundleInfo = GetBundleInfo(data, assetBundle);
-                    // Debug.Log(bundleInfo.name);
-                    var assetBundlePath = Path.Combine(outputPath, assetBundle);
-                    using (var stream = File.OpenRead(assetBundlePath))
+                    BundleBuilderData.BundleInfo bundleInfo;
+                    BundleBuilderData.BundleSplit bundleSplit;
+                    if (TryGetBundleSplit(data, assetBundle, out bundleInfo, out bundleSplit))
                     {
-                        var fileInfo = new FileInfo(assetBundlePath);
-                        var checksum = new Utils.Crc16();
-                        checksum.Update(stream);
-                        var bundle = new Manifest.BundleInfo();
-                        bundle.type = Manifest.BundleType.AssetBundle;
-                        bundle.name = assetBundle;
-                        bundle.checksum = checksum.hex;
-                        bundle.size = (int)fileInfo.Length;
-                        bundle.startup = bundleInfo.load == BundleLoad.Startup;
-                        bundle.priority = bundleInfo.priority;
-                        foreach (var asset in bundleInfo.assets)
+                        // Debug.Log(bundleInfo.name);
+                        var assetBundlePath = Path.Combine(outputPath, assetBundle);
+                        using (var stream = File.OpenRead(assetBundlePath))
                         {
-                            var assetPath = AssetDatabase.GetAssetPath(asset.target);
-                            bundle.assets.Add(assetPath);
+                            var fileInfo = new FileInfo(assetBundlePath);
+                            var checksum = new Utils.Crc16();
+                            checksum.Update(stream);
+                            var bundle = new Manifest.BundleInfo();
+                            bundle.type = Manifest.BundleType.AssetBundle;
+                            bundle.name = bundleSplit.name;
+                            bundle.checksum = checksum.hex;
+                            bundle.size = (int)fileInfo.Length;
+                            bundle.startup = bundleInfo.load == BundleLoad.Startup;
+                            bundle.priority = bundleInfo.priority;
+                            foreach (var asset in bundleSplit.assets)
+                            {
+                                var assetPath = AssetDatabase.GetAssetPath(asset);
+                                bundle.assets.Add(assetPath);
+                            }
+                            bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
+                            manifest.bundles.Add(bundle);
                         }
-                        bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
-                        manifest.bundles.Add(bundle);
                     }
                 }
             }
@@ -418,11 +537,14 @@ namespace UnityFS.Editor
         {
             foreach (var bundle in data.bundles)
             {
-                foreach (var asset in bundle.assets)
+                foreach (var split in bundle.splits)
                 {
-                    if (asset.target == assetObject)
+                    foreach (var asset in split.assets)
                     {
-                        return true;
+                        if (asset == assetObject)
+                        {
+                            return true;
+                        }
                     }
                 }
             }

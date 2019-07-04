@@ -13,6 +13,7 @@ namespace UnityFS.Editor
     {
         private BundleBuilderData _data;
         private IList<BundleBuilderData.BundleInfo> _bundles;
+        private Vector2 _sv;
 
         private BuildTarget _targetPlatform;
 
@@ -36,6 +37,7 @@ namespace UnityFS.Editor
                 EditorGUILayout.HelpBox("Nothing", MessageType.Warning);
                 return;
             }
+            _sv = GUILayout.BeginScrollView(_sv);
             var rescan = false;
             GUILayout.BeginHorizontal();
             var targetPlatform = (BuildTarget)EditorGUILayout.EnumPopup("Preview Platform", _targetPlatform);
@@ -61,26 +63,35 @@ namespace UnityFS.Editor
             foreach (var bundle in _bundles)
             {
                 var bundleName = string.IsNullOrEmpty(bundle.name) ? "(null)" : bundle.name;
-                EditorGUILayout.HelpBox($"{bundleName}, {bundle.assets.Count} assets", MessageType.Info);
-                var note = EditorGUILayout.TextField("Note", bundle.note);
+                EditorGUILayout.HelpBox($"{bundleName}", MessageType.Info);
+                var note = EditorGUILayout.TextField(bundle.note);
                 if (note != bundle.note)
                 {
                     bundle.note = note;
                     _data.MarkAsDirty();
                 }
-                foreach (var asset in bundle.assets)
+                GUILayout.Space(20f);
+                for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    var assetPath = string.Empty;
-                    if (asset.target != null)
+                    var split = bundle.splits[splitIndex];
+                    for (var assetIndex = 0; assetIndex < split.assets.Count; assetIndex++)
                     {
-                        assetPath = AssetDatabase.GetAssetPath(asset.target);
+                        var asset = split.assets[assetIndex];
+                        var assetPath = string.Empty;
+                        if (asset != null)
+                        {
+                            assetPath = AssetDatabase.GetAssetPath(asset);
+                        }
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.IntField(splitIndex, GUILayout.Width(30f));
+                        EditorGUILayout.TextField(assetPath);
+                        EditorGUILayout.ObjectField(asset, typeof(Object), false);
+                        EditorGUILayout.EndHorizontal();
                     }
-                    EditorGUILayout.TextField(assetPath);
-                    EditorGUILayout.ObjectField(asset.target, typeof(Object), false);
-                    EditorGUILayout.EndHorizontal();
                 }
+                GUILayout.Space(50f);
             }
+            GUILayout.EndScrollView();
         }
     }
 }

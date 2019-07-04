@@ -23,12 +23,10 @@ namespace UnityFS.Editor
             public string extensions = string.Empty;    // (仅搜索目录时) 额外包含指定后缀的文件
         }
 
-        [Serializable]
-        public class BundleAsset
+        public class BundleSplit
         {
-            public int id;
-            public Object target;
-            public int splitIndex;
+            public string name; // 分包名
+            public List<Object> assets = new List<Object>(); // 最终进入打包的所有资源对象
         }
 
         [Serializable]
@@ -47,7 +45,7 @@ namespace UnityFS.Editor
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
 
             [NonSerialized]
-            public List<BundleAsset> assets = new List<BundleAsset>(); // 最终进入打包的所有资源对象
+            public List<BundleSplit> splits = new List<BundleSplit>(); 
         }
 
         public int id;
@@ -78,8 +76,9 @@ namespace UnityFS.Editor
         }
     }
 
-    public struct AssetFilter
+    public class AssetFilter
     {
+        public int size;
         public string[] extensions;
         public BundleAssetTypes types;
     }
