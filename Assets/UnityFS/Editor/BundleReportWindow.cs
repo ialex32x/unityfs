@@ -14,6 +14,8 @@ namespace UnityFS.Editor
         private BundleBuilderData _data;
         private IList<BundleBuilderData.BundleInfo> _bundles;
 
+        private BuildTarget _targetPlatform;
+
         void OnEnable()
         {
             titleContent = new GUIContent("Bundle Report");
@@ -23,6 +25,8 @@ namespace UnityFS.Editor
         {
             _data = data;
             _bundles = bundles;
+            _targetPlatform = EditorUserBuildSettings.activeBuildTarget;
+            BundleBuilder.Scan(_data, _targetPlatform);
         }
 
         void OnGUI()
@@ -31,6 +35,28 @@ namespace UnityFS.Editor
             {
                 EditorGUILayout.HelpBox("Nothing", MessageType.Warning);
                 return;
+            }
+            var rescan = false;
+            GUILayout.BeginHorizontal();
+            var targetPlatform = (BuildTarget)EditorGUILayout.EnumPopup("Preview Platform", _targetPlatform);
+            if (GUILayout.Button("Reset", GUILayout.Width(120f)))
+            {
+                _targetPlatform = targetPlatform = EditorUserBuildSettings.activeBuildTarget;
+            }
+            if (GUILayout.Button("Refresh", GUILayout.Width(120f)))
+            {
+                rescan = true;
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Space(20f);
+            if (_targetPlatform != targetPlatform)
+            {
+                _targetPlatform = targetPlatform;
+                rescan = true;
+            }
+            if (rescan)
+            {
+                BundleBuilder.Scan(_data, _targetPlatform);
             }
             foreach (var bundle in _bundles)
             {

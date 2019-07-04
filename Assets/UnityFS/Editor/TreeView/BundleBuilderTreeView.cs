@@ -247,7 +247,6 @@ namespace UnityFS.Editor
             }
             if (selectedBundles.Count != 0)
             {
-                BundleBuilder.Scan(_data);
                 var win = EditorWindow.GetWindow<BundleAssetsWindow>();
                 win.SetBundles(_data, selectedBundles);
                 win.Show();
@@ -411,22 +410,19 @@ namespace UnityFS.Editor
                 case 3:
                     if (item.depth == 0)
                     {
-                        // var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-
-                    }
-                    else if (item.depth == 1)
-                    {
-                        // var bundleInfo = (item.parent as BundleBuilderTreeViewBundle).bundleInfo;
-                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        if (target.target != null)
+                        var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
+                        if (bundleInfo != null)
                         {
-                            var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, target.platforms);
-                            if (platforms != target.platforms)
+                            var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, bundleInfo.platforms);
+                            if (platforms != bundleInfo.platforms)
                             {
-                                target.platforms = platforms;
+                                bundleInfo.platforms = platforms;
                                 _data.MarkAsDirty();
                             }
                         }
+                    }
+                    else if (item.depth == 1)
+                    {
                     }
                     break;
                 case 4:

@@ -19,8 +19,7 @@ namespace UnityFS.Editor
             public int id;
             public bool enabled = true;
             public Object target;
-            public BundleAssetPlatforms platforms = ~BundleAssetPlatforms.None;  // filter for platforms
-            public BundleAssetTypes types = ~BundleAssetTypes.None; // (仅搜索目录时) 仅包含指定资源类型
+            public BundleAssetTypes types = (BundleAssetTypes)~0; // (仅搜索目录时) 仅包含指定资源类型
             public string extensions = string.Empty;    // (仅搜索目录时) 额外包含指定后缀的文件
         }
 
@@ -39,6 +38,7 @@ namespace UnityFS.Editor
             public string name; // bundle filename
             public string note;
             public Manifest.BundleType type;
+            public BundleAssetPlatforms platforms = (BundleAssetPlatforms)~0;  // filter for platforms
             public bool enabled = true;
 
             public BundleLoad load;
@@ -76,6 +76,12 @@ namespace UnityFS.Editor
             // var json = EditorJsonUtility.ToJson(this, true);
             // File.WriteAllText(BundleBuilderDataPath, json);
         }
+    }
+
+    public struct AssetFilter
+    {
+        public string[] extensions;
+        public BundleAssetTypes types;
     }
 
     public class ZipArchiveEntry

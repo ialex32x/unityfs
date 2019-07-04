@@ -47,30 +47,38 @@ namespace UnityFS.Editor
         {
             foreach (var target in bundle.targets)
             {
-                Scan(data, bundle, target);
+                if (target.enabled)
+                {
+                    Scan(data, bundle, target);
+                }
             }
             return true;
         }
 
         public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, BundleBuilderData.BundleAssetTarget target)
         {
-            //TODO: 过滤条件
-            Scan(data, bundle, target.target);
+            var extensions = target.extensions?.Split(';');
+            var filter = new AssetFilter()
+            {
+                extensions = extensions,
+                types = target.types,
+            };
+            Scan(data, bundle, filter, target.target);
         }
 
-        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object target)
+        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, AssetFilter filter, Object asset)
         {
-            if (target == null)
+            if (asset == null)
             {
                 return;
             }
-            var targetPath = AssetDatabase.GetAssetPath(target);
+            var targetPath = AssetDatabase.GetAssetPath(asset);
             if (Directory.Exists(targetPath))
             {
                 // 是一个目录
                 foreach (var directory in Directory.GetDirectories(targetPath))
                 {
-                    Scan(data, bundle, AssetDatabase.LoadMainAssetAtPath(directory));
+                    Scan(data, bundle, filter, AssetDatabase.LoadMainAssetAtPath(directory));
                 }
                 foreach (var file in Directory.GetFiles(targetPath))
                 {
@@ -78,16 +86,61 @@ namespace UnityFS.Editor
                     {
                         continue;
                     }
-                    Scan(data, bundle, AssetDatabase.LoadMainAssetAtPath(file));
+                    if (filter.extensions != null)
+                    {
+                        var skip = false;
+                        for (int i = 0, size = filter.extensions.Length; i < size; i++)
+                        {
+                            var ext = filter.extensions[i];
+                            if (!string.IsNullOrEmpty(ext) && file.EndsWith(ext))
+                            {
+                                skip = true;
+                                break;
+                            }
+                        }
+                        if (skip)
+                        {
+                            continue;
+                        }
+                    }
+                    var fileAsset = AssetDatabase.LoadMainAssetAtPath(file);
+                    if (filter.types != 0)
+                    {
+                        if ((filter.types & BundleAssetTypes.Prefab) == 0 && fileAsset is GameObject && file.EndsWith(".prefab"))
+                        {
+                            continue;
+                        }
+                        else if ((filter.types & BundleAssetTypes.TextAsset) == 0 && fileAsset is TextAsset)
+                        {
+                            continue;
+                        }
+                        else if ((filter.types & BundleAssetTypes.Animation) == 0 && (fileAsset is Animation || fileAsset is AnimationClip))
+                        {
+                            continue;
+                        }
+                        else if ((filter.types & BundleAssetTypes.Material) == 0 && fileAsset is Material)
+                        {
+                            continue;
+                        }
+                        else if ((filter.types & BundleAssetTypes.Texture) == 0 && fileAsset is Texture)
+                        {
+                            continue;
+                        }
+                        else if ((filter.types & BundleAssetTypes.Audio) == 0 && fileAsset is AudioClip)
+                        {
+                            continue;
+                        }
+                    }
+                    Scan(data, bundle, filter, fileAsset);
                 }
             }
             else
             {
-                if (!ContainsAsset(data, target))
+                if (!ContainsAsset(data, asset))
                 {
                     bundle.assets.Add(new BundleBuilderData.BundleAsset()
                     {
-                        target = target,
+                        target = asset,
                     });
                 }
             }
@@ -120,7 +173,7 @@ namespace UnityFS.Editor
         }
 
         // 根据 targets 遍历产生所有实际资源列表 assets
-        public static bool Scan(BundleBuilderData data)
+        public static bool Scan(BundleBuilderData data, BuildTarget targetPlatform)
         {
             foreach (var bundle in data.bundles)
             {
@@ -128,7 +181,10 @@ namespace UnityFS.Editor
             }
             foreach (var bundle in data.bundles)
             {
-                ScanBundle(data, bundle);
+                if (bundle.enabled)
+                {
+                    ScanBundle(data, bundle);
+                }
             }
             return true;
         }
@@ -136,7 +192,7 @@ namespace UnityFS.Editor
         // 生成打包 
         public static void Build(BundleBuilderData data, string outputPath, BuildTarget targetPlatform)
         {
-            BundleBuilder.Scan(data);
+            BundleBuilder.Scan(data, targetPlatform);
             var assetBundleBuilds = GenerateAssetBundleBuilds(data);
             var zipArchiveBuilds = GenerateZipArchiveBuilds(data);
             // var sceneBundleBuilds = GenerateSceneBundleBuilds(data);

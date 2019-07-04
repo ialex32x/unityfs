@@ -15,16 +15,16 @@ namespace UnityFS.Editor
     [Flags]
     public enum BundleAssetPlatforms
     {
-        None = 0,
         Android = 1 << 0,
         iOS = 1 << 1,
-        Any = Android | iOS,
+        Windows = 1 << 2,
+        OSX = 1 << 3,
+        Linux = 1 << 4,
     }
 
     [Flags]
     public enum BundleAssetTypes
     {
-        None = 0,
         Prefab = 1 << 0,     // prefab object
         TextAsset = 1 << 1,
         Animation = 1 << 2,  // animation object
