@@ -41,6 +41,11 @@ namespace UnityFS
             _assetProvider.ForEachTask(callback);
         }
 
+        public static UAsset SearchAsset(string assetName)
+        {
+            throw new NotImplementedException();
+        }
+
         public static UAsset LoadAsset(string assetPath)
         {
             return _assetProvider.GetAsset(assetPath);
