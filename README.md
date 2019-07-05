@@ -88,15 +88,14 @@ fs.completed += () =>
 ### 加载资源 (异步)
 
 ```csharp
-// 方式1. 得到原始 Asset 对象
+// 方式1. 得到原始 UAsset 对象
 UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 1.prefab", self =>
 {
     UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f);
 });
 
-// 方式2. 通过辅助方法直接创建 GameObject
+// 方式2. 通过辅助方法直接创建 GameObject (返回的是一个代理 GameObject)
 UnityFS.ResourceManager.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab").DestroyAfter(10.0f);
-};
 ```
 
 ### 加载场景 (异步)
