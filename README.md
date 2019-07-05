@@ -21,118 +21,102 @@
 
 # 实例
 
+## 初始化
 ```csharp
-using System;
-using System.IO;
-using System.Collections.Generic;
 
-namespace Examples
-{
-    using UnityEngine;
-
-    public class Sample : MonoBehaviour
-    {
-        public bool developMode;        // 编辑器模式 (直接从AssetDatabase加载, 无需打包)
-        public bool downloadStartups;   // 是否进行启动包预下载
-
-        void Awake()
-        {
-            Object.DontDestroyOnLoad(gameObject);
-
-            UnityFS.ResourceManager.Initialize();
-#if UNITY_EDITOR
-            if (developMode)
-            {
-                UnityFS.ResourceManager.Open(new UnityFS.AssetDatabaseAssetProvider());
-                OnUnityFSLoaded();
-            }
-            else
-#endif
-            {
-                var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
-                var localPathRoot = Path.Combine(dataPath, "packages");
-                Debug.Log($"open localPathRoot: {localPathRoot}");
-
-                // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
-                // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
-                var urls = UnityFS.Utils.Helpers.URLs(
-                    // "http://localhost:8081/",
-                    "http://localhost:8080/"
-                );
-                UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
-                {
-                    // 可以进行预下载 (可选)
-                    if (downloadStartups)
-                    {
-                        var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
-                        UnityFS.Utils.Helpers.DownloadBundles(
-                            localPathRoot, startups, urls, 
-                            (i, all, task) =>
-                            {
-                                Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
-                            }, 
-                            () =>
-                            {
-                                Debug.Log("全部下载完毕");
-                                UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
-                                OnUnityFSLoaded();
-                            }
-                        );
-                    }
-                    else
-                    {
-                        UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
-                        OnUnityFSLoaded();
-                    }
-                });
-            }
-        }
-
-        private void OnUnityFSLoaded()
-        {
-            // 获取核心脚本代码包
-            var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Config/test.txt");
-            fs.completed += () =>
-            {
-                // 可以在这里由脚本接管后续启动流程
-                // ScriptEngine.RunScript(fs.ReadAllBytes("Assets/Examples/Scripts/main.lua"));
-
-                // 其他接口示意:
-
-                // 读取文件内容 (zip包中的文件可以同步读取)
-                var data = fs.ReadAllBytes("Assets/Examples/Config/test.txt");
-                Debug.Log(System.Text.Encoding.UTF8.GetString(data));
-
-                // 加载资源, 得到原始 Asset 对象
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 1.prefab", self =>
-                {
-                    UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f);
-                });
-                // 加载资源, 通过辅助方法直接创建 GameObject
-                UnityFS.ResourceManager.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab")
-                    .DestroyAfter(10.0f);
-                // 当所有对象均不引用一个 AssetBundle 时, 将自动卸载对应 AssetBundle
-
-                // 加载场景
-                var scene = UnityFS.ResourceManager.LoadSceneAdditive("Assets/Examples/Scenes/test2.unity");
-                scene.completed += self =>
-                {
-                    Debug.Log("scene loaded");
-                };
-
-                StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
-                {
-                    scene.UnloadScene();
-                    scene = null;
-                }, 20f));
-            };
-        }
-    }
-}
-
+UnityFS.ResourceManager.Initialize();
 ```
 
-# Editor
+## 打开资源管理器, 有两种管理器可以使用
+```csharp
+
+
+// 1. 在编辑器中可以脱离 AssetBundle 直接资源加载
+    #if UNITY_EDITOR
+    if (developMode)
+    {
+        UnityFS.ResourceManager.Open(new UnityFS.AssetDatabaseAssetProvider());
+        OnUnityFSLoaded();
+    }
+    #endif
+
+// 2. 通过资源包进行资源加载
+    var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
+    var localPathRoot = Path.Combine(dataPath, "packages");
+
+    // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
+    // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
+    var urls = UnityFS.Utils.Helpers.URLs(
+        // "http://localhost:8081/",
+        "http://localhost:8080/"
+    );
+    //  获取到资源清单
+    var manifest = ...; 
+    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+    OnUnityFSLoaded();
+```
+
+## 资源加载
+所有 ResourceManager 返回的资源会自动管理加载卸载与资源包依赖 (场景除外): <br/>
+* IFileSystem
+* UAsset
+
+当资源实例不存在强引用时将进入GC流程, 对应资源包将被自动卸载.
+
+### 加载文件 (脚本/配置等)
+IFileSystem 中的文件可以同步加载. 
+```csharp
+// 获取核心脚本代码包
+var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Scripts/code.js");
+fs.completed += () =>
+{
+    // 可以在这里由脚本接管后续启动流程
+    // 需要保持对 fs 的引用, 无引用时将在GC后自动释放对应包
+    ScriptEngine.Initialize(fs); 
+    ScriptEngine.RunScript("Assets/Examples/Scripts/main.lua");
+
+    // 判断文件是否存在
+    var exists = fs.Exists("Assets/Examples/not_exist.file");
+    Debug.Log($"file exists? {exists}");
+
+    // 读取文件内容 (zip包中的文件可以同步读取)
+    var data = fs.ReadAllBytes("Assets/Examples/Config/test.txt");
+    Debug.Log(System.Text.Encoding.UTF8.GetString(data));
+};
+```
+
+### 加载资源 (异步)
+
+```csharp
+// 方式1. 得到原始 Asset 对象
+UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 1.prefab", self =>
+{
+    UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f);
+});
+
+// 方式2. 通过辅助方法直接创建 GameObject
+UnityFS.ResourceManager.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab").DestroyAfter(10.0f);
+};
+```
+
+### 加载场景 (异步)
+```csharp
+// LoadScene/LoadSceneAdditive 分别对应 Single/Additive 场景加载模式
+var scene = UnityFS.ResourceManager.LoadSceneAdditive("Assets/Examples/Scenes/test2.unity");
+scene.completed += self =>
+{
+    Debug.Log("scene loaded");
+};
+
+StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
+    {
+        scene.UnloadScene(); // 场景对象需要手工卸载 (异步完成)
+        scene = null;
+    }, 20f)
+);
+```
+
+# 打包编辑器
 ![editorwindow](Assets/Examples/Textures/editorwindow.png)
 
 # License
