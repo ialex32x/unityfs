@@ -42,11 +42,11 @@ namespace Examples
                     {
                         var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
                         UnityFS.Utils.Helpers.DownloadBundles(
-                            localPathRoot, startups, urls, 
+                            localPathRoot, startups, urls,
                             (i, all, task) =>
                             {
                                 Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
-                            }, 
+                            },
                             () =>
                             {
                                 Debug.Log("全部下载完毕");
@@ -67,8 +67,7 @@ namespace Examples
         private void OnUnityFSLoaded()
         {
             // 获取核心脚本代码包
-            var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Config/test.txt");
-            fs.completed += () =>
+            UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Config/test.txt").completed += fs =>
             {
                 // 可以在这里由脚本接管后续启动流程
                 // ScriptEngine.RunScript(fs.ReadAllBytes("Assets/Examples/Scripts/main.lua"));
