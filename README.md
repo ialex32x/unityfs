@@ -68,7 +68,7 @@ IFileSystem 中的文件可以同步加载.
 ```csharp
 // 获取核心脚本代码包
 var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Scripts/code.js");
-fs.completed += () =>
+fs.completed += self =>
 {
     // 可以在这里由脚本接管后续启动流程
     // 需要保持对 fs 的引用, 无引用时将在GC后自动释放对应包
