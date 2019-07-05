@@ -57,7 +57,7 @@ UnityFS.ResourceManager.Initialize();
 ```
 
 ## 资源加载
-UnityFS.ResourceManager 返回的资源会自动管理加载卸载与资源包依赖 (场景除外): <br/>
+UnityFS.ResourceManager 返回的资源会自动管理加载卸载与资源包依赖: <br/>
 * IFileSystem
 * UAsset
 
