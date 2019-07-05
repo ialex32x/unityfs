@@ -49,6 +49,7 @@ namespace UnityFS
 
         public static void DispatchMainAnyway(Action action)
         {
+            Debug.Assert(_mb != null);
             lock (_actions)
             {
                 _actions.Add(action);
@@ -57,6 +58,7 @@ namespace UnityFS
 
         public static void DispatchMain(Action action)
         {
+            Debug.Assert(_mb != null);
             if (_mainThreadId == System.Threading.Thread.CurrentThread.ManagedThreadId)
             {
                 action();
