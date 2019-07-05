@@ -57,7 +57,7 @@ UnityFS.ResourceManager.Initialize();
 ```
 
 ## 资源加载
-所有 ResourceManager 返回的资源会自动管理加载卸载与资源包依赖 (场景除外): <br/>
+UnityFS.ResourceManager 返回的资源会自动管理加载卸载与资源包依赖 (场景除外): <br/>
 * IFileSystem
 * UAsset
 
@@ -109,7 +109,9 @@ scene.completed += self =>
 
 StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
     {
-        scene.UnloadScene(); // 场景对象需要手工卸载 (异步完成)
+        // 场景对象需要手工卸载 (异步完成)
+        // 场景对应的资源包则在所有场景实例对象GC后自动卸载
+        scene.UnloadScene(); 
         scene = null;
     }, 20f)
 );
