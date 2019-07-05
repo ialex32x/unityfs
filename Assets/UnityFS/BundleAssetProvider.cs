@@ -247,7 +247,7 @@ namespace UnityFS
         private IList<string> _urls;
         private Manifest _manifest;
         private int _runningTasks = 0;
-        private int _concurrentTasks = 3;
+        private int _concurrentTasks = 0;
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
         private string _localPathRoot;
 
@@ -256,7 +256,7 @@ namespace UnityFS
             _manifest = manifest;
             _localPathRoot = localPathRoot;
             _urls = urls;
-            _concurrentTasks = Math.Max(1, Math.Min(concurrent, 4));
+            _concurrentTasks = Math.Max(1, Math.Min(concurrent, 4)); // 并发下载任务数量
             this.Initialize();
         }
 

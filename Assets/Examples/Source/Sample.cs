@@ -37,6 +37,7 @@ namespace Examples
                 );
                 UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
                 {
+                    var concurrent = SystemInfo.processorCount - 1;
                     // 可以进行预下载 (可选)
                     if (downloadStartups)
                     {
@@ -50,14 +51,14 @@ namespace Examples
                             () =>
                             {
                                 Debug.Log("全部下载完毕");
-                                UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+                                UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent));
                                 OnUnityFSLoaded();
                             }
                         );
                     }
                     else
                     {
-                        UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+                        UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent));
                         OnUnityFSLoaded();
                     }
                 });
