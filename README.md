@@ -31,16 +31,16 @@ UnityFS.ResourceManager.Initialize();
 ```csharp
 
 
-// 1. 在编辑器中可以脱离 AssetBundle 直接资源加载
+// 方式1. 在编辑器中可以脱离 AssetBundle 直接资源加载
     #if UNITY_EDITOR
     if (developMode)
     {
+        // 打开编辑器专用资源加载器
         UnityFS.ResourceManager.Open(new UnityFS.AssetDatabaseAssetProvider());
-        OnUnityFSLoaded();
     }
     #endif
 
-// 2. 通过资源包进行资源加载
+// 方式2. 通过资源包进行资源加载
     var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
     var localPathRoot = Path.Combine(dataPath, "packages");
 
@@ -52,8 +52,8 @@ UnityFS.ResourceManager.Initialize();
     );
     //  获取到资源清单
     var manifest = ...; 
+    // 打开资源包资源加载器
     UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
-    OnUnityFSLoaded();
 ```
 
 ## 资源加载
