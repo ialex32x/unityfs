@@ -57,9 +57,10 @@ namespace UnityFS.Utils
             return loader;
         }
 
-        public void DestroyAfter(float seconds)
+        public PrefabLoader DestroyAfter(float seconds)
         {
             StartCoroutine(Helpers.DestroyAfter(gameObject, seconds));
+            return this;
         }
 
         private void Load(string assetPath)
