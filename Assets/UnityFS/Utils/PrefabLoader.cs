@@ -11,6 +11,44 @@ namespace UnityFS.Utils
     {
         private UAsset _asset;
 
+        protected bool _loaded;
+        private List<Action<PrefabLoader>> _callbacks = new List<Action<PrefabLoader>>();
+
+        public event Action<PrefabLoader> completed
+        {
+            add
+            {
+                if (_loaded)
+                {
+                    value(this);
+                }
+                else
+                {
+                    _callbacks.Add(value);
+                }
+            }
+
+            remove
+            {
+                _callbacks.Remove(value);
+            }
+        }
+
+        public bool isLoaded
+        {
+            get { return _loaded; }
+        }
+
+        protected void OnLoaded()
+        {
+            while (_callbacks.Count > 0)
+            {
+                var callback = _callbacks[0];
+                _callbacks.RemoveAt(0);
+                callback(this);
+            }
+        }
+
         public static PrefabLoader Instantiate(string assetPath)
         {
             var gameObject = new GameObject("Prefab Loader");
@@ -33,6 +71,12 @@ namespace UnityFS.Utils
         private void OnCompleted(UAsset asset)
         {
             Object.Instantiate(asset.GetObject(), transform);
+            if (!_loaded)
+            {
+                // Debug.Log($"asset loaded {_assetPath}");
+                _loaded = true;
+                OnLoaded();
+            }
         }
 
         void OnDestroy()
