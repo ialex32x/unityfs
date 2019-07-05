@@ -15,11 +15,11 @@ namespace UnityFS
             get { return _name; }
         }
 
-        public event Action completed
+        public event Action<IFileSystem> completed
         {
             add
             {
-                value();
+                value(this);
             }
 
             remove

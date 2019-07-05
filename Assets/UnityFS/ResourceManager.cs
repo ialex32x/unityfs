@@ -51,10 +51,11 @@ namespace UnityFS
             return _assetProvider.GetAsset(assetPath);
         }
 
-        public static void LoadAsset(string assetPath, Action<UAsset> callback)
+        public static UAsset LoadAsset(string assetPath, Action<UAsset> callback)
         {
             var asset = _assetProvider.GetAsset(assetPath);
             asset.completed += callback;
+            return asset;
         }
 
         public static Utils.PrefabLoader Instantiate(string assetPath)
@@ -76,6 +77,13 @@ namespace UnityFS
         public static IFileSystem GetFileSystem(string bundleName)
         {
             return _assetProvider.GetFileSystem(bundleName);
+        }
+
+        public static IFileSystem GetFileSystem(string bundleName, Action<IFileSystem> callback)
+        {
+            var fs = _assetProvider.GetFileSystem(bundleName);
+            fs.completed += callback;
+            return fs;
         }
     }
 }

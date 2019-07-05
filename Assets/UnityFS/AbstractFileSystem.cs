@@ -9,15 +9,15 @@ namespace UnityFS
     public abstract class AbstractFileSystem : IFileSystem
     {
         protected bool _loaded;
-        private List<Action> _callbacks = new List<Action>();
+        private List<Action<IFileSystem>> _callbacks = new List<Action<IFileSystem>>();
 
-        public event Action completed
+        public event Action<IFileSystem> completed
         {
             add
             {
                 if (_loaded)
                 {
-                    value();
+                    value(this);
                 }
                 else
                 {
@@ -51,7 +51,7 @@ namespace UnityFS
             {
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
-                callback();
+                callback(this);
             }
         }
 

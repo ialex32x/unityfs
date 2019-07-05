@@ -8,7 +8,7 @@ namespace UnityFS
 
     public interface IFileSystem
     {
-        event Action completed; // 加载完成
+        event Action<IFileSystem> completed; // 加载完成
 
         bool Exists(string filename);
         byte[] ReadAllBytes(string filename);
