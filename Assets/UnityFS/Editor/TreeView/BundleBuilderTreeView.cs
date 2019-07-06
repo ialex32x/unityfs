@@ -84,7 +84,7 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("Platform"),
+                    headerContent = new GUIContent("StreamingAssets"),
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
@@ -413,12 +413,19 @@ namespace UnityFS.Editor
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
                         if (bundleInfo != null)
                         {
-                            var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, bundleInfo.platforms);
-                            if (platforms != bundleInfo.platforms)
+                            var streamingAssets = EditorGUI.Toggle(cellRect, bundleInfo.streamingAssets);
+                            if (streamingAssets != bundleInfo.streamingAssets)
                             {
-                                bundleInfo.platforms = platforms;
+                                bundleInfo.streamingAssets = streamingAssets;
                                 _data.MarkAsDirty();
                             }
+                            
+                            // var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, bundleInfo.platforms);
+                            // if (platforms != bundleInfo.platforms)
+                            // {
+                            //     bundleInfo.platforms = platforms;
+                            //     _data.MarkAsDirty();
+                            // }
                         }
                     }
                     else if (item.depth == 1)
