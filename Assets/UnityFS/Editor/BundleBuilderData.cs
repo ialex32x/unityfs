@@ -38,6 +38,7 @@ namespace UnityFS.Editor
             public Manifest.BundleType type;
             public BundleAssetPlatforms platforms = (BundleAssetPlatforms)~0;  // filter for platforms
             public bool enabled = true;
+            public bool streamingAssets = false; // 是否复制到 StreamingAssets 目录
 
             public BundleLoad load;
             public int priority;
