@@ -40,14 +40,13 @@ namespace UnityFS
     public class EmbeddedManifest
     {
         [Serializable]
-        public class EmbeddedBundleInfo
+        public class BundleInfo
         {
             public string name;     // 文件名
             public int size;        // 文件大小
             public string checksum; // 文件校验值
-            public List<string> assets = new List<string>(); // asset path (virtual path)
         }
 
-        public List<EmbeddedBundleInfo> bundles = new List<EmbeddedBundleInfo>(); // bundle 清单
+        public List<BundleInfo> bundles = new List<BundleInfo>(); // bundle 清单
     }
 }

@@ -20,6 +20,7 @@ MonoBehaviour:
     type: 0
     platforms: -1
     enabled: 1
+    streamingAssets: 1
     load: 0
     priority: 7769
     splitObjects: 2
@@ -46,6 +47,7 @@ MonoBehaviour:
     type: 1
     platforms: -1
     enabled: 1
+    streamingAssets: 1
     load: 0
     priority: 3223
     splitObjects: 0
@@ -66,6 +68,7 @@ MonoBehaviour:
     type: 0
     platforms: -1
     enabled: 1
+    streamingAssets: 0
     load: 0
     priority: 0
     splitObjects: 0
@@ -81,6 +84,7 @@ MonoBehaviour:
     type: 0
     platforms: -1
     enabled: 1
+    streamingAssets: 0
     load: 0
     priority: 0
     splitObjects: 0

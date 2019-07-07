@@ -10,6 +10,8 @@ namespace UnityFS.Editor
 
     public class BundleBuilder
     {
+        public const string EmbeddedManifestFileName = "streamingassets-manifest.json";
+        public const string StreamingAssetsBundlesPath = "Assets/StreamingAssets/bundles";
         private static BundleBuilderData _data;
 
         public static BundleBuilderData GetData()
@@ -260,12 +262,43 @@ namespace UnityFS.Editor
             {
                 zipArchiveManifest = BuildZipArchives(outputPath, zipArchiveBuilds, targetPlatform);
             }
-            BuildManifest(data, outputPath, assetBundleManifest, zipArchiveManifest);
-            Cleanup(outputPath, assetBundleManifest, zipArchiveManifest);
+            EmbeddedManifest embeddedManifest;
+            BuildManifest(data, outputPath, assetBundleManifest, zipArchiveManifest, out embeddedManifest);
+            PrepareStreamingAssets(data, outputPath, embeddedManifest);
+            Cleanup(outputPath, assetBundleManifest, zipArchiveManifest, embeddedManifest);
             Debug.Log($"build bundles finished {DateTime.Now}. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives.");
         }
 
-        private static void Cleanup(string outputPath, AssetBundleManifest assetBundleManifest, ZipArchiveManifest zipArchiveManifest)
+        private static void PrepareStreamingAssets(BundleBuilderData data, string outputPath, EmbeddedManifest embeddedManifest)
+        {
+            if (embeddedManifest.bundles.Count > 0)
+            {
+                if (!Directory.Exists(StreamingAssetsBundlesPath))
+                {
+                    Directory.CreateDirectory(StreamingAssetsBundlesPath);
+                }
+                File.Copy(Path.Combine(outputPath, EmbeddedManifestFileName), Path.Combine(StreamingAssetsBundlesPath, EmbeddedManifestFileName), true);
+                foreach (var bundleInfo in embeddedManifest.bundles)
+                {
+                    File.Copy(Path.Combine(outputPath, bundleInfo.name), Path.Combine(StreamingAssetsBundlesPath, bundleInfo.name), true);
+                }
+                // cleanup
+                foreach (var file in Directory.GetFiles(StreamingAssetsBundlesPath))
+                {
+                    //TODO: 检查是否无效文件, 并清理
+                }
+                AssetDatabase.Refresh();
+            }
+            else
+            {
+                if (Directory.Exists(StreamingAssetsBundlesPath))
+                {
+                    Directory.Delete(StreamingAssetsBundlesPath);
+                }
+            }
+        }
+
+        private static void Cleanup(string outputPath, AssetBundleManifest assetBundleManifest, ZipArchiveManifest zipArchiveManifest, EmbeddedManifest embeddedManifest)
         {
             foreach (var file in Directory.GetFiles(outputPath))
             {
@@ -279,6 +312,13 @@ namespace UnityFS.Editor
                 )
                 {
                     match = true;
+                }
+                if (fi.Name == EmbeddedManifestFileName)
+                {
+                    if (embeddedManifest.bundles.Count > 0)
+                    {
+                        match = true;
+                    }
                 }
                 if (!match)
                 {
@@ -443,9 +483,11 @@ namespace UnityFS.Editor
         // 生成清单
         public static void BuildManifest(BundleBuilderData data, string outputPath,
             AssetBundleManifest assetBundleManifest,
-            ZipArchiveManifest zipArchiveManifest)
+            ZipArchiveManifest zipArchiveManifest,
+            out EmbeddedManifest embeddedManifest)
         {
             var manifest = new Manifest();
+            embeddedManifest = new EmbeddedManifest();
             if (assetBundleManifest != null)
             {
                 var assetBundles = assetBundleManifest.GetAllAssetBundles();
@@ -476,6 +518,15 @@ namespace UnityFS.Editor
                             }
                             bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
                             manifest.bundles.Add(bundle);
+                            if (bundleInfo.streamingAssets)
+                            {
+                                embeddedManifest.bundles.Add(new EmbeddedManifest.BundleInfo()
+                                {
+                                    name = bundle.name,
+                                    checksum = bundle.checksum,
+                                    size = bundle.size,
+                                });
+                            }
                         }
                     }
                 }
@@ -505,6 +556,15 @@ namespace UnityFS.Editor
                         }
                         // bundle.dependencies = null;
                         manifest.bundles.Add(bundle);
+                        if (bundleInfo.streamingAssets)
+                        {
+                            embeddedManifest.bundles.Add(new EmbeddedManifest.BundleInfo()
+                            {
+                                name = bundle.name,
+                                checksum = bundle.checksum,
+                                size = bundle.size,
+                            });
+                        }
                     }
                 }
             }
@@ -512,12 +572,30 @@ namespace UnityFS.Editor
             {
                 Directory.CreateDirectory(outputPath);
             }
+            OutputManifest(manifest, outputPath);
+            OutputEmbeddedManifest(embeddedManifest, outputPath);
+        }
+
+        // write manifest & checksum of manifest 
+        private static void OutputManifest(Manifest manifest, string outputPath)
+        {
             var json = JsonUtility.ToJson(manifest);
             var jsonChecksum = Utils.Crc16.ToString(Utils.Crc16.ComputeChecksum(System.Text.Encoding.UTF8.GetBytes(json)));
             var manifestPath = Path.Combine(outputPath, "manifest.json");
             var manifestChecksumPath = Path.Combine(outputPath, "checksum.txt");
             File.WriteAllText(manifestPath, json);
             File.WriteAllText(manifestChecksumPath, jsonChecksum);
+        }
+
+        // write embedded manifest to streamingassets 
+        private static void OutputEmbeddedManifest(EmbeddedManifest embeddedManifest, string outputPath)
+        {
+            if (embeddedManifest.bundles.Count > 0)
+            {
+                var json = JsonUtility.ToJson(embeddedManifest);
+                var manifestPath = Path.Combine(outputPath, "streamingassets-manifest.json");
+                File.WriteAllText(manifestPath, json);
+            }
         }
 
         // 是否包含指定名字的 bundle
