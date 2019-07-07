@@ -307,9 +307,12 @@ namespace UnityFS
                         // _WriteStream(buffer, fileStream, finalPath);
                         fileStream.Close();
                         fileStream = null;
-                        File.Copy(tempPath, _finalPath, true);
+                        if (File.Exists(_finalPath))
+                        {
+                            File.Delete(_finalPath);
+                        }
+                        File.Move(tempPath, _finalPath);
                         _WriteMetadata(metaPath);
-                        File.Delete(tempPath);
                         Complete(null);
                         PrintDebug("download succeeded");
                         break;
