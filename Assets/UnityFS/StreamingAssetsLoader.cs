@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -16,34 +17,38 @@ namespace UnityFS
 
         public StreamingAssetsLoader()
         {
-            // Application.streamingAssetsPath;
             _streamingAssetsPathRoot = Application.streamingAssetsPath + "/bundles/";
             if (Application.platform != RuntimePlatform.Android)
             {
                 _streamingAssetsPathRoot = "file://" + _streamingAssetsPathRoot;
             }
-
-            // #if UNITY_STANDALONE_WIN
-            //             _streamingAssetsPathRoot = "file://" + Application.dataPath + "/StreamingAssets/";
-            // #elif UNITY_STANDALONE_OSX
-            //             _streamingAssetsPathRoot = "file://" + Application.dataPath + "/Data/StreamingAssets/";
-            // #elif UNITY_IPHONE
-            //             _streamingAssetsPathRoot = "file:///" + Application.dataPath + "/Raw/";
-            //             _streamingAssetsPathRoot = _streamingAssetsPathRoot.Replace(" ", "%20");
-            // #elif UNITY_ANDROID
-            //             _streamingAssetsPathRoot = "jar:file://" + Application.dataPath + "!/assets/";
-            // #else
-            //             _streamingAssetsPathRoot = "::Unsupported::";
-            // #endif
         }
 
-        public IEnumerator Open()
+        public IEnumerator OpenManifest()
         {
-            //TODO: 读取 StreamingAssets 中的清单
-            //...
-            _manifest = new EmbeddedManifest(); // STUB
-            // UnityWebRequest
-            yield return null;
+            var uri = _streamingAssetsPathRoot + EmbeddedManifest.FileName;
+            var uwr = UnityWebRequest.Get(uri);
+            yield return uwr.SendWebRequest();
+            if (uwr.error == null && uwr.responseCode == 200)
+            {
+                try
+                {
+                    var json = uwr.downloadHandler.text;
+                    _manifest = JsonUtility.FromJson<EmbeddedManifest>(json);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"StreamingAssetsLoader open failed: {exception}");
+                }
+                foreach (var bundleInfo in _manifest.bundles)
+                {
+                    Debug.Log($"read embedded bundle {bundleInfo.name}");
+                }
+            }
+            else
+            {
+                Debug.Log($"open failed {uwr.error}: {uwr.responseCode}");
+            }
         }
 
         public bool Contains(string bundleName, string checksum, int size)
@@ -66,10 +71,33 @@ namespace UnityFS
             return false;
         }
 
-        public IEnumerator LoadBundle(string bundleName)
+        public IEnumerator LoadBundle(string bundleName, string checksum, int size, Action<AssetBundle> callback)
         {
-            //TODO: create UWR and get assetbundle ...
-            yield return null;
+            if (!Contains(bundleName, checksum, size))
+            {
+                callback(null);
+                yield break;
+            }
+            var uri = _streamingAssetsPathRoot + bundleName;
+            var uwr = UnityWebRequestAssetBundle.GetAssetBundle(uri);
+            yield return uwr.SendWebRequest();
+            if (uwr.error == null && uwr.responseCode == 200)
+            {
+                AssetBundle assetBundle = null;
+                try
+                {
+                    assetBundle = DownloadHandlerAssetBundle.GetContent(uwr);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
+                }
+                callback(assetBundle);
+            }
+            else
+            {
+                Debug.Log($"load failed {uwr.error}: {uwr.responseCode}");
+            }
         }
     }
 }

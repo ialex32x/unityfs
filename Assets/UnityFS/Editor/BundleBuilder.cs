@@ -10,8 +10,6 @@ namespace UnityFS.Editor
 
     public class BundleBuilder
     {
-        public const string EmbeddedManifestFileName = "streamingassets-manifest.json";
-        public const string StreamingAssetsBundlesPath = "Assets/StreamingAssets/bundles";
         private static BundleBuilderData _data;
 
         public static BundleBuilderData GetData()
@@ -273,22 +271,22 @@ namespace UnityFS.Editor
         {
             if (embeddedManifest.bundles.Count > 0)
             {
-                if (!Directory.Exists(StreamingAssetsBundlesPath))
+                if (!Directory.Exists(EmbeddedManifest.BundlesPath))
                 {
-                    Directory.CreateDirectory(StreamingAssetsBundlesPath);
+                    Directory.CreateDirectory(EmbeddedManifest.BundlesPath);
                 }
-                File.Copy(Path.Combine(outputPath, EmbeddedManifestFileName), Path.Combine(StreamingAssetsBundlesPath, EmbeddedManifestFileName), true);
+                File.Copy(Path.Combine(outputPath, EmbeddedManifest.FileName), Path.Combine(EmbeddedManifest.BundlesPath, EmbeddedManifest.FileName), true);
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
-                    File.Copy(Path.Combine(outputPath, bundleInfo.name), Path.Combine(StreamingAssetsBundlesPath, bundleInfo.name), true);
+                    File.Copy(Path.Combine(outputPath, bundleInfo.name), Path.Combine(EmbeddedManifest.BundlesPath, bundleInfo.name), true);
                 }
                 AssetDatabase.Refresh();
                 // cleanup
-                foreach (var file in Directory.GetFiles(StreamingAssetsBundlesPath))
+                foreach (var file in Directory.GetFiles(EmbeddedManifest.BundlesPath))
                 {
                     var fi = new FileInfo(file);
                     var match = false;
-                    if (fi.Name == EmbeddedManifestFileName || fi.Name == EmbeddedManifestFileName + ".meta")
+                    if (fi.Name == EmbeddedManifest.FileName || fi.Name == EmbeddedManifest.FileName + ".meta")
                     {
                         continue;
                     }
@@ -309,9 +307,9 @@ namespace UnityFS.Editor
             }
             else
             {
-                if (Directory.Exists(StreamingAssetsBundlesPath))
+                if (Directory.Exists(EmbeddedManifest.BundlesPath))
                 {
-                    Directory.Delete(StreamingAssetsBundlesPath);
+                    Directory.Delete(EmbeddedManifest.BundlesPath);
                 }
             }
         }
@@ -331,7 +329,7 @@ namespace UnityFS.Editor
                 {
                     match = true;
                 }
-                if (fi.Name == EmbeddedManifestFileName)
+                if (fi.Name == EmbeddedManifest.FileName)
                 {
                     if (embeddedManifest.bundles.Count > 0)
                     {

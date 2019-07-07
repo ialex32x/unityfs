@@ -39,6 +39,9 @@ namespace UnityFS
     [Serializable]
     public class EmbeddedManifest
     {
+        public const string FileName = "streamingassets-manifest.json";
+        public const string BundlesPath = "Assets/StreamingAssets/bundles";
+
         [Serializable]
         public class BundleInfo
         {
