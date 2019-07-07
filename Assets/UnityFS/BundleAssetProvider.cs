@@ -280,6 +280,24 @@ namespace UnityFS
             {
                 return;
             }
+            /*
+            if (_streamingAssetsLoader.Contains(bundle.name)) 
+            {
+                JobScheduler.DispatchCoroutine(
+                    _streamingAssetsLoader.LoadBundle(bundle.name, assetBundle => 
+                    {
+                        if (assetBundle == null)
+                        {
+                            bundle.Load(assetBundle);
+                        } 
+                        else 
+                        {
+                            fallback to http web request (download task)
+                        }
+                    })
+                );
+            }
+            */
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
             AddDownloadTask(DownloadTask.Create(
