@@ -13,6 +13,7 @@ namespace Examples
 
         void Awake()
         {
+            // Debug.Log(Application.streamingAssetsPath);
             Object.DontDestroyOnLoad(gameObject);
 
             UnityFS.ResourceManager.Initialize();

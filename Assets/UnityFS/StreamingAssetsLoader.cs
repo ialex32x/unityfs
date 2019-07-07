@@ -6,29 +6,35 @@ using System.Collections.Generic;
 namespace UnityFS
 {
     using UnityEngine;
+    using UnityEngine.Networking;
 
     public class StreamingAssetsLoader
     {
-        // private string _streamingPrefix;
+        private string _streamingAssetsPathRoot;
 
         private EmbeddedManifest _manifest;
 
         public StreamingAssetsLoader()
         {
             // Application.streamingAssetsPath;
+            _streamingAssetsPathRoot = Application.streamingAssetsPath + "/bundles/";
+            if (Application.platform != RuntimePlatform.Android)
+            {
+                _streamingAssetsPathRoot = "file://" + _streamingAssetsPathRoot;
+            }
 
-// #if UNITY_STANDALONE_WIN
-//             _streamingPrefix = "file://" + Application.dataPath + "/StreamingAssets/";
-// #elif UNITY_STANDALONE_OSX
-//             _streamingPrefix = "file://" + Application.dataPath + "/Data/StreamingAssets/";
-// #elif UNITY_IPHONE
-//             _streamingPrefix = "file:///" + Application.dataPath + "/Raw/";
-//             _streamingPrefix = _streamingPrefix.Replace(" ", "%20");
-// #elif UNITY_ANDROID
-//             _streamingPrefix = "jar:file://" + Application.dataPath + "!/assets/";
-// #else
-//             _streamingPrefix = "::Unsupported::";
-// #endif
+            // #if UNITY_STANDALONE_WIN
+            //             _streamingAssetsPathRoot = "file://" + Application.dataPath + "/StreamingAssets/";
+            // #elif UNITY_STANDALONE_OSX
+            //             _streamingAssetsPathRoot = "file://" + Application.dataPath + "/Data/StreamingAssets/";
+            // #elif UNITY_IPHONE
+            //             _streamingAssetsPathRoot = "file:///" + Application.dataPath + "/Raw/";
+            //             _streamingAssetsPathRoot = _streamingAssetsPathRoot.Replace(" ", "%20");
+            // #elif UNITY_ANDROID
+            //             _streamingAssetsPathRoot = "jar:file://" + Application.dataPath + "!/assets/";
+            // #else
+            //             _streamingAssetsPathRoot = "::Unsupported::";
+            // #endif
         }
 
         public IEnumerator Open()
@@ -36,6 +42,7 @@ namespace UnityFS
             //TODO: 读取 StreamingAssets 中的清单
             //...
             _manifest = new EmbeddedManifest(); // STUB
+            // UnityWebRequest
             yield return null;
         }
 

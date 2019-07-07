@@ -120,5 +120,8 @@ StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
 # 打包编辑器
 ![editorwindow](Assets/Examples/Textures/editorwindow.png)
 
+# Unity 版本
+Unity 2018.3+
+
 # License
 MIT
