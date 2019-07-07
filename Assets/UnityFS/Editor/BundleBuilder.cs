@@ -282,10 +282,28 @@ namespace UnityFS.Editor
                 {
                     File.Copy(Path.Combine(outputPath, bundleInfo.name), Path.Combine(StreamingAssetsBundlesPath, bundleInfo.name), true);
                 }
+                AssetDatabase.Refresh();
                 // cleanup
                 foreach (var file in Directory.GetFiles(StreamingAssetsBundlesPath))
                 {
-                    //TODO: 检查是否无效文件, 并清理
+                    var fi = new FileInfo(file);
+                    var match = false;
+                    if (fi.Name == EmbeddedManifestFileName || fi.Name == EmbeddedManifestFileName + ".meta")
+                    {
+                        continue;
+                    }
+                    foreach (var bundleInfo in embeddedManifest.bundles)
+                    {
+                        if (fi.Name == bundleInfo.name || fi.Name == bundleInfo.name + ".meta")
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (!match)
+                    {
+                        fi.Delete();
+                    }
                 }
                 AssetDatabase.Refresh();
             }
