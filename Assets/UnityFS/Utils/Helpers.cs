@@ -94,15 +94,16 @@ namespace UnityFS.Utils
             }
             return pending.ToArray();
         }
-        
+
         public static void DownloadBundles(
             string localPathRoot,
             Manifest.BundleInfo[] bundles,
             IList<string> urls,
+            StreamingAssetsLoader streamingAssets,
             Action<int, int, ITask> onProgress,
             Action onComplete)
         {
-            JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, urls, onProgress, onComplete));
+            JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, urls, streamingAssets, onProgress, onComplete));
         }
 
         // 当前任务数, 总任务数, 当前任务进度
@@ -110,12 +111,17 @@ namespace UnityFS.Utils
             string localPathRoot,
             Manifest.BundleInfo[] bundles,
             IList<string> urls,
+            StreamingAssetsLoader streamingAssets,
             Action<int, int, ITask> onProgress,
             Action onComplete)
         {
             for (int i = 0, size = bundles.Length; i < size; i++)
             {
                 var bundleInfo = bundles[i];
+                if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
+                {
+                    continue;
+                }
                 var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, 10, null);
                 var progress = -1.0f;
                 task.SetDebugMode(true).Run();

@@ -250,13 +250,15 @@ namespace UnityFS
         private int _concurrentTasks = 0;
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
         private string _localPathRoot;
+        private StreamingAssetsLoader _streamingAssets;
 
-        public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls, int concurrent)
+        public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls, int concurrent, StreamingAssetsLoader streamingAssets)
         {
             _manifest = manifest;
             _localPathRoot = localPathRoot;
             _urls = urls;
             _concurrentTasks = Math.Max(1, Math.Min(concurrent, 4)); // 并发下载任务数量
+            _streamingAssets = streamingAssets;
             this.Initialize();
         }
 
@@ -280,24 +282,29 @@ namespace UnityFS
             {
                 return;
             }
-            /*
-            if (_streamingAssetsLoader.Contains(bundle.name)) 
+            if (_streamingAssets != null && _streamingAssets.Contains(bundle.name, bundle.checksum, bundle.size))
             {
                 JobScheduler.DispatchCoroutine(
-                    _streamingAssetsLoader.LoadBundle(bundle.name, assetBundle => 
+                    _streamingAssets.LoadBundle(bundle.name, stream =>
                     {
-                        if (assetBundle == null)
+                        if (stream != null)
                         {
-                            bundle.Load(assetBundle);
-                        } 
-                        else 
+                            bundle.Load(stream);
+                        }
+                        else
                         {
-                            fallback to http web request (download task)
+                            PrintLog($"read from streamingassets failed: {bundle.name}");
+                            DownloadBundleFile(bundle);
                         }
                     })
                 );
+                return;
             }
-            */
+            DownloadBundleFile(bundle);
+        }
+
+        private void DownloadBundleFile(UBundle bundle)
+        {
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
             AddDownloadTask(DownloadTask.Create(

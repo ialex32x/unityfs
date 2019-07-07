@@ -40,29 +40,33 @@ namespace Examples
                 UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
                 {
                     var concurrent = SystemInfo.processorCount - 1;
-                    // 可以进行预下载 (可选)
-                    if (downloadStartups)
+                    new UnityFS.StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
                     {
-                        var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
-                        UnityFS.Utils.Helpers.DownloadBundles(
-                            localPathRoot, startups, urls,
-                            (i, all, task) =>
-                            {
-                                Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
-                            },
-                            () =>
-                            {
-                                Debug.Log("全部下载完毕");
-                                UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent));
-                                OnUnityFSLoaded();
-                            }
-                        );
-                    }
-                    else
-                    {
-                        UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent));
-                        OnUnityFSLoaded();
-                    }
+                        // 可以进行预下载 (可选)
+                        if (downloadStartups)
+                        {
+                            var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
+                            UnityFS.Utils.Helpers.DownloadBundles(
+                                localPathRoot, startups, urls,
+                                streamingAssets,
+                                (i, all, task) =>
+                                {
+                                    Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
+                                },
+                                () =>
+                                {
+                                    Debug.Log("全部下载完毕");
+                                    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent, streamingAssets));
+                                    OnUnityFSLoaded();
+                                }
+                            );
+                        }
+                        else
+                        {
+                            UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent, streamingAssets));
+                            OnUnityFSLoaded();
+                        }
+                    });
                 });
             }
         }
