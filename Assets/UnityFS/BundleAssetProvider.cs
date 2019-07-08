@@ -307,6 +307,7 @@ namespace UnityFS
             }
             if (_streamingAssets != null && _streamingAssets.Contains(bundle.name, bundle.checksum, bundle.size))
             {
+                bundle.AddRef();
                 JobScheduler.DispatchCoroutine(
                     _streamingAssets.LoadBundle(bundle.name, stream =>
                     {
@@ -319,6 +320,7 @@ namespace UnityFS
                             PrintLog($"read from streamingassets failed: {bundle.name}");
                             DownloadBundleFile(bundle);
                         }
+                        bundle.RemoveRef();
                     })
                 );
                 return;
