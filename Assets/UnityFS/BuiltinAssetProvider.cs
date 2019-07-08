@@ -24,6 +24,15 @@ namespace UnityFS
                 request.completed += OnResourceLoaded;
             }
 
+            protected override void Dispose(bool bManaged)
+            {
+                if (!_disposed)
+                {
+                    Debug.LogFormat($"UBuiltinAsset ({_assetPath}) released");
+                    _disposed = true;
+                }
+            }
+
             private void OnResourceLoaded(AsyncOperation op)
             {
                 var request = op as ResourceRequest;

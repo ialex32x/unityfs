@@ -7,11 +7,12 @@ namespace UnityFS
     using UnityEngine;
 
     // Unity 资源抽象
-    public abstract class UAsset
+    public abstract class UAsset : IDisposable
     {
         protected string _assetPath;
         protected Object _object;
 
+        protected bool _disposed;
         protected bool _loaded;
         private List<Action<UAsset>> _callbacks = new List<Action<UAsset>>();
 
@@ -19,6 +20,10 @@ namespace UnityFS
         {
             add
             {
+                if (_disposed)
+                {
+                    Debug.LogError($"uasset already disposed ({_assetPath})");
+                }
                 if (_loaded)
                 {
                     value(this);
@@ -47,6 +52,10 @@ namespace UnityFS
 
         public Object GetObject()
         {
+            if (_disposed)
+            {
+                Debug.LogError($"uasset already disposed ({_assetPath})");
+            }
             return _object;
         }
 
@@ -54,6 +63,19 @@ namespace UnityFS
         {
             _assetPath = assetPath;
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~UAsset()
+        {
+            Dispose(false);
+        }
+
+        protected abstract void Dispose(bool bManaged);
 
         protected void OnLoaded()
         {

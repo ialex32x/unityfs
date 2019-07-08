@@ -21,9 +21,13 @@ namespace UnityFS
                 Complete();
             }
 
-            ~UAssetDatabaseAsset()
+            protected override void Dispose(bool bManaged)
             {
-                Debug.LogFormat($"UAsset(AssetDatabase:{_assetPath}) released");
+                if (!_disposed)
+                {
+                    Debug.LogFormat($"UAssetDatabaseAsset ({_assetPath}) released");
+                    _disposed = true;
+                }
             }
         }
 
@@ -50,7 +54,7 @@ namespace UnityFS
         {
             return null;
         }
-        
+
         public string Find(string assetPath)
         {
             return "assetdatabase";

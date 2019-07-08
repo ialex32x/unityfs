@@ -201,7 +201,7 @@ namespace UnityFS
             }
         }
 
-        // 从 AssetBundle 资源包载入资源
+        // 从 AssetBundle 资源包载入 (不实际调用 assetbundle.LoadAsset)
         protected class UAssetBundleAsset : UAsset
         {
             protected UAssetBundleBundle _bundle;
@@ -214,23 +214,27 @@ namespace UnityFS
                 _bundle.completed += OnBundleLoaded;
             }
 
-            ~UAssetBundleAsset()
+            protected override void Dispose(bool bManaged)
             {
-                JobScheduler.DispatchMain(() =>
+                if (!_disposed)
                 {
-                    _bundle.completed -= OnBundleLoaded;
-                    _bundle.RemoveRef();
-                });
+                    JobScheduler.DispatchMain(() =>
+                    {
+                        _bundle.completed -= OnBundleLoaded;
+                        _bundle.RemoveRef();
+                    });
+                    Debug.LogFormat($"UAssetBundleAsset ({_assetPath}) released");
+                    _disposed = true;
+                }
             }
 
             protected virtual void OnBundleLoaded(UBundle bundle)
             {
-                // assert (bundle == _bundle)
-                Complete(); // failed
+                Complete();
             }
         }
 
-        // 从 AssetBundle 资源包载入资源
+        // 从 AssetBundle 资源包载入 (会调用 assetbundle.LoadAsset 载入实际资源)
         protected class UAssetBundleConcreteAsset : UAssetBundleAsset
         {
             public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath)
@@ -240,6 +244,11 @@ namespace UnityFS
 
             protected override void OnBundleLoaded(UBundle bundle)
             {
+                if (_disposed)
+                {
+                    Complete();
+                    return;
+                }
                 // assert (bundle == _bundle)
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)

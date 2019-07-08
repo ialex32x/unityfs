@@ -14,5 +14,9 @@ namespace UnityFS
         {
             Complete();
         }
+
+        protected override void Dispose(bool bManaged)
+        {
+        }
     }
 }
