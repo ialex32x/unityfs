@@ -41,5 +41,10 @@ namespace UnityFS
         {
             return null;
         }
+
+        public Stream OpenRead(string filename)
+        {
+            return null;
+        }
     }
 }

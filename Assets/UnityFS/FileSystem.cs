@@ -11,6 +11,7 @@ namespace UnityFS
         event Action<IFileSystem> completed; // 加载完成
 
         bool Exists(string filename);
+        Stream OpenRead(string filename);
         byte[] ReadAllBytes(string filename);
     }
 }

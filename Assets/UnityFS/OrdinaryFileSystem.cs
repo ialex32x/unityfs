@@ -25,6 +25,15 @@ namespace UnityFS
             return File.Exists(Path.Combine(_rootPath, filename));
         }
 
+        public override Stream OpenRead(string filename)
+        {
+            if (string.IsNullOrEmpty(_rootPath))
+            {
+                return File.OpenRead(filename);
+            }
+            return File.OpenRead(Path.Combine(_rootPath, filename));
+        }
+
         public override byte[] ReadAllBytes(string filename)
         {
             if (string.IsNullOrEmpty(_rootPath))

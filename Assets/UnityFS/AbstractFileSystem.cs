@@ -58,5 +58,7 @@ namespace UnityFS
         public abstract bool Exists(string filename);
 
         public abstract byte[] ReadAllBytes(string filename);
+
+        public abstract Stream OpenRead(string filename);
     }
 }

@@ -51,6 +51,11 @@ namespace UnityFS
             {
                 return _bundle.ReadAllBytes(filename);
             }
+
+            public override Stream OpenRead(string filename)
+            {
+                return _bundle.OpenRead(filename);
+            }
         }
 
         public class ZipArchiveUBundle : UBundle
@@ -86,6 +91,20 @@ namespace UnityFS
                     }
                 }
                 return false;
+            }
+
+            // 打开压缩包中的文件, 返回其文件流
+            public Stream OpenRead(string filename)
+            {
+                if (_zipFile != null)
+                {
+                    var entry = _zipFile.GetEntry(filename);
+                    if (entry != null)
+                    {
+                        return _zipFile.GetInputStream(entry);
+                    }
+                }
+                return null;
             }
 
             public byte[] ReadAllBytes(string filename)
