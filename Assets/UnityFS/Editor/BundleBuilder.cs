@@ -264,7 +264,7 @@ namespace UnityFS.Editor
             BuildManifest(data, outputPath, assetBundleManifest, zipArchiveManifest, out embeddedManifest);
             PrepareStreamingAssets(data, outputPath, embeddedManifest);
             Cleanup(outputPath, assetBundleManifest, zipArchiveManifest, embeddedManifest);
-            Debug.Log($"build bundles finished {DateTime.Now}. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives.");
+            Debug.Log($"build bundles finished {DateTime.Now}. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
         private static void PrepareStreamingAssets(BundleBuilderData data, string outputPath, EmbeddedManifest embeddedManifest)

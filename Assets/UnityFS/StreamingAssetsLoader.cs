@@ -35,25 +35,29 @@ namespace UnityFS
             var uri = _streamingAssetsPathRoot + EmbeddedManifest.FileName;
             var uwr = UnityWebRequest.Get(uri);
             yield return uwr.SendWebRequest();
-            if (uwr.error == null && uwr.responseCode == 200)
+            try
             {
-                try
+                if (uwr.error == null && uwr.responseCode == 200)
                 {
                     var json = uwr.downloadHandler.text;
                     JsonUtility.FromJsonOverwrite(json, _manifest);
+                    // foreach (var bundleInfo in _manifest.bundles)
+                    // {
+                    //     Debug.Log($"embedded {bundleInfo.name}");
+                    // }
                 }
-                catch (Exception exception)
+                else
                 {
-                    Debug.LogWarning($"StreamingAssetsLoader open failed: {exception}");
-                }
-                finally
-                {
-                    callback(this);
+                    Debug.LogWarning($"StreamingAssetsLoader open failed {uwr.error}: {uwr.responseCode}");
                 }
             }
-            else
+            catch (Exception exception)
             {
-                Debug.Log($"open failed {uwr.error}: {uwr.responseCode}");
+                Debug.LogWarning($"StreamingAssetsLoader open failed: {exception}");
+            }
+            finally
+            {
+                callback(this);
             }
         }
 
@@ -78,6 +82,7 @@ namespace UnityFS
         {
             var uri = _streamingAssetsPathRoot + bundleName;
             var uwr = UnityWebRequest.Get(uri);
+            // uwr.downloadHandler = new DownloadHandlerBuffer();
             yield return uwr.SendWebRequest();
             if (uwr.error == null && uwr.responseCode == 200)
             {
@@ -85,8 +90,8 @@ namespace UnityFS
                 try
                 {
                     var bytes = uwr.downloadHandler.data;
+                    // Debug.LogWarning($"load bundle (stream) from streamingassets: {bundleName} ({bytes.Length}) ({uwr.downloadHandler.GetType()})");
                     stream = new MemoryStream(bytes);
-                    callback(stream);
                 }
                 catch (Exception exception)
                 {
@@ -96,7 +101,7 @@ namespace UnityFS
             }
             else
             {
-                Debug.Log($"load failed {uwr.error}: {uwr.responseCode}");
+                Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
             }
         }
 
@@ -120,7 +125,7 @@ namespace UnityFS
             }
             else
             {
-                Debug.Log($"load failed {uwr.error}: {uwr.responseCode}");
+                Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
             }
         }
     }

@@ -16,6 +16,14 @@ namespace UnityFS
             UnityFS.JobScheduler.Initialize();
         }
 
+        public static void Close()
+        {
+            if (_assetProvider != null)
+            {
+                _assetProvider.Close();
+            }
+        }
+
         public static void Open(IAssetProvider assetProvider)
         {
             _assetProvider = assetProvider;

@@ -120,6 +120,7 @@ namespace UnityFS.Utils
                 var bundleInfo = bundles[i];
                 if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
                 {
+                    // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
                     continue;
                 }
                 var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, 10, null);

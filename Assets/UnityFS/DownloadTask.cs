@@ -314,7 +314,7 @@ namespace UnityFS
                         File.Move(tempPath, _finalPath);
                         _WriteMetadata(metaPath);
                         Complete(null);
-                        PrintDebug("download succeeded");
+                        // PrintDebug("download succeeded");
                         break;
                     }
                     catch (Exception exception)
@@ -385,7 +385,7 @@ namespace UnityFS
                             crc.Update(buffer, 0, recv);
                             _progress = Mathf.Clamp01((float)(recvAll + partialSize) / _size);
                             // Thread.Sleep(200); // 模拟低速下载
-                            PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
+                            // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                         }
                         else
                         {
@@ -394,7 +394,7 @@ namespace UnityFS
                     }
                 }
             }
-            PrintDebug($"download exited");
+            // PrintDebug($"download exited");
         }
 
         public static void Destroy()

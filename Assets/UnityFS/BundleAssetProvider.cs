@@ -146,7 +146,11 @@ namespace UnityFS
                     _stream.Dispose();
                     _stream = null;
                 }
-                _provider.Unload(this);
+                if (_provider != null)
+                {
+                    _provider.Unload(this);
+                    _provider = null;
+                }
             }
 
             // stream 生命周期将被 UAssetBundleBundle 托管
@@ -351,7 +355,7 @@ namespace UnityFS
         protected void Unload(UBundle bundle)
         {
             _bundles.Remove(bundle.name);
-            PrintLog($"bundle unloaded {bundle.name}");
+            PrintLog($"bundle unloaded: {bundle.name}");
         }
 
         private void _AddDependencies(UBundle bundle, string[] dependencies)
@@ -421,8 +425,27 @@ namespace UnityFS
         public void Close()
         {
             Abort();
+            OnRelease();
         }
 
+        private void OnRelease()
+        {
+            GC.Collect();
+            var count = _bundles.Count;
+            if (count > 0)
+            {
+                var bundles = new UBundle[count];
+                _bundles.Values.CopyTo(bundles, 0);
+                for (var i = 0; i < count; i++)
+                {
+                    var bundle = bundles[i];
+                    // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
+                    bundle.Release();
+                }
+            }
+        }
+
+        // 终止所有任务
         public void Abort()
         {
             for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)

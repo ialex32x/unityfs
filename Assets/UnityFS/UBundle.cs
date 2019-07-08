@@ -88,6 +88,11 @@ namespace UnityFS
             }
         }
 
+        public void Release()
+        {
+            OnRelease();
+        }
+
         protected virtual void OnRelease()
         {
             if (_denpendencies != null)
