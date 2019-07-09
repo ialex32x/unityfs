@@ -13,7 +13,23 @@ namespace Examples
 
         public void OnStartupTask(UnityFS.Manifest.BundleInfo[] bundles)
         {
-            Debug.Log($"startup task: {bundles.Length}");
+            var sum = 0;
+            for (int i = 0, size = bundles.Length; i < size; i++)
+            {
+                sum += bundles[i].size;
+            }
+            var fsum = (float)sum / 1024f;
+            string unit = null;
+            if (fsum > 1024f)
+            {
+                fsum /= 1024f;
+                unit = "MB";
+            }
+            else
+            {
+                unit = "KB";
+            }
+            Debug.Log($"需要下载文件数量: {bundles.Length} (共 {fsum.ToString("#.##")} {unit})");
         }
 
         public void OnComplete()
