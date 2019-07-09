@@ -13,6 +13,7 @@ namespace Examples
 
         public void OnStartupTask(UnityFS.Manifest.BundleInfo[] bundles)
         {
+            Debug.Log($"startup task: {bundles.Length}");
         }
 
         public void OnComplete()
@@ -22,12 +23,12 @@ namespace Examples
 
         public void OnTaskStart(UnityFS.ITask task)
         {
-
+            Debug.Log($"task start: {task.name}");
         }
 
         public void OnTaskComplete(UnityFS.ITask task)
         {
-
+            Debug.Log($"task complete: {task.name}");
         }
 
         void Awake()

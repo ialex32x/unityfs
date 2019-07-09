@@ -308,24 +308,37 @@ namespace UnityFS
                 new StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
                 {
                     _streamingAssets = streamingAssets;
-                    var startups = Utils.Helpers.CollectStartupBundles(manifest, _localPathRoot);
-                    for (int i = 0, size = startups.Length; i < size; i++)
+                    var startups = Utils.Helpers.CollectBundles(manifest, _localPathRoot, bundleInfo =>
                     {
-                        var bundleInfo = startups[i];
-                        if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
+                        if (bundleInfo.startup)
                         {
-                            // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
-                            continue;
+                            return streamingAssets == null || !streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size);
                         }
-                        AddDownloadTask(DownloadTask.Create(bundleInfo, _urls, _localPathRoot, -1, 10, self =>
+                        return false;
+                    });
+                    if (startups.Length > 0)
+                    {
+                        for (int i = 0, size = startups.Length; i < size; i++)
                         {
-                            RemoveDownloadTask(self);
-                        }), false);
+                            var bundleInfo = startups[i];
+                            AddDownloadTask(DownloadTask.Create(bundleInfo, _urls, _localPathRoot, -1, 10, self =>
+                            {
+                                RemoveDownloadTask(self);
+                                if (_tasks.Count == 0)
+                                {
+                                    SetManifest(manifest);
+                                    ResourceManager.GetListener().OnComplete();
+                                }
+                            }), false);
+                        }
+                        ResourceManager.GetListener().OnStartupTask(startups);
+                        Schedule();
                     }
-                    ResourceManager.GetListener().OnStartupTask(startups);
-                    Schedule();
-                    SetManifest(manifest);
-                    ResourceManager.GetListener().OnComplete();
+                    else
+                    {
+                        SetManifest(manifest);
+                        ResourceManager.GetListener().OnComplete();
+                    }
                 });
             });
         }
