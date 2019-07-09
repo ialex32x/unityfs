@@ -93,6 +93,11 @@ namespace UnityFS
             return new UEditorScene(GetAsset(assetPath)).LoadAdditive();
         }
 
+        public void Open()
+        {
+            ResourceManager.GetListener().OnComplete();
+        }
+
         public void Close()
         {
         }

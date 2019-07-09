@@ -6,69 +6,47 @@ namespace Examples
 {
     using UnityEngine;
 
-    public class Sample : MonoBehaviour
+    public class Sample : MonoBehaviour, UnityFS.IAssetProviderListener
     {
         public bool developMode;        // 编辑器模式 (直接从AssetDatabase加载, 无需打包)
         public bool downloadStartups;   // 是否进行启动包预下载
 
+        public void OnStartupTask(UnityFS.Manifest.BundleInfo[] bundles)
+        {
+        }
+
+        public void OnComplete()
+        {
+            OnUnityFSLoaded();
+        }
+
+        public void OnTaskStart(UnityFS.ITask task)
+        {
+
+        }
+
+        public void OnTaskComplete(UnityFS.ITask task)
+        {
+
+        }
+
         void Awake()
         {
-            // var loader = new UnityFS.StreamingAssetsLoader();
-            // StartCoroutine(loader.OpenManifest());
             Object.DontDestroyOnLoad(gameObject);
 
-            UnityFS.ResourceManager.Initialize();
-#if UNITY_EDITOR
-            if (developMode)
-            {
-                UnityFS.ResourceManager.Open(new UnityFS.AssetDatabaseAssetProvider());
-                OnUnityFSLoaded();
-            }
-            else
-#endif
-            {
-                var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
-                var localPathRoot = Path.Combine(dataPath, "packages");
-                Debug.Log($"open localPathRoot: {localPathRoot}");
+            // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
+            // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
+            var urls = UnityFS.Utils.Helpers.URLs(
+                // "http://localhost:8081/",
+                "http://localhost:8080/"
+            );
 
-                // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
-                // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
-                var urls = UnityFS.Utils.Helpers.URLs(
-                    // "http://localhost:8081/",
-                    "http://localhost:8080/"
-                );
-                UnityFS.Utils.Helpers.GetManifest(urls, localPathRoot, manifest =>
-                {
-                    var concurrent = SystemInfo.processorCount - 1;
-                    new UnityFS.StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
-                    {
-                        // 可以进行预下载 (可选)
-                        if (downloadStartups)
-                        {
-                            var startups = UnityFS.Utils.Helpers.CollectStartupBundles(manifest, localPathRoot);
-                            UnityFS.Utils.Helpers.DownloadBundles(
-                                localPathRoot, startups, urls,
-                                streamingAssets,
-                                (i, all, task) =>
-                                {
-                                    Debug.Log($"下载中 {startups[i].name}({task.url}) {(int)(task.progress * 100f)}% ({i}/{all})");
-                                },
-                                () =>
-                                {
-                                    Debug.Log("全部下载完毕");
-                                    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent, streamingAssets));
-                                    OnUnityFSLoaded();
-                                }
-                            );
-                        }
-                        else
-                        {
-                            UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, concurrent, streamingAssets));
-                            OnUnityFSLoaded();
-                        }
-                    });
-                });
-            }
+            var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
+            var localPathRoot = Path.Combine(dataPath, "bundles");
+            Debug.Log($"open localPathRoot: {localPathRoot}");
+
+            UnityFS.ResourceManager.Initialize(developMode, localPathRoot, urls, this);
+            UnityFS.ResourceManager.Open();
         }
 
         private void OnUnityFSLoaded()

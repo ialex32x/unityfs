@@ -8,9 +8,9 @@ namespace UnityFS
 
     public interface IAssetProviderListener
     {
-        void OnProgress(int taskIndex, int taskCount, ITask task, Manifest.BundleInfo[] bundles);
+        void OnStartupTask(Manifest.BundleInfo[] bundles);
         void OnComplete();
-        void OnTaskProgress(ITask task);
+        void OnTaskStart(ITask task);
         void OnTaskComplete(ITask task);
     }
 }

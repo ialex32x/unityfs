@@ -11,9 +11,32 @@ namespace UnityFS
         // 资源加载器
         static IAssetProvider _assetProvider;
 
-        public static void Initialize()
+        static IAssetProviderListener _listener;
+
+        public static void SetListener(IAssetProviderListener listener)
         {
+            _listener = listener;
+        }
+
+        public static IAssetProviderListener GetListener()
+        {
+            return _listener;
+        }
+
+        public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, IAssetProviderListener listener)
+        {
+            _listener = listener;
             UnityFS.JobScheduler.Initialize();
+#if UNITY_EDITOR
+            if (devMode)
+            {
+                _assetProvider = new UnityFS.AssetDatabaseAssetProvider();
+            }
+            else
+#endif
+            {
+                _assetProvider = new UnityFS.BundleAssetProvider(localPathRoot, urls);
+            }
         }
 
         public static void Close()
@@ -24,9 +47,9 @@ namespace UnityFS
             }
         }
 
-        public static void Open(IAssetProvider assetProvider)
+        public static void Open()
         {
-            _assetProvider = assetProvider;
+            _assetProvider.Open();
         }
 
         public static UScene LoadScene(string assetPath)

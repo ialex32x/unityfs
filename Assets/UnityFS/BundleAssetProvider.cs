@@ -284,14 +284,11 @@ namespace UnityFS
         private string _localPathRoot;
         private StreamingAssetsLoader _streamingAssets;
 
-        public BundleAssetProvider(Manifest manifest, string localPathRoot, IList<string> urls, int concurrent, StreamingAssetsLoader streamingAssets)
+        public BundleAssetProvider(string localPathRoot, IList<string> urls)
         {
-            _manifest = manifest;
             _localPathRoot = localPathRoot;
             _urls.AddRange(urls);
-            _concurrentTasks = Math.Max(1, Math.Min(concurrent, 4)); // 并发下载任务数量
-            _streamingAssets = streamingAssets;
-            this.Initialize();
+            _concurrentTasks = Math.Max(1, Math.Min(SystemInfo.processorCount - 1, 4)); // 并发下载任务数量
         }
 
         public void AddURLs(params string[] urls)
@@ -299,8 +296,43 @@ namespace UnityFS
             _urls.AddRange(urls);
         }
 
+        public void Open()
+        {
+            Initialize();
+        }
+
         private void Initialize()
         {
+            Utils.Helpers.GetManifest(_urls, _localPathRoot, manifest =>
+            {
+                new StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
+                {
+                    _streamingAssets = streamingAssets;
+                    var startups = Utils.Helpers.CollectStartupBundles(manifest, _localPathRoot);
+                    for (int i = 0, size = startups.Length; i < size; i++)
+                    {
+                        var bundleInfo = startups[i];
+                        if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
+                        {
+                            // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
+                            continue;
+                        }
+                        AddDownloadTask(DownloadTask.Create(bundleInfo, _urls, _localPathRoot, -1, 10, self =>
+                        {
+                            RemoveDownloadTask(self);
+                        }), false);
+                    }
+                    ResourceManager.GetListener().OnStartupTask(startups);
+                    Schedule();
+                    SetManifest(manifest);
+                    ResourceManager.GetListener().OnComplete();
+                });
+            });
+        }
+
+        private void SetManifest(Manifest manifest)
+        {
+            _manifest = manifest;
             foreach (var bundle in _manifest.bundles)
             {
                 _bundlesMap[bundle.name] = bundle;
@@ -346,23 +378,15 @@ namespace UnityFS
         {
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
-            AddDownloadTask(DownloadTask.Create(
-                bundle.name, bundle.checksum, bundle.size, bundle.priority,
-                _urls,
-                _localPathRoot,
-                -1,
-                10,
-                self =>
+            AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, _urls, _localPathRoot, -1, 10, self =>
             {
-                _tasks.Remove(self);
-                _runningTasks--;
-                Schedule();
+                RemoveDownloadTask(self);
                 if (!LoadBundleFile(bundle, _localPathRoot))
                 {
                     bundle.Load(null);
                 }
                 bundle.RemoveRef();
-            }));
+            }), true);
         }
 
         private bool LoadBundleFile(UBundle bundle, string localPathRoot)
@@ -418,7 +442,7 @@ namespace UnityFS
             }
         }
 
-        private DownloadTask AddDownloadTask(DownloadTask newTask)
+        private DownloadTask AddDownloadTask(DownloadTask newTask, bool bSchedule)
         {
             for (var node = _tasks.First; node != null; node = node.Next)
             {
@@ -434,8 +458,19 @@ namespace UnityFS
                 }
             }
             _tasks.AddLast(newTask);
-            Schedule();
+            if (bSchedule)
+            {
+                Schedule();
+            }
             return newTask;
+        }
+
+        private void RemoveDownloadTask(DownloadTask task)
+        {
+            _tasks.Remove(task);
+            _runningTasks--;
+            ResourceManager.GetListener().OnTaskComplete(task);
+            Schedule();
         }
 
         private void Schedule()
@@ -452,6 +487,7 @@ namespace UnityFS
                 {
                     _runningTasks++;
                     task.Run();
+                    ResourceManager.GetListener().OnTaskStart(task);
                     break;
                 }
             }
