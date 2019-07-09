@@ -276,7 +276,7 @@ namespace UnityFS
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
         private Dictionary<string, WeakReference> _fileSystems = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
-        private IList<string> _urls;
+        private List<string> _urls = new List<string>();
         private Manifest _manifest;
         private int _runningTasks = 0;
         private int _concurrentTasks = 0;
@@ -288,10 +288,15 @@ namespace UnityFS
         {
             _manifest = manifest;
             _localPathRoot = localPathRoot;
-            _urls = urls;
+            _urls.AddRange(urls);
             _concurrentTasks = Math.Max(1, Math.Min(concurrent, 4)); // 并发下载任务数量
             _streamingAssets = streamingAssets;
             this.Initialize();
+        }
+
+        public void AddURLs(params string[] urls)
+        {
+            _urls.AddRange(urls);
         }
 
         private void Initialize()
