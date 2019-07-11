@@ -24,36 +24,21 @@
 ## 初始化
 ```csharp
 
-UnityFS.ResourceManager.Initialize();
-```
-
-## 打开资源管理器, 有两种管理器可以使用
-```csharp
-
-
-// 方式1. 在编辑器中可以脱离 AssetBundle 直接资源加载
-    #if UNITY_EDITOR
-    if (developMode)
-    {
-        // 打开编辑器专用资源加载器
-        UnityFS.ResourceManager.Open(new UnityFS.AssetDatabaseAssetProvider());
-    }
-    #endif
-
-// 方式2. 通过资源包进行资源加载
-    var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
-    var localPathRoot = Path.Combine(dataPath, "packages");
-
     // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
     // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
     var urls = UnityFS.Utils.Helpers.URLs(
         // "http://localhost:8081/",
         "http://localhost:8080/"
     );
-    //  获取到资源清单
-    var manifest = ...; 
-    // 打开资源包资源加载器
-    UnityFS.ResourceManager.Open(new UnityFS.BundleAssetProvider(manifest, localPathRoot, urls, 1));
+
+    // 下载存储目录
+    var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
+    var localPathRoot = Path.Combine(dataPath, "bundles");
+    Debug.Log($"open localPathRoot: {localPathRoot}");
+
+    UnityFS.ResourceManager.Initialize(developMode, localPathRoot, urls, this);
+    UnityFS.ResourceManager.Open();
+
 ```
 
 ## 资源加载
