@@ -25,7 +25,7 @@ namespace UnityFS
 
         public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, IAssetProviderListener listener)
         {
-            _listener = listener;
+            _listener = listener ?? new EmptyAssetProviderListener();
             UnityFS.JobScheduler.Initialize();
 #if UNITY_EDITOR
             if (devMode)

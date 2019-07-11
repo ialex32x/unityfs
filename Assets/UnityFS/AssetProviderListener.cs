@@ -13,4 +13,23 @@ namespace UnityFS
         void OnTaskStart(ITask task);
         void OnTaskComplete(ITask task);
     }
+
+    public class EmptyAssetProviderListener : IAssetProviderListener
+    {
+        public void OnComplete()
+        {
+        }
+
+        public void OnStartupTask(Manifest.BundleInfo[] bundles)
+        {
+        }
+
+        public void OnTaskComplete(ITask task)
+        {
+        }
+
+        public void OnTaskStart(ITask task)
+        {
+        }
+    }
 }
