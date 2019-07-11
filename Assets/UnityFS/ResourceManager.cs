@@ -23,9 +23,14 @@ namespace UnityFS
             return _listener;
         }
 
-        public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, IAssetProviderListener listener)
+        public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, Action oncomplete)
         {
-            _listener = listener ?? new EmptyAssetProviderListener();
+            Initialize(devMode, localPathRoot, urls, null, oncomplete);
+        }
+
+        public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, Action oninitialize, Action oncomplete)
+        {
+            _listener = new EmptyAssetProviderListener();
             UnityFS.JobScheduler.Initialize();
 #if UNITY_EDITOR
             if (devMode)
@@ -37,6 +42,15 @@ namespace UnityFS
             {
                 _assetProvider = new UnityFS.BundleAssetProvider(localPathRoot, urls);
             }
+            if (oninitialize != null)
+            {
+                oninitialize();
+            }
+            _assetProvider.Open();
+            if (oncomplete != null)
+            {
+                _assetProvider.completed += oncomplete;
+            }
         }
 
         public static void Close()
@@ -45,11 +59,6 @@ namespace UnityFS
             {
                 _assetProvider.Close();
             }
-        }
-
-        public static void Open()
-        {
-            _assetProvider.Open();
         }
 
         public static UScene LoadScene(string assetPath)

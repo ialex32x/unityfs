@@ -283,6 +283,33 @@ namespace UnityFS
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
         private string _localPathRoot;
         private StreamingAssetsLoader _streamingAssets;
+        private bool _disposed;
+
+        private List<Action> _callbacks = new List<Action>();
+
+        public event Action completed
+        {
+            add
+            {
+                if (_disposed)
+                {
+                    Debug.LogError($"BundleAssetProvider already disposed");
+                }
+                if (_manifest != null)
+                {
+                    value();
+                }
+                else
+                {
+                    _callbacks.Add(value);
+                }
+            }
+
+            remove
+            {
+                _callbacks.Remove(value);
+            }
+        }
 
         public BundleAssetProvider(string localPathRoot, IList<string> urls)
         {
@@ -353,6 +380,12 @@ namespace UnityFS
                 {
                     _assetPath2Bundle[assetPath] = bundle.name;
                 }
+            }
+            while (_callbacks.Count > 0)
+            {
+                var callback = _callbacks[0];
+                _callbacks.RemoveAt(0);
+                callback();
             }
         }
 
@@ -514,17 +547,21 @@ namespace UnityFS
 
         private void OnRelease()
         {
-            GC.Collect();
-            var count = _bundles.Count;
-            if (count > 0)
+            if (!_disposed)
             {
-                var bundles = new UBundle[count];
-                _bundles.Values.CopyTo(bundles, 0);
-                for (var i = 0; i < count; i++)
+                _disposed = true;
+                GC.Collect();
+                var count = _bundles.Count;
+                if (count > 0)
                 {
-                    var bundle = bundles[i];
-                    // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
-                    bundle.Release();
+                    var bundles = new UBundle[count];
+                    _bundles.Values.CopyTo(bundles, 0);
+                    for (var i = 0; i < count; i++)
+                    {
+                        var bundle = bundles[i];
+                        // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
+                        bundle.Release();
+                    }
                 }
             }
         }

@@ -34,7 +34,6 @@ namespace Examples
 
         public void OnComplete()
         {
-            OnUnityFSLoaded();
         }
 
         public void OnTaskStart(UnityFS.ITask task)
@@ -62,8 +61,13 @@ namespace Examples
             var localPathRoot = Path.Combine(dataPath, "bundles");
             Debug.Log($"open localPathRoot: {localPathRoot}");
 
-            UnityFS.ResourceManager.Initialize(developMode, localPathRoot, urls, this);
-            UnityFS.ResourceManager.Open();
+            UnityFS.ResourceManager.Initialize(developMode, localPathRoot, urls, () =>
+            {
+                UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件
+            }, () =>
+            {
+                OnUnityFSLoaded();
+            });
         }
 
         private void OnUnityFSLoaded()

@@ -33,6 +33,18 @@ namespace UnityFS
 
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
 
+        public event Action completed
+        {
+            add
+            {
+                value();
+            }
+
+            remove
+            {
+            }
+        }
+
         public UAsset GetAsset(string assetPath)
         {
             WeakReference assetRef;
