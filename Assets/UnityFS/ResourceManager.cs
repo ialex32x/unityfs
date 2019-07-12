@@ -11,6 +11,7 @@ namespace UnityFS
         // 资源加载器
         static IAssetProvider _assetProvider;
 
+        static IAssetsAnalyzer _analyzer;
         static IAssetProviderListener _listener;
 
         public static void SetListener(IAssetProviderListener listener)
@@ -21,6 +22,20 @@ namespace UnityFS
         public static IAssetProviderListener GetListener()
         {
             return _listener;
+        }
+
+        public static void SetAnalyzer(IAssetsAnalyzer analyzer)
+        {
+            _analyzer = analyzer;
+        }
+
+        public static IAssetsAnalyzer GetAnalyzer()
+        {
+            if (_analyzer == null)
+            {
+                _analyzer = new EmptyAssetsAnalyzer();
+            }
+            return _analyzer;
         }
 
         public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, Action oncomplete)

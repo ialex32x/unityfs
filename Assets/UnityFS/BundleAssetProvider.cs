@@ -220,10 +220,11 @@ namespace UnityFS
                 {
                     JobScheduler.DispatchMain(() =>
                     {
+                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
                         _bundle.completed -= OnBundleLoaded;
                         _bundle.RemoveRef();
                     });
-                    Debug.LogFormat($"UAssetBundleAsset ({_assetPath}) released");
+                    Debug.LogFormat($"UAssetBundleAsset ({assetPath}) released");
                     _disposed = true;
                 }
             }
@@ -677,6 +678,7 @@ namespace UnityFS
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
+                    ResourceManager.GetAnalyzer().OnAssetAccess(assetPath);
                     return asset;
                 }
             }
@@ -690,6 +692,7 @@ namespace UnityFS
                     var assetBundleUBundle = bundle as UAssetBundleBundle;
                     if (assetBundleUBundle != null)
                     {
+                        ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
                         if (concrete)
                         {
                             asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath);

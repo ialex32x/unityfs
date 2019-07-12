@@ -26,6 +26,10 @@ namespace UnityFS
                 if (!_disposed)
                 {
                     Debug.LogFormat($"UAssetDatabaseAsset ({_assetPath}) released");
+                    JobScheduler.DispatchMain(() =>
+                    {
+                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                    });
                     _disposed = true;
                 }
             }
@@ -54,9 +58,11 @@ namespace UnityFS
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
+                    ResourceManager.GetAnalyzer().OnAssetAccess(assetPath);
                     return asset;
                 }
             }
+            ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
             asset = new UAssetDatabaseAsset(assetPath);
             _assets[assetPath] = new WeakReference(asset);
             return asset;

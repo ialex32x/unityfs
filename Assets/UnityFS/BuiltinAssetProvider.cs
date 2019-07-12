@@ -28,7 +28,11 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat($"UBuiltinAsset ({_assetPath}) released");
+                    Debug.LogFormat($"UBuiltinAsset ({assetPath}) released");
+                    JobScheduler.DispatchMain(() =>
+                    {
+                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                    });
                     _disposed = true;
                 }
             }
@@ -68,19 +72,21 @@ namespace UnityFS
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
+                    ResourceManager.GetAnalyzer().OnAssetAccess(assetPath);
                     return asset;
                 }
             }
+            ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
             asset = new UBuiltinAsset(assetPath);
             _assets[assetPath] = new WeakReference(asset);
             return asset;
         }
-        
+
         public UBundle GetBundle(string bundleName)
         {
             return null;
         }
-        
+
         public string Find(string assetPath)
         {
             return "builtin";
