@@ -115,7 +115,7 @@ namespace UnityFS
 
         public static Utils.PrefabLoader Instantiate(string assetPath)
         {
-            return Utils.PrefabLoader.Instantiate(assetPath);
+            return Utils.PrefabLoader.Load(assetPath);
         }
 
         // 返回文件所在 FileSystem

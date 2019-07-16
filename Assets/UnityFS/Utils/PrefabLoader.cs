@@ -49,11 +49,11 @@ namespace UnityFS.Utils
             }
         }
 
-        public static PrefabLoader Instantiate(string assetPath)
+        public static PrefabLoader Load(string assetPath)
         {
             var gameObject = new GameObject("Prefab Loader");
             var loader = gameObject.AddComponent<PrefabLoader>();
-            loader.Load(assetPath);
+            loader._Load(assetPath);
             return loader;
         }
 
@@ -63,7 +63,7 @@ namespace UnityFS.Utils
             return this;
         }
 
-        private void Load(string assetPath)
+        private void _Load(string assetPath)
         {
             _asset = ResourceManager.LoadAsset(assetPath);
             _asset.completed += OnCompleted;
