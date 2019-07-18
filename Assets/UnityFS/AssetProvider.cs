@@ -19,7 +19,7 @@ namespace UnityFS
 
         IFileSystem GetFileSystem(string bundleName);
         UBundle GetBundle(string bundleName);
-        UAsset GetAsset(string assetPath);
+        UAsset GetAsset(string assetPath, Type type);
 
         void Open();
         void Close();

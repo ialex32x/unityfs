@@ -11,12 +11,14 @@ namespace UnityFS
     {
         protected class UAssetDatabaseAsset : UAsset
         {
-            public UAssetDatabaseAsset(string assetPath)
+            public UAssetDatabaseAsset(string assetPath, Type type)
             : base(assetPath)
             {
 #if UNITY_EDITOR
                 // Application.LoadLevelAdditiveAsync()
-                _object = UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
+                _object = type != null
+                    ? UnityEditor.AssetDatabase.LoadAssetAtPath(assetPath, type)
+                    : UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
 #endif
                 Complete();
             }
@@ -49,7 +51,7 @@ namespace UnityFS
             }
         }
 
-        public UAsset GetAsset(string assetPath)
+        public UAsset GetAsset(string assetPath, Type type)
         {
             WeakReference assetRef;
             UAsset asset = null;
@@ -63,7 +65,7 @@ namespace UnityFS
                 }
             }
             ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-            asset = new UAssetDatabaseAsset(assetPath);
+            asset = new UAssetDatabaseAsset(assetPath, type);
             _assets[assetPath] = new WeakReference(asset);
             return asset;
         }
@@ -89,12 +91,12 @@ namespace UnityFS
 
         public UScene LoadScene(string assetPath)
         {
-            return new UEditorScene(GetAsset(assetPath)).Load();
+            return new UEditorScene(GetAsset(assetPath, null)).Load();
         }
 
         public UScene LoadSceneAdditive(string assetPath)
         {
-            return new UEditorScene(GetAsset(assetPath)).LoadAdditive();
+            return new UEditorScene(GetAsset(assetPath, null)).LoadAdditive();
         }
 
         public void Open()

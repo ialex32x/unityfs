@@ -103,12 +103,24 @@ namespace UnityFS
 
         public static UAsset LoadAsset(string assetPath)
         {
-            return _assetProvider.GetAsset(assetPath);
+            return _assetProvider.GetAsset(assetPath, null);
+        }
+
+        public static UAsset LoadAsset(string assetPath, Type type)
+        {
+            return _assetProvider.GetAsset(assetPath, type);
         }
 
         public static UAsset LoadAsset(string assetPath, Action<UAsset> callback)
         {
-            var asset = _assetProvider.GetAsset(assetPath);
+            var asset = _assetProvider.GetAsset(assetPath, null);
+            asset.completed += callback;
+            return asset;
+        }
+
+        public static UAsset LoadAsset(string assetPath, Type type, Action<UAsset> callback)
+        {
+            var asset = _assetProvider.GetAsset(assetPath, type);
             asset.completed += callback;
             return asset;
         }

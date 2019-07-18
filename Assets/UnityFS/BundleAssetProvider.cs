@@ -238,9 +238,12 @@ namespace UnityFS
         // 从 AssetBundle 资源包载入 (会调用 assetbundle.LoadAsset 载入实际资源)
         protected class UAssetBundleConcreteAsset : UAssetBundleAsset
         {
-            public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath)
+            private Type _type;
+
+            public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type)
             : base(bundle, assetPath)
             {
+                _type = type;
             }
 
             protected override void OnBundleLoaded(UBundle bundle)
@@ -254,7 +257,7 @@ namespace UnityFS
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
                 {
-                    var request = assetBundle.LoadAssetAsync(_assetPath);
+                    var request = _type != null ? assetBundle.LoadAssetAsync(_assetPath, _type) : assetBundle.LoadAssetAsync(_assetPath);
                     request.completed += OnAssetLoaded;
                 }
                 else
@@ -609,12 +612,12 @@ namespace UnityFS
 
         public UScene LoadScene(string assetPath)
         {
-            return new UScene(GetAsset(assetPath, false)).Load();
+            return new UScene(GetAsset(assetPath, false, null)).Load();
         }
 
         public UScene LoadSceneAdditive(string assetPath)
         {
-            return new UScene(GetAsset(assetPath, false)).LoadAdditive();
+            return new UScene(GetAsset(assetPath, false, null)).LoadAdditive();
         }
 
         public IFileSystem GetFileSystem(string bundleName)
@@ -654,9 +657,9 @@ namespace UnityFS
             return invalid;
         }
 
-        public UAsset GetAsset(string assetPath)
+        public UAsset GetAsset(string assetPath, Type type)
         {
-            return GetAsset(assetPath, true);
+            return GetAsset(assetPath, true, type);
         }
 
         public string Find(string assetPath)
@@ -669,7 +672,7 @@ namespace UnityFS
             return null;
         }
 
-        private UAsset GetAsset(string assetPath, bool concrete)
+        private UAsset GetAsset(string assetPath, bool concrete, Type type)
         {
             UAsset asset = null;
             WeakReference assetRef;
@@ -695,7 +698,7 @@ namespace UnityFS
                         ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
                         if (concrete)
                         {
-                            asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath);
+                            asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath, type);
                         }
                         else
                         {
