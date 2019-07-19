@@ -68,6 +68,18 @@ namespace UnityFS
             }
         }
 
+        private static IAssetProvider GetAssetProvider()
+        {
+#if UNITY_EDITOR
+            if (_assetProvider == null)
+            {
+                Debug.LogWarning("[EditorOnly] ResourceManager 未初始化时使用了资源接口, 默认采用编辑器模式运行.");
+                Initialize(true, null, null, null);
+            }
+#endif
+            return _assetProvider;
+        }
+
         public static void Close()
         {
             if (_assetProvider != null)
@@ -78,22 +90,22 @@ namespace UnityFS
 
         public static UScene LoadScene(string assetPath)
         {
-            return _assetProvider.LoadScene(assetPath);
+            return GetAssetProvider().LoadScene(assetPath);
         }
 
         public static UScene LoadSceneAdditive(string assetPath)
         {
-            return _assetProvider.LoadSceneAdditive(assetPath);
+            return GetAssetProvider().LoadSceneAdditive(assetPath);
         }
 
         public static UBundle LoadBundle(string bundleName)
         {
-            return _assetProvider.GetBundle(bundleName);
+            return GetAssetProvider().GetBundle(bundleName);
         }
 
         public static void ForEachTask(Action<ITask> callback)
         {
-            _assetProvider.ForEachTask(callback);
+            GetAssetProvider().ForEachTask(callback);
         }
 
         public static UAsset SearchAsset(string assetName)
@@ -103,24 +115,24 @@ namespace UnityFS
 
         public static UAsset LoadAsset(string assetPath)
         {
-            return _assetProvider.GetAsset(assetPath, null);
+            return GetAssetProvider().GetAsset(assetPath, null);
         }
 
         public static UAsset LoadAsset(string assetPath, Type type)
         {
-            return _assetProvider.GetAsset(assetPath, type);
+            return GetAssetProvider().GetAsset(assetPath, type);
         }
 
         public static UAsset LoadAsset(string assetPath, Action<UAsset> callback)
         {
-            var asset = _assetProvider.GetAsset(assetPath, null);
+            var asset = GetAssetProvider().GetAsset(assetPath, null);
             asset.completed += callback;
             return asset;
         }
 
         public static UAsset LoadAsset(string assetPath, Type type, Action<UAsset> callback)
         {
-            var asset = _assetProvider.GetAsset(assetPath, type);
+            var asset = GetAssetProvider().GetAsset(assetPath, type);
             asset.completed += callback;
             return asset;
         }
@@ -133,7 +145,7 @@ namespace UnityFS
         // 返回文件所在 FileSystem
         public static IFileSystem FindFileSystem(string assetPath)
         {
-            var bundleName = _assetProvider.Find(assetPath);
+            var bundleName = GetAssetProvider().Find(assetPath);
             if (!string.IsNullOrEmpty(bundleName))
             {
                 return GetFileSystem(bundleName);
@@ -143,12 +155,12 @@ namespace UnityFS
 
         public static IFileSystem GetFileSystem(string bundleName)
         {
-            return _assetProvider.GetFileSystem(bundleName);
+            return GetAssetProvider().GetFileSystem(bundleName);
         }
 
         public static IFileSystem GetFileSystem(string bundleName, Action<IFileSystem> callback)
         {
-            var fs = _assetProvider.GetFileSystem(bundleName);
+            var fs = GetAssetProvider().GetFileSystem(bundleName);
             fs.completed += callback;
             return fs;
         }
