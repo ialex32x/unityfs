@@ -24,6 +24,22 @@ namespace UnityFS
                 request.completed += OnResourceLoaded;
             }
 
+            public override byte[] ReadAllBytes()
+            {
+                var path = _assetPath;
+                if (!path.EndsWith(".bytes"))
+                {
+                    path += ".bytes";
+                }
+                var textAsset = Resources.Load<TextAsset>(path);
+                if (textAsset != null)
+                {
+                    return textAsset.bytes;
+                }
+                return null;
+                // throw new NotSupportedException();
+            }
+
             protected override void Dispose(bool bManaged)
             {
                 if (!_disposed)

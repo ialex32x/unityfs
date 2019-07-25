@@ -72,7 +72,16 @@ namespace Examples
 
         private void OnUnityFSLoaded()
         {
-            // 获取核心脚本代码包
+            // 在 zip 包中的文件可以异步加载
+            var testFile = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Config/test.txt");
+            testFile.completed += self =>
+            {
+                var text = System.Text.Encoding.UTF8.GetString(testFile.ReadAllBytes());
+                Debug.Log($"用 LoadAsset 形式加载一个文件: {text}");
+            };
+
+            // 在 zip 包中的文件也可以异步加载
+            // 首先获取对应的 FileSystem 对象， 并等待加载完成，完成后可同步加载其中的所有内容
             UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Config/test.txt").completed += fs =>
             {
                 // 可以在这里由脚本接管后续启动流程
@@ -81,6 +90,7 @@ namespace Examples
                 // 其他接口示意:
 
                 // 读取文件内容 (zip包中的文件可以同步读取)
+                // NOTE: ** FileSystem 加载完成后， 只要持有其引用， 其中的文件均可同步加载
                 var data = fs.ReadAllBytes("Assets/Examples/Config/test.txt");
                 Debug.Log(System.Text.Encoding.UTF8.GetString(data));
 

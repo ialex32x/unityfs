@@ -23,6 +23,11 @@ namespace UnityFS
                 Complete();
             }
 
+            public override byte[] ReadAllBytes()
+            {
+                return File.ReadAllBytes(_assetPath);
+            }
+
             protected override void Dispose(bool bManaged)
             {
                 if (!_disposed)

@@ -15,6 +15,11 @@ namespace UnityFS
             Complete();
         }
 
+        public override byte[] ReadAllBytes()
+        {
+            return null;
+        }
+
         protected override void Dispose(bool bManaged)
         {
         }

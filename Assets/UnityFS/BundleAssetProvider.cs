@@ -19,9 +19,9 @@ namespace UnityFS
     {
         public class ZipFileSystem : AbstractFileSystem
         {
-            private ZipArchiveUBundle _bundle;
+            private UZipArchiveBundle _bundle;
 
-            public ZipFileSystem(ZipArchiveUBundle bundle)
+            public ZipFileSystem(UZipArchiveBundle bundle)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -58,12 +58,12 @@ namespace UnityFS
             }
         }
 
-        public class ZipArchiveUBundle : UBundle
+        public class UZipArchiveBundle : UBundle
         {
             private ZipFile _zipFile;
             private BundleAssetProvider _provider;
 
-            public ZipArchiveUBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
+            public UZipArchiveBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
             : base(bundleInfo)
             {
                 _provider = provider;
@@ -135,6 +135,51 @@ namespace UnityFS
                 {
                     OnLoaded();
                 }
+            }
+        }
+
+        // Zip 包中的文件资源
+        protected class UZipArchiveBundleAsset : UAsset
+        {
+            protected UZipArchiveBundle _bundle;
+
+            public UZipArchiveBundleAsset(UZipArchiveBundle bundle, string assetPath)
+            : base(assetPath)
+            {
+                _bundle = bundle;
+                _bundle.AddRef();
+                _bundle.completed += OnBundleLoaded;
+            }
+
+            protected override void Dispose(bool bManaged)
+            {
+                if (!_disposed)
+                {
+                    JobScheduler.DispatchMain(() =>
+                    {
+                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                        _bundle.completed -= OnBundleLoaded;
+                        _bundle.RemoveRef();
+                    });
+                    Debug.LogFormat($"UZipArchiveBundleAsset ({assetPath}) released");
+                    _disposed = true;
+                }
+            }
+
+            public override byte[] ReadAllBytes()
+            {
+                return _bundle.ReadAllBytes(_assetPath);
+            }
+
+            public Stream OpenRead()
+            {
+                return _bundle.OpenRead(_assetPath);
+            }
+
+            protected virtual void OnBundleLoaded(UBundle bundle)
+            {
+                // _bundle.ReadAllBytes(_assetPath);
+                Complete();
             }
         }
 
@@ -212,6 +257,26 @@ namespace UnityFS
                 _bundle = bundle;
                 _bundle.AddRef();
                 _bundle.completed += OnBundleLoaded;
+            }
+
+            public override byte[] ReadAllBytes()
+            {
+                var assetBundle = _bundle.GetAssetBundle();
+                if (assetBundle != null)
+                {
+                    var path = _assetPath;
+                    if (!path.EndsWith(".bytes"))
+                    {
+                        path += ".bytes";
+                    }
+                    var textAsset = assetBundle.LoadAsset<TextAsset>(path);
+                    if (textAsset != null)
+                    {
+                        return textAsset.bytes;
+                    }
+                }
+                return null;
+                // throw new NotSupportedException();
             }
 
             protected override void Dispose(bool bManaged)
@@ -595,7 +660,7 @@ namespace UnityFS
                             bundle = new UAssetBundleBundle(this, bundleInfo);
                             break;
                         case Manifest.BundleType.ZipArchive:
-                            bundle = new ZipArchiveUBundle(this, bundleInfo);
+                            bundle = new UZipArchiveBundle(this, bundleInfo);
                             break;
                     }
 
@@ -636,7 +701,7 @@ namespace UnityFS
             if (bundle != null)
             {
                 bundle.AddRef();
-                var zipArchiveBundle = bundle as ZipArchiveUBundle;
+                var zipArchiveBundle = bundle as UZipArchiveBundle;
                 if (zipArchiveBundle != null)
                 {
                     fileSystem = new ZipFileSystem(zipArchiveBundle);
@@ -705,6 +770,16 @@ namespace UnityFS
                             asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
                         }
                         _assets[assetPath] = new WeakReference(asset);
+                    }
+                    else
+                    {
+                        var zipArchiveBundle = bundle as UZipArchiveBundle;
+                        if (zipArchiveBundle != null)
+                        {
+                            ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
+                            asset = new UZipArchiveBundleAsset(zipArchiveBundle, assetPath);
+                            _assets[assetPath] = new WeakReference(asset);
+                        }
                     }
                     bundle.RemoveRef();
                     return asset;
