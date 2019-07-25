@@ -53,7 +53,8 @@ UnityFS.ResourceManager 返回的资源会自动管理加载卸载与资源包�
 当资源实例不存在强引用时将进入GC流程, 对应资源包将被自动卸载.
 
 ### 加载文件 (脚本/配置等)
-IFileSystem 中的文件可以同步加载. 
+IFileSystem 中的文件可以同步加载 (实际对应zip包中的文件). 
+
 ```csharp
 // 获取核心脚本代码包
 var fs = UnityFS.ResourceManager.FindFileSystem("Assets/Examples/Scripts/code.js");
@@ -73,6 +74,17 @@ fs.completed += self =>
     Debug.Log(System.Text.Encoding.UTF8.GetString(data));
 };
 ```
+
+```csharp
+// 可以用 LoadAsset 载入文件内容 (通常位于zip包中)
+var testFile = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Config/test.txt");
+testFile.completed += self =>
+{
+    var text = System.Text.Encoding.UTF8.GetString(testFile.ReadAllBytes());
+    Debug.Log($"用 LoadAsset 形式加载一个文件: {text}");
+};
+```
+
 
 ### 加载资源 (异步)
 
