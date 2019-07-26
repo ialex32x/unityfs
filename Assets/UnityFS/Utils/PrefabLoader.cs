@@ -12,7 +12,13 @@ namespace UnityFS.Utils
         private UAsset _asset;
 
         protected bool _loaded;
+        private GameObject _target;
         private List<Action<PrefabLoader>> _callbacks = new List<Action<PrefabLoader>>();
+
+        public GameObject target
+        {
+            get { return _target; }
+        }
 
         public event Action<PrefabLoader> completed
         {
@@ -57,6 +63,13 @@ namespace UnityFS.Utils
             return loader;
         }
 
+        public static PrefabLoader Load(GameObject gameObject, string assetPath)
+        {
+            var loader = gameObject.AddComponent<PrefabLoader>();
+            loader._Load(assetPath);
+            return loader;
+        }
+
         public PrefabLoader DestroyAfter(float seconds)
         {
             StartCoroutine(Helpers.DestroyAfter(gameObject, seconds));
@@ -71,7 +84,10 @@ namespace UnityFS.Utils
 
         private void OnCompleted(UAsset asset)
         {
-            Object.Instantiate(asset.GetObject(), transform);
+            _target = Object.Instantiate(asset.GetObject() as GameObject, transform);
+            _target.transform.localPosition = Vector3.zero;
+            _target.transform.localRotation = Quaternion.identity;
+            _target.transform.localScale = Vector3.one;
             if (!_loaded)
             {
                 // Debug.Log($"asset loaded {_assetPath}");
