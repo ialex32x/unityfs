@@ -36,11 +36,11 @@ namespace UnityFS.Editor
             public string name; // bundle filename
             public string note;
             public Manifest.BundleType type;
+            public Manifest.BundleLoad load;
             public BundleAssetPlatforms platforms = (BundleAssetPlatforms)~0;  // filter for platforms
             public bool enabled = true;
             public bool streamingAssets = false; // 是否复制到 StreamingAssets 目录
 
-            public BundleLoad load;
             public int priority;
             public int splitObjects; // 自动分包
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)

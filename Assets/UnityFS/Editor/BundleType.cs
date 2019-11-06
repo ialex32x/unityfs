@@ -6,12 +6,6 @@ namespace UnityFS.Editor
 {
     using UnityEngine;
 
-    public enum BundleLoad
-    {
-        Startup,
-        Normal,
-    }
-
     [Flags]
     public enum BundleAssetPlatforms
     {

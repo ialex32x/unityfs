@@ -525,7 +525,7 @@ namespace UnityFS.Editor
                             bundle.name = bundleSplit.name;
                             bundle.checksum = checksum.hex;
                             bundle.size = (int)fileInfo.Length;
-                            bundle.startup = bundleInfo.load == BundleLoad.Startup;
+                            bundle.load = bundleInfo.load;
                             bundle.priority = bundleInfo.priority;
                             foreach (var asset in bundleSplit.assets)
                             {
@@ -563,7 +563,7 @@ namespace UnityFS.Editor
                         bundle.name = zipArchive.name;
                         bundle.checksum = checksum.hex;
                         bundle.size = (int)fileInfo.Length;
-                        bundle.startup = bundleInfo.load == BundleLoad.Startup;
+                        bundle.load = bundleInfo.load;
                         bundle.priority = bundleInfo.priority;
                         foreach (var assetPath in zipArchive.assets)
                         {

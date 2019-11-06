@@ -437,7 +437,7 @@ namespace UnityFS.Editor
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
                         cellRect.width *= 0.5f;
-                        var load = (BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
+                        var load = (Manifest.BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
                         if (load != bundleInfo.load)
                         {
                             bundleInfo.load = load;

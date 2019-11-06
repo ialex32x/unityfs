@@ -11,6 +11,15 @@ namespace UnityFS
     public class Manifest
     {
         [Serializable]
+        public enum BundleLoad
+        {
+            Startup,
+            Important, 
+            Normal,
+            Optional, 
+        }
+
+        [Serializable]
         public enum BundleType
         {
             AssetBundle,
@@ -23,7 +32,8 @@ namespace UnityFS
         public class BundleInfo
         {
             public BundleType type; // 资源包类型
-            public bool startup;    // 是否需要在启动前完成下载更新
+            public BundleLoad load; // 加载级别
+            public bool startup { get { return load == BundleLoad.Startup; } }    // 是否需要在启动前完成下载更新
             public int priority;    // 下载排队优先级
             public string name;     // 文件名
             public int size;        // 文件大小
