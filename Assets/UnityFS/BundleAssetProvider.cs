@@ -504,6 +504,24 @@ namespace UnityFS
             }), true);
         }
 
+        // 检查是否存在有效的本地包
+        public bool IsBundleFileValid(Manifest.BundleInfo bundleInfo)
+        {
+            var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
+            return Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo);
+        }
+
+        // 检查是否存在有效的本地包
+        public bool IsBundleFileValid(string bundleName)
+        {
+            Manifest.BundleInfo bundleInfo;
+            if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
+            {
+                return IsBundleFileValid(bundleInfo);
+            }
+            return false;
+        }
+
         private bool LoadBundleFile(UBundle bundle, string localPathRoot)
         {
             var fullPath = Path.Combine(localPathRoot, bundle.name);
