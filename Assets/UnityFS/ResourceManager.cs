@@ -143,6 +143,12 @@ namespace UnityFS
             return asset;
         }
 
+        /// 一次性加载若干个资源
+        public static UAssets LoadAssets(IList<string> assetPaths)
+        {
+            return new UAssets().AddRange(assetPaths);
+        }
+
         public static Utils.PrefabLoader Instantiate(string assetPath)
         {
             return Utils.PrefabLoader.Load(assetPath);

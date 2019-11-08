@@ -33,7 +33,6 @@ namespace UnityFS
                     _callbacks.Add(value);
                 }
             }
-
             remove
             {
                 _callbacks.Remove(value);
