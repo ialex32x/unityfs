@@ -113,6 +113,12 @@ namespace UnityFS
             throw new NotImplementedException();
         }
 
+        // 检查本地包文件是否有效
+        public static bool IsBundleFileValid(string bundleName)
+        {
+            return GetAssetProvider().IsBundleFileValid(bundleName);
+        }
+
         public static UAsset LoadAsset(string assetPath)
         {
             return GetAssetProvider().GetAsset(assetPath, null);

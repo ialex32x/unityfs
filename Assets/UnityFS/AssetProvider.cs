@@ -21,6 +21,8 @@ namespace UnityFS
         UBundle GetBundle(string bundleName);
         UAsset GetAsset(string assetPath, Type type);
 
+        bool IsBundleFileValid(string bundleName);
+
         void Open();
         void Close();
     }

@@ -80,6 +80,11 @@ namespace UnityFS
             return null;
         }
 
+        public bool IsBundleFileValid(string bundleName)
+        {
+            return true;
+        }
+
         public string Find(string assetPath)
         {
             return "assetdatabase";

@@ -112,6 +112,11 @@ namespace UnityFS
         {
         }
 
+        public bool IsBundleFileValid(string bundleName)
+        {
+            return true;
+        }
+
         public IFileSystem GetFileSystem(string bundleName)
         {
             return new OrdinaryFileSystem(null);
