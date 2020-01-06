@@ -154,6 +154,7 @@ namespace UnityFS
             {
                 _url = _urls[_urlIndex] + "/" + _name;
             }
+            _url += "?checksum=" + (_checksum ?? DateTime.Now.Ticks.ToString());
         }
 
         private bool Retry(int retry)
