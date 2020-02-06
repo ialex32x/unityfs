@@ -69,6 +69,11 @@ namespace UnityFS.Editor
             public List<Variable> variables = new List<Variable>();
 
             [NonSerialized]
+            public List<Object> assetsCache = new List<Object>();
+
+            public List<Object> assetsOrder = new List<Object>();
+
+            [NonSerialized]
             public List<BundleSplit> splits = new List<BundleSplit>();
 
             public int splitObjects; // 自动分包
@@ -89,7 +94,7 @@ namespace UnityFS.Editor
                 return n;
             }
 
-            private BundleSplit GetBundleSplit(string name = null)
+            private BundleSplit GetBundleSplit(string name)
             {
                 for (int i = 0, size = splits.Count; i < size; i++)
                 {
@@ -105,7 +110,7 @@ namespace UnityFS.Editor
                 return n;
             }
 
-            public BundleSlice GetBundleSlice(string name = null)
+            public BundleSlice GetBundleSlice(string name)
             {
                 var split = GetBundleSplit(name);
                 var count = split.slices.Count;

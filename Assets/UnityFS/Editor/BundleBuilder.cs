@@ -42,6 +42,11 @@ namespace UnityFS.Editor
             return _data;
         }
 
+        private static int Neg2Inf(int v)
+        {
+            return v < 0 ? int.MaxValue : v;
+        }
+
         // 根据 targets 遍历产生所有实际资源列表 assets
         public static bool ScanBundle(BundleBuilderData data, BundleBuilderData.BundleInfo bundle)
         {
@@ -51,6 +56,12 @@ namespace UnityFS.Editor
                 {
                     Scan(data, bundle, target);
                 }
+            }
+            bundle.assetsCache.Sort((a, b) => Neg2Inf(bundle.assetsOrder.IndexOf(a)) - Neg2Inf(bundle.assetsOrder.IndexOf(b)));
+            foreach (var asset in bundle.assetsCache)
+            {
+                var slice = bundle.GetBundleSlice(null);
+                slice.assets.Add(asset);
             }
             return true;
         }
@@ -138,8 +149,12 @@ namespace UnityFS.Editor
             {
                 if (!ContainsAsset(data, asset))
                 {
-                    var slice = bundle.GetBundleSlice();
-                    slice.assets.Add(asset);
+                    bundle.assetsCache.Add(asset);
+                    if (!bundle.assetsOrder.Contains(asset))
+                    {
+                        bundle.assetsOrder.Add(asset);
+                        data.MarkAsDirty();
+                    }
                 }
             }
         }
@@ -192,6 +207,7 @@ namespace UnityFS.Editor
             foreach (var bundle in data.bundles)
             {
                 bundle.splits.Clear();
+                bundle.assetsCache.Clear();
             }
             foreach (var bundle in data.bundles)
             {
@@ -612,6 +628,10 @@ namespace UnityFS.Editor
         {
             foreach (var bundle in data.bundles)
             {
+                if (bundle.assetsCache.Contains(assetObject))
+                {
+                    return true;
+                }
                 foreach (var split in bundle.splits)
                 {
                     foreach (var slice in split.slices)
