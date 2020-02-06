@@ -27,15 +27,20 @@ namespace UnityFS.Editor
         public enum BundleSplitType
         {
             None,
-            Counter,
             Prefix,
+            Suffix,
+        }
+
+        public class BundleSlice
+        {
+            public string fullName;
+            public List<Object> assets = new List<Object>(); // 最终进入打包的所有资源对象
         }
 
         public class BundleSplit
         {
             public string name; // 分包名
-            public BundleSplitType type; // 分包方式
-            public List<Object> assets = new List<Object>(); // 最终进入打包的所有资源对象
+            public List<BundleSlice> slices = new List<BundleSlice>();
         }
 
         public class Variable
@@ -66,8 +71,7 @@ namespace UnityFS.Editor
             [NonSerialized]
             public List<BundleSplit> splits = new List<BundleSplit>();
 
-            // legacy
-            // public int splitObjects; // 自动分包
+            public int splitObjects; // 自动分包
 
             public Variable GetVariable(string name)
             {
@@ -83,6 +87,72 @@ namespace UnityFS.Editor
                 n.name = name;
                 variables.Add(n);
                 return n;
+            }
+
+            private BundleSplit GetBundleSplit(string name = null)
+            {
+                for (int i = 0, size = splits.Count; i < size; i++)
+                {
+                    var v = splits[i];
+                    if (v.name == name)
+                    {
+                        return v;
+                    }
+                }
+                var n = new BundleSplit();
+                n.name = name;
+                splits.Add(n);
+                return n;
+            }
+
+            public BundleSlice GetBundleSlice(string name = null)
+            {
+                var split = GetBundleSplit(name);
+                var count = split.slices.Count;
+                var slice = count > 0 ? split.slices[count - 1] : null;
+                if (slice == null || this.splitObjects >= 1 && slice.assets.Count >= this.splitObjects)
+                {
+                    slice = new BundleSlice();
+                    split.slices.Add(slice);
+                    var dot = this.name.LastIndexOf('.');
+                    string prefix;
+                    string suffix;
+
+                    if (dot >= 0)
+                    {
+                        prefix = this.name.Substring(0, dot);
+                        suffix = this.name.Substring(dot);
+                    }
+                    else
+                    {
+                        prefix = this.name;
+                        suffix = string.Empty;
+                    }
+
+                    if (this.splitObjects == 0 || count == 0)
+                    {
+                        if (string.IsNullOrEmpty(split.name))
+                        {
+                            slice.fullName = this.name;
+                        }
+                        else
+                        {
+                            slice.fullName = prefix + "_" + split.name + suffix;
+                        }
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(split.name))
+                        {
+                            slice.fullName = prefix + "_" + count + suffix;
+                        }
+                        else
+                        {
+                            slice.fullName = prefix + "_" + split.name + "_" + count + suffix;
+                        }
+                    }
+                }
+                return slice;
             }
         }
 
@@ -116,7 +186,6 @@ namespace UnityFS.Editor
 
     public class AssetFilter
     {
-        public int size;
         public string[] extensions;
         public BundleAssetTypes types;
     }

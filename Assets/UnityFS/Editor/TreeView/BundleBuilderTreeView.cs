@@ -143,7 +143,10 @@ namespace UnityFS.Editor
 
         public void _ExpandAll()
         {
-            this.SetExpandedRecursive(0, true);
+            foreach(var child in rootItem.children)
+            {
+                SetExpanded(child.id, true);
+            }
         }
 
         protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
@@ -511,10 +514,10 @@ namespace UnityFS.Editor
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
                         if (bundleInfo.type == Manifest.BundleType.AssetBundle)
                         {
-                            var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.GetVariable("splitObjects").intValue, 0, 100);
-                            if (splitObjects != bundleInfo.GetVariable("splitObjects").intValue)
+                            var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
+                            if (splitObjects != bundleInfo.splitObjects)
                             {
-                                bundleInfo.GetVariable("splitObjects").intValue = splitObjects;
+                                bundleInfo.splitObjects = splitObjects;
                                 _data.MarkAsDirty();
                             }
                         }
