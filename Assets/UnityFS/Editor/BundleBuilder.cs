@@ -60,7 +60,7 @@ namespace UnityFS.Editor
             var extensions = target.extensions?.Split(';');
             var filter = new AssetFilter()
             {
-                size = bundle.splitObjects,
+                size = bundle.GetVariable("splitObjects").intValue,
                 extensions = extensions,
                 types = target.types,
             };
@@ -149,6 +149,7 @@ namespace UnityFS.Editor
                     if (split == null || filter.size >= 1 && split.assets.Count >= filter.size)
                     {
                         split = new BundleBuilderData.BundleSplit();
+                        split.type = BundleBuilderData.BundleSplitType.Counter;
                         index = bundle.splits.Count;
                         if (filter.size == 0)
                         {

@@ -78,6 +78,10 @@ namespace UnityFS.Editor
                 {
                     _treeView.CollapseAll();
                 }
+                if (GUILayout.Button("Expand All"))
+                {
+                    _treeView._ExpandAll();
+                }
                 GUILayout.Space(20f);
                 if (GUILayout.Button("Refresh"))
                 {

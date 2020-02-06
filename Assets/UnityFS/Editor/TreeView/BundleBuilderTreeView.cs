@@ -141,6 +141,11 @@ namespace UnityFS.Editor
             return new BundleBuilderTreeViewRoot(0, -1, "root");
         }
 
+        public void _ExpandAll()
+        {
+            this.SetExpandedRecursive(0, true);
+        }
+
         protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
         {
             var rows = new List<TreeViewItem>();
@@ -419,7 +424,7 @@ namespace UnityFS.Editor
                                 bundleInfo.streamingAssets = streamingAssets;
                                 _data.MarkAsDirty();
                             }
-                            
+
                             // var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, bundleInfo.platforms);
                             // if (platforms != bundleInfo.platforms)
                             // {
@@ -506,10 +511,10 @@ namespace UnityFS.Editor
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
                         if (bundleInfo.type == Manifest.BundleType.AssetBundle)
                         {
-                            var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
-                            if (splitObjects != bundleInfo.splitObjects)
+                            var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.GetVariable("splitObjects").intValue, 0, 100);
+                            if (splitObjects != bundleInfo.GetVariable("splitObjects").intValue)
                             {
-                                bundleInfo.splitObjects = splitObjects;
+                                bundleInfo.GetVariable("splitObjects").intValue = splitObjects;
                                 _data.MarkAsDirty();
                             }
                         }
