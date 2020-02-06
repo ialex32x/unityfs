@@ -86,6 +86,7 @@ namespace UnityFS.Editor
             [NonSerialized]
             public List<BundleSplit> splits = new List<BundleSplit>();
 
+            //TODO: 用规则代替
             public int splitObjects; // 自动分包
 
             public Variable GetVariable(string name)
