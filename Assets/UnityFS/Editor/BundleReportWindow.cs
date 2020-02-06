@@ -72,13 +72,13 @@ namespace UnityFS.Editor
         {
             var bundleName = string.IsNullOrEmpty(bundle.name) ? "(null)" : bundle.name;
             EditorGUILayout.HelpBox($"{bundleName}", MessageType.Info);
-            var note = EditorGUILayout.TextField(bundle.note);
+            var note = EditorGUILayout.TextField("Info", bundle.note);
             if (note != bundle.note)
             {
                 bundle.note = note;
                 _data.MarkAsDirty();
             }
-            GUILayout.Space(20f);
+            GUILayout.Space(4f);
             for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
             {
                 var split = bundle.splits[splitIndex];
