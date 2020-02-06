@@ -43,6 +43,15 @@ namespace UnityFS.Editor
             public List<BundleSlice> slices = new List<BundleSlice>();
         }
 
+        [Serializable]
+        public class BundleSplitRule
+        {
+            public BundleSplitType type;
+            public string keyword;
+            public string name;
+            public int capacity;
+        }
+
         public class Variable
         {
             public string name;
@@ -65,8 +74,9 @@ namespace UnityFS.Editor
             public int priority;
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
 
-            public BundleSplitType splitType;
             public List<Variable> variables = new List<Variable>();
+
+            public List<BundleSplitRule> rules = new List<BundleSplitRule>();
 
             [NonSerialized]
             public List<Object> assetsCache = new List<Object>();
