@@ -84,9 +84,9 @@ namespace UnityFS
             var uwr = UnityWebRequest.Get(uri);
             // uwr.downloadHandler = new DownloadHandlerBuffer();
             yield return uwr.SendWebRequest();
+            MemoryStream stream = null;
             if (uwr.error == null && uwr.responseCode == 200)
             {
-                MemoryStream stream = null;
                 try
                 {
                     var bytes = uwr.downloadHandler.data;
@@ -97,12 +97,12 @@ namespace UnityFS
                 {
                     Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
                 }
-                callback(stream);
             }
             else
             {
                 Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
             }
+            callback(stream);
         }
 
         public IEnumerator LoadBundle(string bundleName, string checksum, int size, Action<AssetBundle> callback)
