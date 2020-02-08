@@ -15,6 +15,11 @@ namespace UnityFS
             Complete();
         }
 
+        protected override bool IsValid()
+        {
+            return false;
+        }
+
         public override byte[] ReadAllBytes()
         {
             return null;

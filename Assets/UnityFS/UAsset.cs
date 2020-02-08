@@ -39,6 +39,11 @@ namespace UnityFS
             }
         }
 
+        public bool isValid
+        {
+            get { return IsValid(); }
+        }
+
         public bool isLoaded
         {
             get { return _loaded; }
@@ -56,6 +61,11 @@ namespace UnityFS
                 Debug.LogError($"uasset already disposed ({_assetPath})");
             }
             return _object;
+        }
+
+        protected virtual bool IsValid()
+        {
+            return true;
         }
 
         // 为 filesystem 提供兼容性接口 (每次调用返回一份拷贝数据)
