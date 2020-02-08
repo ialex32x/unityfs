@@ -317,10 +317,14 @@ namespace UnityFS.Editor
             {
                 Block("Basic", () =>
                 {
-                    var note = EditorGUILayout.TextField("Info", bundle.note);
-                    if (note != bundle.note)
+                    EditorGUI.BeginChangeCheck();
+                    bundle.note = EditorGUILayout.TextField("Info", bundle.note);
+                    bundle.streamingAssets = EditorGUILayout.Toggle("StreamingAssets", bundle.streamingAssets);
+                    bundle.load = (Manifest.BundleLoad)EditorGUILayout.EnumPopup("Load", bundle.load);
+                    bundle.type = (Manifest.BundleType)EditorGUILayout.EnumPopup("Type", bundle.type);
+                    bundle.priority = EditorGUILayout.IntSlider("Priority", bundle.priority, 0, 10000);
+                    if (EditorGUI.EndChangeCheck())
                     {
-                        bundle.note = note;
                         _data.MarkAsDirty();
                     }
                 });
