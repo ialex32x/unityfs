@@ -74,7 +74,7 @@ namespace UnityFS
             }
         }
 
-        private static IAssetProvider GetAssetProvider()
+        public static IAssetProvider GetAssetProvider()
         {
 #if UNITY_EDITOR
             if (_assetProvider == null)

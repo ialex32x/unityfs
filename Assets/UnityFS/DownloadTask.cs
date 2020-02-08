@@ -393,7 +393,7 @@ namespace UnityFS
                     while (recvAll < rsp.ContentLength)
                     {
                         var recv = webStream.Read(buffer, 0, buffer.Length);
-                        if (recv > 0)
+                        if (recv > 0 && _running)
                         {
                             recvAll += recv;
                             targetStream.Write(buffer, 0, recv);

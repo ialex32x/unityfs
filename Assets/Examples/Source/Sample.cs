@@ -129,5 +129,58 @@ namespace Examples
                 }, 20f));
             };
         }
+
+        private void DrawText(float x, float y, float h, string text, Color color)
+        {
+            var oldColor = GUI.color;
+            GUI.color = Color.black;
+            GUI.Label(new Rect(x - 1f, y - 1f, 1000f, h), text);
+            GUI.Label(new Rect(x - 1f, y, 1000f, h), text);
+            GUI.Label(new Rect(x - 1f, y + 0f, 1000f, h), text);
+
+            GUI.Label(new Rect(x + 1f, y - 1f, 1000f, h), text);
+            GUI.Label(new Rect(x + 1f, y, 1000f, h), text);
+            GUI.Label(new Rect(x + 1f, y + 1f, 1000f, h), text);
+
+            GUI.Label(new Rect(x, y - 1f, 1000f, h), text);
+            GUI.Label(new Rect(x, y + 1f, 1000f, h), text);
+            GUI.color = Color.green;
+            GUI.Label(new Rect(x, y, 1000f, h), text);
+            GUI.color = oldColor;
+        }
+
+        void OnGUI()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+            var scale = 2f;
+            GUI.matrix = Matrix4x4.TRS(
+                Vector3.zero,
+                Quaternion.identity,
+                new Vector3(scale, scale, scale)
+            );
+            var x = 0f;
+            var y = 0f;
+            var line = 20f;
+            var assetProvider = UnityFS.ResourceManager.GetAssetProvider();
+
+            GUILayout.BeginVertical();
+            assetProvider.ForEachTask(task =>
+            {
+                if (task.isRunning)
+                {
+                    DrawText(x, y, line, string.Format("{0} {1} {2}%", task.name, task.size, (int)(task.progress * 100f)), Color.green);
+
+                }
+                else
+                {
+                    DrawText(x, y, line, string.Format("{0} {1}", task.name, task.size), GUI.color);
+                }
+                y += line;
+            });
+            GUILayout.EndVertical();
+        }
     }
 }
