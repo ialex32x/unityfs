@@ -255,9 +255,7 @@ namespace UnityFS.Editor
             }
             if (selectedBundles.Count != 0)
             {
-                var win = EditorWindow.GetWindow<BundleAssetsWindow>();
-                win.SetBundles(_data, selectedBundles);
-                win.Show();
+                BundleAssetsWindow.Inspect(_data, selectedBundles);
             }
             else
             {

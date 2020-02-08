@@ -30,6 +30,13 @@ namespace UnityFS.Editor
             _foldoutStyle.alignment = TextAnchor.MiddleLeft;
         }
 
+        public static void Inspect(BundleBuilderData data, IList<BundleBuilderData.BundleInfo> bundles)
+        {
+            var win = EditorWindow.GetWindow<BundleAssetsWindow>();
+            win.SetBundles(data, bundles);
+            win.Show();
+        }
+
         public void SetBundles(BundleBuilderData data, IList<BundleBuilderData.BundleInfo> bundles)
         {
             _data = data;
@@ -49,6 +56,7 @@ namespace UnityFS.Editor
             }
             _sv = GUILayout.BeginScrollView(_sv);
             var rescan = false;
+            GUILayout.Space(4f);
             GUILayout.BeginHorizontal();
             var targetPlatform = (BuildTarget)EditorGUILayout.EnumPopup("Preview Platform", _targetPlatform);
             if (GUILayout.Button("Reset", GUILayout.Width(120f)))
@@ -60,7 +68,6 @@ namespace UnityFS.Editor
                 rescan = true;
             }
             GUILayout.EndHorizontal();
-            GUILayout.Space(20f);
             if (_targetPlatform != targetPlatform)
             {
                 _targetPlatform = targetPlatform;
