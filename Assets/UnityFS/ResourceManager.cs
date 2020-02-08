@@ -12,6 +12,7 @@ namespace UnityFS
         public int slow;
         public int bufferSize;
         public string localPathRoot;
+        public Func<string, string> assetPathTransformer;
         public IList<string> urls;
         public Action oncomplete;
         public Action oninitialize;
@@ -61,7 +62,7 @@ namespace UnityFS
             else
 #endif
             {
-                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.urls, args.slow, args.bufferSize);
+                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.urls, args.slow, args.bufferSize, args.assetPathTransformer);
             }
             if (args.oninitialize != null)
             {

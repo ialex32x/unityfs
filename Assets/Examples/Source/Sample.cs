@@ -144,7 +144,7 @@ namespace Examples
 
             GUI.Label(new Rect(x, y - 1f, 1000f, h), text);
             GUI.Label(new Rect(x, y + 1f, 1000f, h), text);
-            GUI.color = Color.green;
+            GUI.color = color;
             GUI.Label(new Rect(x, y, 1000f, h), text);
             GUI.color = oldColor;
         }
@@ -161,7 +161,7 @@ namespace Examples
                 Quaternion.identity,
                 new Vector3(scale, scale, scale)
             );
-            var x = 0f;
+            var x = 10f;
             var y = 0f;
             var line = 20f;
             var assetProvider = UnityFS.ResourceManager.GetAssetProvider();
@@ -171,12 +171,12 @@ namespace Examples
             {
                 if (task.isRunning)
                 {
-                    DrawText(x, y, line, string.Format("{0} {1} {2}%", task.name, task.size, (int)(task.progress * 100f)), Color.green);
+                    DrawText(x, y, line, string.Format("{0} {1} {2:00.00}%", task.name, task.size, task.progress * 100f), Color.green);
 
                 }
                 else
                 {
-                    DrawText(x, y, line, string.Format("{0} {1}", task.name, task.size), GUI.color);
+                    DrawText(x, y, line, string.Format("{0} {1}", task.name, task.size), Color.white);
                 }
                 y += line;
             });

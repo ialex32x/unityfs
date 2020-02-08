@@ -346,6 +346,7 @@ namespace UnityFS
         private Dictionary<string, WeakReference> _fileSystems = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private List<string> _urls = new List<string>();
+        private Func<string, string> _assetPathTransformer;
         private Manifest _manifest;
         private int _slow = 0;
         private int _bufferSize = 0;
@@ -382,11 +383,12 @@ namespace UnityFS
             }
         }
 
-        public BundleAssetProvider(string localPathRoot, IList<string> urls, int slow, int bufferSize)
+        public BundleAssetProvider(string localPathRoot, IList<string> urls, int slow, int bufferSize, Func<string, string> assetPathTransformer)
         {
             _slow = slow;
             _bufferSize = bufferSize;
             _localPathRoot = localPathRoot;
+            _assetPathTransformer = assetPathTransformer;
             _urls.AddRange(urls);
             _concurrentTasks = Math.Max(1, Math.Min(SystemInfo.processorCount - 1, 4)); // 并发下载任务数量
         }
@@ -443,6 +445,11 @@ namespace UnityFS
             });
         }
 
+        private string TransformAssetPath(string assetPath)
+        {
+            return _assetPathTransformer != null ? _assetPathTransformer.Invoke(assetPath) : assetPath;
+        }
+
         private void SetManifest(Manifest manifest)
         {
             _manifest = manifest;
@@ -451,7 +458,7 @@ namespace UnityFS
                 _bundlesMap[bundle.name] = bundle;
                 foreach (var assetPath in bundle.assets)
                 {
-                    _assetPath2Bundle[assetPath] = bundle.name;
+                    _assetPath2Bundle[TransformAssetPath(assetPath)] = bundle.name;
                 }
             }
             while (_callbacks.Count > 0)
@@ -754,7 +761,7 @@ namespace UnityFS
         public string Find(string assetPath)
         {
             string bundleName;
-            if (_assetPath2Bundle.TryGetValue(assetPath, out bundleName))
+            if (_assetPath2Bundle.TryGetValue(TransformAssetPath(assetPath), out bundleName))
             {
                 return bundleName;
             }
@@ -765,7 +772,8 @@ namespace UnityFS
         {
             UAsset asset = null;
             WeakReference assetRef;
-            if (_assets.TryGetValue(assetPath, out assetRef) && assetRef.IsAlive)
+            var transformedAssetPath = TransformAssetPath(assetPath);
+            if (_assets.TryGetValue(transformedAssetPath, out assetRef) && assetRef.IsAlive)
             {
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
@@ -775,7 +783,7 @@ namespace UnityFS
                 }
             }
             string bundleName;
-            if (_assetPath2Bundle.TryGetValue(assetPath, out bundleName))
+            if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
             {
                 var bundle = this.GetBundle(bundleName);
                 if (bundle != null)
@@ -793,7 +801,7 @@ namespace UnityFS
                         {
                             asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
                         }
-                        _assets[assetPath] = new WeakReference(asset);
+                        _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
                     }
                     else
                     {
@@ -802,7 +810,7 @@ namespace UnityFS
                         {
                             ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
                             asset = new UZipArchiveBundleAsset(zipArchiveBundle, assetPath);
-                            _assets[assetPath] = new WeakReference(asset);
+                            _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
                         }
                     }
                     bundle.RemoveRef();
@@ -811,7 +819,7 @@ namespace UnityFS
                 // 不是 Unity 资源包, 不能实例化 AssetBundleUAsset
             }
             var invalid = new UFailureAsset(assetPath);
-            _assets[assetPath] = new WeakReference(invalid);
+            _assets[TransformAssetPath(assetPath)] = new WeakReference(invalid);
             return invalid;
         }
     }
