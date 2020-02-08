@@ -143,7 +143,7 @@ namespace UnityFS.Editor
 
         public void _ExpandAll()
         {
-            foreach(var child in rootItem.children)
+            foreach (var child in rootItem.children)
             {
                 SetExpanded(child.id, true);
             }
@@ -524,6 +524,11 @@ namespace UnityFS.Editor
                     }
                     break;
             }
+        }
+
+        protected override void SelectionChanged(IList<int> selectedIds)
+        {
+            ShowBundleReport();
         }
 
         private void OnSortingChanged(MultiColumnHeader multiColumnHeader)
