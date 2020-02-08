@@ -19,8 +19,8 @@ namespace UnityFS.Editor
             public int id;
             public bool enabled = true;
             public Object target;
-            public BundleAssetTypes types = (BundleAssetTypes)~0; // (仅搜索目录时) 仅包含指定资源类型
-            public string extensions = string.Empty;    // (仅搜索目录时) 额外包含指定后缀的文件
+            // public BundleAssetTypes types = (BundleAssetTypes)~0; // (仅搜索目录时) 仅包含指定资源类型
+            // public List<string> extensions = new List<string>();  // (仅搜索目录时) 额外包含指定后缀的文件
         }
 
         [Serializable]
@@ -33,23 +33,82 @@ namespace UnityFS.Editor
 
         public class BundleSlice
         {
-            public string fullName;
+            public string name;
             public List<Object> assets = new List<Object>(); // 最终进入打包的所有资源对象
         }
 
+        [Serializable]
         public class BundleSplit
         {
-            public string name; // 分包名
+            public string name = string.Empty; // 分包名
+            public int sliceObjects;
+            public List<BundleSplitRule> rules = new List<BundleSplitRule>();
+
+            [NonSerialized]
+            public List<Object> assets = new List<Object>();
+            [NonSerialized]
             public List<BundleSlice> slices = new List<BundleSlice>();
+
+            public void Slice(string bundleName)
+            {
+                foreach (var asset in assets)
+                {
+                    GetBundleSlice(bundleName).assets.Add(asset);
+                }
+            }
+
+            public static string GetBundleName(string name, string part)
+            {
+                if (string.IsNullOrEmpty(part))
+                {
+                    return name;
+                }
+                var dot = name.LastIndexOf('.');
+                string prefix;
+                string suffix;
+                if (dot >= 0)
+                {
+                    prefix = name.Substring(0, dot);
+                    suffix = name.Substring(dot);
+                }
+                else
+                {
+                    prefix = name;
+                    suffix = string.Empty;
+                }
+                return prefix + "_" + part + suffix;
+            }
+
+            public BundleSlice GetBundleSlice(string bundleName)
+            {
+                var splitName = this.name ?? string.Empty;
+                var count = this.slices.Count;
+                var slice = count > 0 ? this.slices[count - 1] : null;
+                if (slice == null || this.sliceObjects >= 1 && slice.assets.Count >= this.sliceObjects)
+                {
+                    slice = new BundleSlice();
+                    this.slices.Add(slice);
+                    var baseName = splitName;
+                    if (this.sliceObjects != 0 && count != 0)
+                    {
+                        baseName += "_" + count;
+                    }
+                    slice.name = GetBundleName(bundleName, baseName);
+                }
+                return slice;
+            }
         }
 
         [Serializable]
         public class BundleSplitRule
         {
             public BundleSplitType type;
+            public BundleAssetTypes assetTypes;
             public string keyword;
-            public string name;
-            public int capacity;
+            public bool exclude;
+
+            [NonSerialized]
+            public List<Object> assets = new List<Object>();
         }
 
         public class Variable
@@ -74,101 +133,31 @@ namespace UnityFS.Editor
             public int priority;
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
 
-            public List<Variable> variables = new List<Variable>();
-
-            public List<BundleSplitRule> rules = new List<BundleSplitRule>();
-
-            [NonSerialized]
-            public List<Object> assetsCache = new List<Object>();
-
             public List<Object> assetsOrder = new List<Object>();
 
-            [NonSerialized]
             public List<BundleSplit> splits = new List<BundleSplit>();
 
-            //TODO: 用规则代替
-            public int splitObjects; // 自动分包
-
-            public Variable GetVariable(string name)
+            private static int Neg2Inf(int v)
             {
-                for (int i = 0, size = variables.Count; i < size; i++)
-                {
-                    var v = variables[i];
-                    if (v.name == name)
-                    {
-                        return v;
-                    }
-                }
-                var n = new Variable();
-                n.name = name;
-                variables.Add(n);
-                return n;
+                return v < 0 ? int.MaxValue : v;
             }
 
-            private BundleSplit GetBundleSplit(string name)
+            public void Slice()
             {
-                for (int i = 0, size = splits.Count; i < size; i++)
+                foreach (var split in splits)
                 {
-                    var v = splits[i];
-                    if (v.name == name)
-                    {
-                        return v;
-                    }
+                    split.assets.Sort((a, b) => Neg2Inf(assetsOrder.IndexOf(a)) - Neg2Inf(assetsOrder.IndexOf(b)));
+                    split.Slice(name);
                 }
-                var n = new BundleSplit();
-                n.name = name;
-                splits.Add(n);
-                return n;
             }
 
-            public BundleSlice GetBundleSlice(string name)
+            public void Cleanup()
             {
-                var split = GetBundleSplit(name);
-                var count = split.slices.Count;
-                var slice = count > 0 ? split.slices[count - 1] : null;
-                if (slice == null || this.splitObjects >= 1 && slice.assets.Count >= this.splitObjects)
+                foreach (var split in splits)
                 {
-                    slice = new BundleSlice();
-                    split.slices.Add(slice);
-                    var dot = this.name.LastIndexOf('.');
-                    string prefix;
-                    string suffix;
-
-                    if (dot >= 0)
-                    {
-                        prefix = this.name.Substring(0, dot);
-                        suffix = this.name.Substring(dot);
-                    }
-                    else
-                    {
-                        prefix = this.name;
-                        suffix = string.Empty;
-                    }
-
-                    if (this.splitObjects == 0 || count == 0)
-                    {
-                        if (string.IsNullOrEmpty(split.name))
-                        {
-                            slice.fullName = this.name;
-                        }
-                        else
-                        {
-                            slice.fullName = prefix + "_" + split.name + suffix;
-                        }
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(split.name))
-                        {
-                            slice.fullName = prefix + "_" + count + suffix;
-                        }
-                        else
-                        {
-                            slice.fullName = prefix + "_" + split.name + "_" + count + suffix;
-                        }
-                    }
+                    split.assets.Clear();
+                    split.slices.Clear();
                 }
-                return slice;
             }
         }
 
@@ -198,12 +187,20 @@ namespace UnityFS.Editor
             // var json = EditorJsonUtility.ToJson(this, true);
             // File.WriteAllText(BundleBuilderDataPath, json);
         }
-    }
 
-    public class AssetFilter
-    {
-        public string[] extensions;
-        public BundleAssetTypes types;
+        public void Cleanup()
+        {
+            foreach (var bundle in bundles)
+            {
+                bundle.Cleanup();
+                if (bundle.splits.Count == 0)
+                {
+                    var defaultSplit = new BundleSplit();
+                    bundle.splits.Add(defaultSplit);
+                    MarkAsDirty();
+                }
+            }
+        }
     }
 
     public class ZipArchiveEntry

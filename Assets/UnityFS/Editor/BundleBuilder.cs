@@ -42,14 +42,24 @@ namespace UnityFS.Editor
             return _data;
         }
 
-        private static int Neg2Inf(int v)
+        // 根据 targets 遍历产生所有实际资源列表 assets
+        public static bool Scan(BundleBuilderData data, BuildTarget targetPlatform)
         {
-            return v < 0 ? int.MaxValue : v;
+            data.Cleanup();
+            foreach (var bundle in data.bundles)
+            {
+                ScanBundle(data, bundle);
+            }
+            return true;
         }
 
         // 根据 targets 遍历产生所有实际资源列表 assets
         public static bool ScanBundle(BundleBuilderData data, BundleBuilderData.BundleInfo bundle)
         {
+            if (!bundle.enabled)
+            {
+                return false;
+            }
             foreach (var target in bundle.targets)
             {
                 if (target.enabled)
@@ -57,27 +67,16 @@ namespace UnityFS.Editor
                     Scan(data, bundle, target);
                 }
             }
-            bundle.assetsCache.Sort((a, b) => Neg2Inf(bundle.assetsOrder.IndexOf(a)) - Neg2Inf(bundle.assetsOrder.IndexOf(b)));
-            foreach (var asset in bundle.assetsCache)
-            {
-                var slice = bundle.GetBundleSlice(null);
-                slice.assets.Add(asset);
-            }
+            bundle.Slice();
             return true;
         }
 
         public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, BundleBuilderData.BundleAssetTarget target)
         {
-            var extensions = target.extensions?.Split(';');
-            var filter = new AssetFilter()
-            {
-                extensions = extensions,
-                types = target.types,
-            };
-            Scan(data, bundle, filter, target.target);
+            Scan(data, bundle, target, target.target);
         }
 
-        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, AssetFilter filter, Object asset)
+        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, BundleBuilderData.BundleAssetTarget target, Object asset)
         {
             if (asset == null)
             {
@@ -89,7 +88,7 @@ namespace UnityFS.Editor
                 // 是一个目录
                 foreach (var directory in Directory.GetDirectories(targetPath))
                 {
-                    Scan(data, bundle, filter, AssetDatabase.LoadMainAssetAtPath(directory));
+                    Scan(data, bundle, target, AssetDatabase.LoadMainAssetAtPath(directory));
                 }
                 foreach (var file in Directory.GetFiles(targetPath))
                 {
@@ -97,59 +96,14 @@ namespace UnityFS.Editor
                     {
                         continue;
                     }
-                    if (filter.extensions != null)
-                    {
-                        var skip = false;
-                        for (int i = 0, size = filter.extensions.Length; i < size; i++)
-                        {
-                            var ext = filter.extensions[i];
-                            if (!string.IsNullOrEmpty(ext) && file.EndsWith(ext))
-                            {
-                                skip = true;
-                                break;
-                            }
-                        }
-                        if (skip)
-                        {
-                            continue;
-                        }
-                    }
                     var fileAsset = AssetDatabase.LoadMainAssetAtPath(file);
-                    if (filter.types != 0)
-                    {
-                        if ((filter.types & BundleAssetTypes.Prefab) == 0 && fileAsset is GameObject && file.EndsWith(".prefab"))
-                        {
-                            continue;
-                        }
-                        else if ((filter.types & BundleAssetTypes.TextAsset) == 0 && fileAsset is TextAsset)
-                        {
-                            continue;
-                        }
-                        else if ((filter.types & BundleAssetTypes.Animation) == 0 && (fileAsset is Animation || fileAsset is AnimationClip))
-                        {
-                            continue;
-                        }
-                        else if ((filter.types & BundleAssetTypes.Material) == 0 && fileAsset is Material)
-                        {
-                            continue;
-                        }
-                        else if ((filter.types & BundleAssetTypes.Texture) == 0 && fileAsset is Texture)
-                        {
-                            continue;
-                        }
-                        else if ((filter.types & BundleAssetTypes.Audio) == 0 && fileAsset is AudioClip)
-                        {
-                            continue;
-                        }
-                    }
-                    Scan(data, bundle, filter, fileAsset);
+                    Scan(data, bundle, target, fileAsset);
                 }
             }
             else
             {
-                if (!ContainsAsset(data, asset))
+                if (CollectAsset(data, bundle, asset))
                 {
-                    bundle.assetsCache.Add(asset);
                     if (!bundle.assetsOrder.Contains(asset))
                     {
                         bundle.assetsOrder.Add(asset);
@@ -157,6 +111,122 @@ namespace UnityFS.Editor
                     }
                 }
             }
+        }
+
+        public static BundleBuilderData.BundleSplit GetBundleSplit(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, string name)
+        {
+            for (int i = 0, size = bundle.splits.Count; i < size; i++)
+            {
+                var v = bundle.splits[i];
+                if (v.name == name)
+                {
+                    return v;
+                }
+            }
+            var n = new BundleBuilderData.BundleSplit();
+            n.name = name;
+            bundle.splits.Add(n);
+            data.MarkAsDirty();
+            return n;
+        }
+
+        public static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
+        {
+            for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
+            {
+                var split = bundle.splits[splitIndex];
+                var ruleMatch = false;
+                if (split.rules.Count > 0)
+                {
+                    for (var ruleIndex = 0; ruleIndex < split.rules.Count; ruleIndex++)
+                    {
+                        var rule = split.rules[ruleIndex];
+                        if (rule.exclude)
+                        {
+                            if (IsRuleMatched(rule, asset))
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (IsRuleMatched(rule, asset))
+                            {
+                                ruleMatch = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    ruleMatch = true;
+                }
+                if (ruleMatch)
+                {
+                    if (!ContainsAsset(data, asset))
+                    {
+                        split.assets.Add(asset);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool IsAssetTypeMatched(BundleBuilderData.BundleSplitRule rule, Object asset)
+        {
+            if (rule.assetTypes != 0)
+            {
+                if ((rule.assetTypes & BundleAssetTypes.Prefab) == 0 && asset is GameObject)
+                {
+                    var file = AssetDatabase.GetAssetPath(asset);
+                    if (file != null && file.EndsWith(".prefab"))
+                    {
+                        return false;
+                    }
+                }
+                else if ((rule.assetTypes & BundleAssetTypes.TextAsset) == 0 && asset is TextAsset)
+                {
+                    return false;
+                }
+                else if ((rule.assetTypes & BundleAssetTypes.Animation) == 0 && (asset is Animation || asset is AnimationClip))
+                {
+                    return false;
+                }
+                else if ((rule.assetTypes & BundleAssetTypes.Material) == 0 && asset is Material)
+                {
+                    return false;
+                }
+                else if ((rule.assetTypes & BundleAssetTypes.Texture) == 0 && asset is Texture)
+                {
+                    return false;
+                }
+                else if ((rule.assetTypes & BundleAssetTypes.Audio) == 0 && asset is AudioClip)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool IsRuleMatched(BundleBuilderData.BundleSplitRule rule, Object asset)
+        {
+            if (rule.type == BundleBuilderData.BundleSplitType.Prefix)
+            {
+                if (!asset.name.StartsWith(rule.keyword))
+                {
+                    return false;
+                }
+            }
+            else if (rule.type == BundleBuilderData.BundleSplitType.Suffix)
+            {
+                if (!asset.name.EndsWith(rule.keyword))
+                {
+                    return false;
+                }
+            }
+            return IsAssetTypeMatched(rule, asset);
         }
 
         public static AssetBundleBuild[] GenerateAssetBundleBuilds(BundleBuilderData data)
@@ -185,7 +255,7 @@ namespace UnityFS.Editor
                         {
                             var names = assetNames.ToArray();
                             var build = new AssetBundleBuild();
-                            build.assetBundleName = bundleSlice.fullName;
+                            build.assetBundleName = bundleSlice.name;
                             build.assetNames = names;
                             build.addressableNames = names;
                             builds.Add(build);
@@ -199,24 +269,6 @@ namespace UnityFS.Editor
                 }
             }
             return builds.ToArray();
-        }
-
-        // 根据 targets 遍历产生所有实际资源列表 assets
-        public static bool Scan(BundleBuilderData data, BuildTarget targetPlatform)
-        {
-            foreach (var bundle in data.bundles)
-            {
-                bundle.splits.Clear();
-                bundle.assetsCache.Clear();
-            }
-            foreach (var bundle in data.bundles)
-            {
-                if (bundle.enabled)
-                {
-                    ScanBundle(data, bundle);
-                }
-            }
-            return true;
         }
 
         // 生成打包 
@@ -479,7 +531,7 @@ namespace UnityFS.Editor
                 {
                     foreach (var slice in split.slices)
                     {
-                        if (slice.fullName == bundleName)
+                        if (slice.name == bundleName)
                         {
                             bundleInfo = bundle;
                             bundleSlice = slice;
@@ -519,7 +571,7 @@ namespace UnityFS.Editor
                             checksum.Update(stream);
                             var bundle = new Manifest.BundleInfo();
                             bundle.type = Manifest.BundleType.AssetBundle;
-                            bundle.name = bundleSlice.fullName;
+                            bundle.name = bundleSlice.name;
                             bundle.checksum = checksum.hex;
                             bundle.size = (int)fileInfo.Length;
                             bundle.load = bundleInfo.load;
@@ -628,12 +680,12 @@ namespace UnityFS.Editor
         {
             foreach (var bundle in data.bundles)
             {
-                if (bundle.assetsCache.Contains(assetObject))
-                {
-                    return true;
-                }
                 foreach (var split in bundle.splits)
                 {
+                    if (split.assets.Contains(assetObject))
+                    {
+                        return true;
+                    }
                     foreach (var slice in split.slices)
                     {
                         foreach (var asset in slice.assets)

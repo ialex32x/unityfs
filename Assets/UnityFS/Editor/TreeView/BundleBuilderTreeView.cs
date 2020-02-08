@@ -113,16 +113,16 @@ namespace UnityFS.Editor
                     minWidth = 60,
                     autoResize = true
                 },
-                new MultiColumnHeaderState.Column
-                {
-                    headerContent = new GUIContent("Split"),
-                    headerTextAlignment = TextAlignment.Left,
-                    sortedAscending = true,
-                    sortingArrowAlignment = TextAlignment.Left,
-                    width = 70,
-                    minWidth = 60,
-                    autoResize = true
-                }
+                // new MultiColumnHeaderState.Column
+                // {
+                //     headerContent = new GUIContent("Split"),
+                //     headerTextAlignment = TextAlignment.Left,
+                //     sortedAscending = true,
+                //     sortingArrowAlignment = TextAlignment.Left,
+                //     width = 70,
+                //     minWidth = 60,
+                //     autoResize = true
+                // },
             };
 
             // Assert.AreEqual(columns.Length, Enum.GetValues(typeof(MyColumns)).Length, "Number of columns should match number of enum values: You probably forgot to update one of them.");
@@ -462,21 +462,20 @@ namespace UnityFS.Editor
                     }
                     else if (item.depth == 1)
                     {
-                        // var bundleInfo = (item.parent as BundleBuilderTreeViewBundle).bundleInfo;
-                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        if (target.target != null)
-                        {
-                            var assetPath = AssetDatabase.GetAssetPath(target.target);
-                            if (Directory.Exists(assetPath))
-                            {
-                                var types = (BundleAssetTypes)EditorGUI.EnumFlagsField(cellRect, target.types);
-                                if (types != target.types)
-                                {
-                                    target.types = types;
-                                    _data.MarkAsDirty();
-                                }
-                            }
-                        }
+                        // var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        // if (target.target != null)
+                        // {
+                        //     var assetPath = AssetDatabase.GetAssetPath(target.target);
+                        //     if (Directory.Exists(assetPath))
+                        //     {
+                        //         var types = (BundleAssetTypes)EditorGUI.EnumFlagsField(cellRect, target.types);
+                        //         if (types != target.types)
+                        //         {
+                        //             target.types = types;
+                        //             _data.MarkAsDirty();
+                        //         }
+                        //     }
+                        // }
                     }
                     break;
                 case 5:
@@ -498,12 +497,12 @@ namespace UnityFS.Editor
                             var assetPath = AssetDatabase.GetAssetPath(target.target);
                             if (Directory.Exists(assetPath))
                             {
-                                var extensions = EditorGUI.TextField(cellRect, target.extensions);
-                                if (extensions != target.extensions)
-                                {
-                                    target.extensions = extensions;
-                                    _data.MarkAsDirty();
-                                }
+                                // var extensions = EditorGUI.TextField(cellRect, target.extensions);
+                                // if (extensions != target.extensions)
+                                // {
+                                //     target.extensions = extensions;
+                                //     _data.MarkAsDirty();
+                                // }
                             }
                         }
                     }
@@ -514,12 +513,12 @@ namespace UnityFS.Editor
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
                         if (bundleInfo.type == Manifest.BundleType.AssetBundle)
                         {
-                            var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
-                            if (splitObjects != bundleInfo.splitObjects)
-                            {
-                                bundleInfo.splitObjects = splitObjects;
-                                _data.MarkAsDirty();
-                            }
+                            // var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
+                            // if (splitObjects != bundleInfo.splitObjects)
+                            // {
+                            //     bundleInfo.splitObjects = splitObjects;
+                            //     _data.MarkAsDirty();
+                            // }
                         }
                         // else if (bundleInfo.type == BundleType.SceneBundle)
                         // {

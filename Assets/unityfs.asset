@@ -18,89 +18,122 @@ MonoBehaviour:
     name: test1.pkg
     note: "prefab\u6D4B\u8BD5\u5305"
     type: 0
+    load: 0
     platforms: -1
     enabled: 1
     streamingAssets: 1
-    load: 0
     priority: 7769
-    splitObjects: 2
     targets:
     - id: 2
       enabled: 1
       target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
-      types: -1
-      extensions: 
     - id: 10
       enabled: 1
       target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,
         type: 3}
-      types: -1
-      extensions: 
     - id: 13
       enabled: 1
       target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
-      types: -1
-      extensions: 
+    assetsOrder:
+    - {fileID: 6276737056871012079, guid: df4858d82a3ad344d88e9ce52e8cbaa0, type: 3}
+    - {fileID: 6276737056871012079, guid: c6c8ccd62d337f64397a1b81602962ff, type: 3}
+    - {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306, type: 3}
+    - {fileID: 6276737056871012079, guid: 668e963c9b20d8f4a9ff590b67836a18, type: 3}
+    - {fileID: 6276737056871012079, guid: 39c9918754758004abd0fc77903fefd3, type: 3}
+    - {fileID: 6276737056871012079, guid: bb139e380276a5b4a8c47ec1c7d48c3f, type: 3}
+    - {fileID: 6276737056871012079, guid: 26da0e2a307e83d4abcc4678b485e810, type: 3}
+    - {fileID: 6276737056871012079, guid: b94a6b52c1f97994ebf8dde96dd5f8db, type: 3}
+    - {fileID: 6276737056871012079, guid: ce7ab5d846e45ac4ca42d89d2dd9bbde, type: 3}
+    - {fileID: 2100000, guid: 111422be4e25c0b44a81e01b3fb08fbc, type: 2}
+    - {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
+    splits:
+    - name: 
+      sliceObjects: 0
+      rules:
+      - type: 1
+        assetTypes: -1
+        keyword: Cube
+        exclude: 1
+      - type: 0
+        assetTypes: 0
+        keyword: 
+        exclude: 0
+    - name: cube
+      sliceObjects: 2
+      rules:
+      - type: 1
+        assetTypes: 1
+        keyword: Cube
+        exclude: 0
   - id: 3
     name: test2.pkg
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
     type: 1
+    load: 0
     platforms: -1
     enabled: 1
     streamingAssets: 1
-    load: 0
     priority: 3223
-    splitObjects: 0
     targets:
     - id: 22
       enabled: 1
       target: {fileID: 102900000, guid: 2feb7197082914e38a692c44a3798c2d, type: 3}
-      types: -1
-      extensions: 
     - id: 23
       enabled: 1
       target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
-      types: -1
-      extensions: 
+    assetsOrder:
+    - {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
+    - {fileID: 4900000, guid: 423169b27afc2744d9f06d44346b777e, type: 3}
+    - {fileID: 4900000, guid: e6471453252543c48af648e48b08262a, type: 3}
+    - {fileID: 4900000, guid: 2bd99bdd627371a4ab6980f7fa960b3e, type: 3}
+    splits:
+    - name: 
+      sliceObjects: 0
+      rules: []
   - id: 17
     name: bundle_17.pkg
     note: "\u5176\u4ED6\u5176\u4ED6"
     type: 0
+    load: 0
     platforms: -1
     enabled: 1
     streamingAssets: 0
-    load: 0
     priority: 0
-    splitObjects: 0
     targets:
     - id: 18
       enabled: 1
       target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
-      types: -1
-      extensions: 
+    assetsOrder:
+    - {fileID: 2800000, guid: e46dad9ccca72ad4587045373fba4ffa, type: 3}
+    - {fileID: 2800000, guid: ad80bd1399b82cc4ba0c7f4d055ac1ce, type: 3}
+    splits:
+    - name: 
+      sliceObjects: 0
+      rules: []
   - id: 19
     name: bundle_19.pkg
     note: 
     type: 0
+    load: 0
     platforms: -1
     enabled: 1
     streamingAssets: 0
-    load: 0
     priority: 0
-    splitObjects: 0
     targets:
     - id: 20
       enabled: 1
       target: {fileID: 102900000, guid: 3753d2e5af63eac439ba9b0f36641e6d, type: 3}
-      types: -1
-      extensions: 
     - id: 21
       enabled: 1
       target: {fileID: 102900000, guid: b35be9c075bfa7d4990280e18b1ac7fb, type: 3}
-      types: -1
-      extensions: 
     - id: 24
       enabled: 1
       target: {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
-      types: -1
-      extensions: 
+    assetsOrder:
+    - {fileID: 102900000, guid: 3753d2e5af63eac439ba9b0f36641e6d, type: 3}
+    - {fileID: 102900000, guid: b35be9c075bfa7d4990280e18b1ac7fb, type: 3}
+    - {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
+    splits:
+    - name: 
+      sliceObjects: 0
+      rules: []
