@@ -13,6 +13,7 @@ namespace UnityFS.Editor
     {
         protected static GUIStyle _foldoutArea = new GUIStyle();
         protected static GUIStyle _blockStyle = new GUIStyle();
+        protected static GUIStyle _foldoutStyle = new GUIStyle();
         protected Dictionary<string, GUIContent> _titles = new Dictionary<string, GUIContent>();
         protected List<Action> _defers = new List<Action>();
         private BundleBuilderData _data;
@@ -26,6 +27,7 @@ namespace UnityFS.Editor
         {
             titleContent = new GUIContent("Bundle Editor");
             _blockStyle.normal.background = MakeTex(100, 100, new Color32(56, 56, 56, 0));
+            _foldoutStyle.alignment = TextAnchor.MiddleLeft;
         }
 
         public void SetBundles(BundleBuilderData data, IList<BundleBuilderData.BundleInfo> bundles)
@@ -38,6 +40,7 @@ namespace UnityFS.Editor
 
         void OnGUI()
         {
+            _foldoutStyle.normal.textColor = GUI.skin.button.normal.textColor;
             _GUIColor = GUI.color;
             if (_bundles == null || _bundles.Count == 0)
             {
@@ -123,10 +126,12 @@ namespace UnityFS.Editor
             var prefid = $"{GetType().FullName}:Foldouts:{key}";
             var foldout = EditorPrefs.GetBool(prefid, defaultValue);
             EditorGUILayout.BeginHorizontal();
-            var newfoldout = EditorGUILayout.BeginFoldoutHeaderGroup(foldout, text);
-            if (newfoldout != foldout)
+            var headerRect = EditorGUILayout.GetControlRect();
+            // var newfoldout = EditorGUILayout.BeginFoldoutHeaderGroup(foldout, text);
+            GUI.Box(headerRect, "");
+            if (GUI.Button(headerRect, (foldout ? "▼ " : "▶ ") + text, _foldoutStyle))
             {
-                foldout = newfoldout;
+                foldout = !foldout;
                 EditorPrefs.SetBool(prefid, foldout);
             }
             for (var i = 0; i < items.Length; i++)
@@ -145,7 +150,7 @@ namespace UnityFS.Editor
                 EditorGUILayout.EndVertical();
                 GUILayout.EndHorizontal();
             }
-            EditorGUILayout.EndFoldoutHeaderGroup();
+            // EditorGUILayout.EndFoldoutHeaderGroup();
             return foldout;
         }
 
