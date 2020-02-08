@@ -375,6 +375,7 @@ namespace UnityFS.Editor
                                             assetPath = AssetDatabase.GetAssetPath(asset);
                                         }
                                         EditorGUILayout.BeginHorizontal();
+                                        GUILayout.Space(20f);
                                         EditorGUILayout.TextField(assetPath);
                                         EditorGUILayout.ObjectField(asset, typeof(Object), false);
                                         EditorGUILayout.EndHorizontal();
