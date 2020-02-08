@@ -113,23 +113,6 @@ namespace UnityFS.Editor
             }
         }
 
-        public static BundleBuilderData.BundleSplit GetBundleSplit(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, string name)
-        {
-            for (int i = 0, size = bundle.splits.Count; i < size; i++)
-            {
-                var v = bundle.splits[i];
-                if (v.name == name)
-                {
-                    return v;
-                }
-            }
-            var n = new BundleBuilderData.BundleSplit();
-            n.name = name;
-            bundle.splits.Add(n);
-            data.MarkAsDirty();
-            return n;
-        }
-
         public static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
         {
             for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)

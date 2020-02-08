@@ -14,16 +14,17 @@ namespace UnityFS
     {
         public const string BundleContentType = "application/octet-stream";
         public const string PartExt = ".part";
-        public const int BufferSize = 1024 * 2;
 
         private static bool _destroy = false;
 
         private bool _debug;
+        private int _bufferSize = 1024 * 2;
         private int _retry;        // 重试次数 (<0 时无限重试)
         private string _finalPath; // 最终存储路径
 
         private string _name;
         private string _checksum;
+        private int _slow;
         private int _size;
         private int _priority;
         private float _progress;
@@ -63,6 +64,18 @@ namespace UnityFS
         public int size
         {
             get { return _size; }
+        }
+
+        public int bufferSize
+        {
+            get { return _bufferSize; }
+            set { if (value != 0) { _bufferSize = Math.Max(value, 128); } }
+        }
+
+        public int slow
+        {
+            get { return _slow; }
+            set { _slow = value; }
         }
 
         // 运行中
@@ -130,6 +143,7 @@ namespace UnityFS
             task._name = name;
             task._checksum = checksum;
             task._size = size;
+            task._slow = 0;
             task._priority = priority;
             task._retry = retry;
             task._timeout = timeout;
@@ -202,7 +216,7 @@ namespace UnityFS
 
         private void DownloadExec(object state)
         {
-            var buffer = new byte[BufferSize];
+            var buffer = new byte[_bufferSize];
             var tempPath = _finalPath + PartExt;
             var metaPath = _finalPath + Metadata.Ext;
             var retry = 0;
@@ -385,7 +399,10 @@ namespace UnityFS
                             targetStream.Write(buffer, 0, recv);
                             crc.Update(buffer, 0, recv);
                             _progress = Mathf.Clamp01((float)(recvAll + partialSize) / _size);
-                            // Thread.Sleep(200); // 模拟低速下载
+                            if (_slow > 0)
+                            {
+                                Thread.Sleep(_slow); // 模拟低速下载
+                            }
                             // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                         }
                         else

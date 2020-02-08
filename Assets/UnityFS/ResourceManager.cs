@@ -6,6 +6,17 @@ namespace UnityFS
 {
     using UnityEngine;
 
+    public struct ResourceManagerArgs
+    {
+        public bool devMode;
+        public int slow;
+        public int bufferSize;
+        public string localPathRoot;
+        public IList<string> urls;
+        public Action oncomplete;
+        public Action oninitialize;
+    }
+
     public static class ResourceManager
     {
         // 资源加载器
@@ -38,33 +49,28 @@ namespace UnityFS
             return _analyzer;
         }
 
-        public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, Action oncomplete)
-        {
-            Initialize(devMode, localPathRoot, urls, null, oncomplete);
-        }
-
-        public static void Initialize(bool devMode, string localPathRoot, IList<string> urls, Action oninitialize, Action oncomplete)
+        public static void Initialize(ResourceManagerArgs args)
         {
             _listener = new EmptyAssetProviderListener();
             UnityFS.JobScheduler.Initialize();
 #if UNITY_EDITOR
-            if (devMode)
+            if (args.devMode)
             {
                 _assetProvider = new UnityFS.AssetDatabaseAssetProvider();
             }
             else
 #endif
             {
-                _assetProvider = new UnityFS.BundleAssetProvider(localPathRoot, urls);
+                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.urls, args.slow, args.bufferSize);
             }
-            if (oninitialize != null)
+            if (args.oninitialize != null)
             {
-                oninitialize();
+                args.oninitialize();
             }
             _assetProvider.Open();
-            if (oncomplete != null)
+            if (args.oncomplete != null)
             {
-                _assetProvider.completed += oncomplete;
+                _assetProvider.completed += args.oncomplete;
             }
         }
 
@@ -74,7 +80,10 @@ namespace UnityFS
             if (_assetProvider == null)
             {
                 Debug.LogWarning("[EditorOnly] ResourceManager 未初始化时使用了资源接口, 默认采用编辑器模式运行.");
-                Initialize(true, null, null, null);
+                Initialize(new ResourceManagerArgs()
+                {
+                    devMode = true, 
+                });
             }
 #endif
             return _assetProvider;

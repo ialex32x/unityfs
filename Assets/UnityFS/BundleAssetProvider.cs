@@ -347,6 +347,8 @@ namespace UnityFS
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private List<string> _urls = new List<string>();
         private Manifest _manifest;
+        private int _slow = 0;
+        private int _bufferSize = 0;
         private int _runningTasks = 0;
         private int _concurrentTasks = 0;
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
@@ -380,8 +382,10 @@ namespace UnityFS
             }
         }
 
-        public BundleAssetProvider(string localPathRoot, IList<string> urls)
+        public BundleAssetProvider(string localPathRoot, IList<string> urls, int slow, int bufferSize)
         {
+            _slow = slow;
+            _bufferSize = bufferSize;
             _localPathRoot = localPathRoot;
             _urls.AddRange(urls);
             _concurrentTasks = Math.Max(1, Math.Min(SystemInfo.processorCount - 1, 4)); // 并发下载任务数量
@@ -619,6 +623,8 @@ namespace UnityFS
                 if (!task.isRunning && !task.isDone)
                 {
                     _runningTasks++;
+                    task.slow = _slow;
+                    task.bufferSize = _bufferSize;
                     task.Run();
                     ResourceManager.GetListener().OnTaskStart(task);
                     break;

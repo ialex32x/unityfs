@@ -141,8 +141,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 603c0e9fccd19482ca000a5982bdeab7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  developMode: 1
+  developMode: 0
   downloadStartups: 1
+  slow: 0
+  bufferSize: 0
 --- !u!4 &2581637
 Transform:
   m_ObjectHideFlags: 0

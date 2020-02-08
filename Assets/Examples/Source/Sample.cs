@@ -10,6 +10,8 @@ namespace Examples
     {
         public bool developMode;        // 编辑器模式 (直接从AssetDatabase加载, 无需打包)
         public bool downloadStartups;   // 是否进行启动包预下载
+        public int slow = 0;
+        public int bufferSize = 0;
 
         public void OnStartupTask(UnityFS.Manifest.BundleInfo[] bundles)
         {
@@ -61,12 +63,21 @@ namespace Examples
             var localPathRoot = Path.Combine(dataPath, "bundles");
             Debug.Log($"open localPathRoot: {localPathRoot}");
 
-            UnityFS.ResourceManager.Initialize(developMode, localPathRoot, urls, () =>
+            UnityFS.ResourceManager.Initialize(new UnityFS.ResourceManagerArgs()
             {
-                UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件
-            }, () =>
-            {
-                OnUnityFSLoaded();
+                devMode = developMode,
+                slow = slow,
+                bufferSize = bufferSize,
+                localPathRoot = localPathRoot,
+                urls = urls,
+                oninitialize = () =>
+                {
+                    UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件
+                },
+                oncomplete = () =>
+                {
+                    OnUnityFSLoaded();
+                }
             });
         }
 
