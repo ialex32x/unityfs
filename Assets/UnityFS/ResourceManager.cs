@@ -22,7 +22,6 @@ namespace UnityFS
     {
         // 资源加载器
         static IAssetProvider _assetProvider;
-
         static IAssetsAnalyzer _analyzer;
         static IAssetProviderListener _listener;
 

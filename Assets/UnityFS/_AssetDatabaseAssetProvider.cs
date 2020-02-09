@@ -32,12 +32,12 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat($"UAssetDatabaseAsset ({_assetPath}) released");
+                    Debug.LogFormat("UAssetDatabaseAsset {0} released {1}", _assetPath, bManaged);
+                    _disposed = true;
                     JobScheduler.DispatchMain(() =>
                     {
                         ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
                     });
-                    _disposed = true;
                 }
             }
         }
@@ -111,7 +111,7 @@ namespace UnityFS
 
         public void Open()
         {
-            ResourceManager.GetListener().OnComplete();
+            ResourceManager.GetListener().OnSetManifest();
         }
 
         public void Close()

@@ -17,6 +17,7 @@ namespace UnityFS
         protected bool _loaded;
         private List<Action<UBundle>> _callbacks = new List<Action<UBundle>>();
 
+        // main thread only
         public event Action<UBundle> completed
         {
             add

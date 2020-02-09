@@ -44,17 +44,21 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat($"UBuiltinAsset ({assetPath}) released");
+                    Debug.LogFormat("UBuiltinAsset {0} released [{1}]", _assetPath, bManaged);
+                    _disposed = true;
                     JobScheduler.DispatchMain(() =>
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
                     });
-                    _disposed = true;
                 }
             }
 
             private void OnResourceLoaded(AsyncOperation op)
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 var request = op as ResourceRequest;
                 _object = request.asset;
                 Complete();
@@ -134,7 +138,7 @@ namespace UnityFS
 
         public void Open()
         {
-            ResourceManager.GetListener().OnComplete();
+            ResourceManager.GetListener().OnSetManifest();
         }
 
         public void Close()

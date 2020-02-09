@@ -19,6 +19,7 @@ namespace UnityFS
     {
         public class ZipFileSystem : AbstractFileSystem
         {
+            private bool _disposed;
             private UZipArchiveBundle _bundle;
 
             public ZipFileSystem(UZipArchiveBundle bundle)
@@ -30,7 +31,8 @@ namespace UnityFS
 
             ~ZipFileSystem()
             {
-                JobScheduler.DispatchMain(() =>
+                _disposed = true;
+                JobScheduler.DispatchMain(() => // resurrecting 
                 {
                     _bundle.completed -= OnBundleLoaded;
                     _bundle.RemoveRef();
@@ -39,6 +41,10 @@ namespace UnityFS
 
             private void OnBundleLoaded(UBundle bundle)
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 Complete();
             }
 
@@ -155,14 +161,14 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    JobScheduler.DispatchMain(() =>
+                    Debug.LogFormat("UZipArchiveBundleAsset {0} released [{1}]", _assetPath, bManaged);
+                    _disposed = true;
+                    JobScheduler.DispatchMain(() => // resurrecting 
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
                         _bundle.completed -= OnBundleLoaded;
                         _bundle.RemoveRef();
                     });
-                    Debug.LogFormat($"UZipArchiveBundleAsset ({assetPath}) released");
-                    _disposed = true;
                 }
             }
 
@@ -178,6 +184,10 @@ namespace UnityFS
 
             protected virtual void OnBundleLoaded(UBundle bundle)
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 // _bundle.ReadAllBytes(_assetPath);
                 Complete();
             }
@@ -283,19 +293,23 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    JobScheduler.DispatchMain(() =>
+                    Debug.LogFormat("UAssetBundleAsset {0} released [{1}]", _assetPath, bManaged);
+                    _disposed = true;
+                    JobScheduler.DispatchMain(() => // resurrecting 
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
                         _bundle.completed -= OnBundleLoaded;
                         _bundle.RemoveRef();
                     });
-                    Debug.LogFormat($"UAssetBundleAsset ({assetPath}) released");
-                    _disposed = true;
                 }
             }
 
             protected virtual void OnBundleLoaded(UBundle bundle)
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 Complete();
             }
         }
@@ -429,9 +443,9 @@ namespace UnityFS
                                 if (_tasks.Count == 0)
                                 {
                                     SetManifest(manifest);
-                                    ResourceManager.GetListener().OnComplete();
+                                    ResourceManager.GetListener().OnSetManifest();
                                 }
-                            }), false);
+                            }).SetDebugMode(true), false);
                         }
                         ResourceManager.GetListener().OnStartupTask(startups);
                         Schedule();
@@ -439,7 +453,7 @@ namespace UnityFS
                     else
                     {
                         SetManifest(manifest);
-                        ResourceManager.GetListener().OnComplete();
+                        ResourceManager.GetListener().OnSetManifest();
                     }
                 });
             });
@@ -512,7 +526,7 @@ namespace UnityFS
                     bundle.Load(null);
                 }
                 bundle.RemoveRef();
-            }), true);
+            }).SetDebugMode(true), true);
         }
 
         // 检查是否存在有效的本地包

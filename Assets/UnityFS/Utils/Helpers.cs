@@ -123,9 +123,9 @@ namespace UnityFS.Utils
                     // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
                     continue;
                 }
-                var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, 10, null);
+                var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, 10, null).SetDebugMode(true);
                 var progress = -1.0f;
-                task.SetDebugMode(true).Run();
+                task.Run();
                 while (!task.isDone)
                 {
                     if (progress != task.progress)

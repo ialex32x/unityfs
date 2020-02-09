@@ -34,7 +34,7 @@ namespace Examples
             Debug.Log($"需要下载文件数量: {bundles.Length} (共 {fsum.ToString("#.##")} {unit})");
         }
 
-        public void OnComplete()
+        public void OnSetManifest()
         {
         }
 
@@ -51,6 +51,7 @@ namespace Examples
         void Awake()
         {
             Object.DontDestroyOnLoad(gameObject);
+            gameObject.AddComponent<UnityFS.Utils.TaskInspector>();
 
             // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
             // 适用于 CDN 部署还没有全部起作用时, 退化到直接文件服务器地址
@@ -128,59 +129,6 @@ namespace Examples
                     scene = null;
                 }, 20f));
             };
-        }
-
-        private void DrawText(float x, float y, float h, string text, Color color)
-        {
-            var oldColor = GUI.color;
-            GUI.color = Color.black;
-            GUI.Label(new Rect(x - 1f, y - 1f, 1000f, h), text);
-            GUI.Label(new Rect(x - 1f, y, 1000f, h), text);
-            GUI.Label(new Rect(x - 1f, y + 0f, 1000f, h), text);
-
-            GUI.Label(new Rect(x + 1f, y - 1f, 1000f, h), text);
-            GUI.Label(new Rect(x + 1f, y, 1000f, h), text);
-            GUI.Label(new Rect(x + 1f, y + 1f, 1000f, h), text);
-
-            GUI.Label(new Rect(x, y - 1f, 1000f, h), text);
-            GUI.Label(new Rect(x, y + 1f, 1000f, h), text);
-            GUI.color = color;
-            GUI.Label(new Rect(x, y, 1000f, h), text);
-            GUI.color = oldColor;
-        }
-
-        void OnGUI()
-        {
-            if (!Application.isPlaying)
-            {
-                return;
-            }
-            var scale = 2f;
-            GUI.matrix = Matrix4x4.TRS(
-                Vector3.zero,
-                Quaternion.identity,
-                new Vector3(scale, scale, scale)
-            );
-            var x = 10f;
-            var y = 0f;
-            var line = 20f;
-            var assetProvider = UnityFS.ResourceManager.GetAssetProvider();
-
-            GUILayout.BeginVertical();
-            assetProvider.ForEachTask(task =>
-            {
-                if (task.isRunning)
-                {
-                    DrawText(x, y, line, string.Format("{0} {1} {2:00.00}%", task.name, task.size, task.progress * 100f), Color.green);
-
-                }
-                else
-                {
-                    DrawText(x, y, line, string.Format("{0} {1}", task.name, task.size), Color.white);
-                }
-                y += line;
-            });
-            GUILayout.EndVertical();
         }
     }
 }

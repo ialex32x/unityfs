@@ -8,15 +8,15 @@ namespace UnityFS
 
     public interface IAssetProviderListener
     {
+        void OnSetManifest();
         void OnStartupTask(Manifest.BundleInfo[] bundles);
-        void OnComplete();
         void OnTaskStart(ITask task);
         void OnTaskComplete(ITask task);
     }
 
     public class EmptyAssetProviderListener : IAssetProviderListener
     {
-        public void OnComplete()
+        public void OnSetManifest()
         {
         }
 
