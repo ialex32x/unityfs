@@ -23,6 +23,11 @@ namespace UnityFS
                 Complete();
             }
 
+            protected override bool IsValid()
+            {
+                return _object != null;
+            }
+
             public override byte[] ReadAllBytes()
             {
                 return File.ReadAllBytes(_assetPath);
@@ -70,7 +75,14 @@ namespace UnityFS
                 }
             }
             ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-            asset = new UAssetDatabaseAsset(assetPath, type);
+            if (File.Exists(assetPath))
+            {
+                asset = new UAssetDatabaseAsset(assetPath, type);
+            }
+            else
+            {
+                asset = new UFailureAsset(assetPath);
+            }
             _assets[assetPath] = new WeakReference(asset);
             return asset;
         }
