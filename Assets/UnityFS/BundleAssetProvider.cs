@@ -293,7 +293,7 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat("UAssetBundleAsset {0} released [{1}]", _assetPath, bManaged);
+                    Debug.LogFormat("UAssetBundleAsset {0} released [{1}] {2}", _assetPath, bManaged, _bundle.name);
                     _disposed = true;
                     JobScheduler.DispatchMain(() => // resurrecting 
                     {
@@ -397,14 +397,14 @@ namespace UnityFS
             }
         }
 
-        public BundleAssetProvider(string localPathRoot, IList<string> urls, int slow, int bufferSize, Func<string, string> assetPathTransformer)
+        public BundleAssetProvider(string localPathRoot, IList<string> urls, int concurrentTasks, int slow, int bufferSize, Func<string, string> assetPathTransformer)
         {
             _slow = slow;
             _bufferSize = bufferSize;
             _localPathRoot = localPathRoot;
             _assetPathTransformer = assetPathTransformer;
             _urls.AddRange(urls);
-            _concurrentTasks = Math.Max(1, Math.Min(SystemInfo.processorCount - 1, 4)); // 并发下载任务数量
+            _concurrentTasks = Math.Max(1, Math.Min(concurrentTasks, 4)); // 并发下载任务数量 
         }
 
         public void AddURLs(params string[] urls)

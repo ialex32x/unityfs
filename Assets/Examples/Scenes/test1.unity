@@ -143,8 +143,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   developMode: 0
   downloadStartups: 1
-  slow: 0
-  bufferSize: 0
+  concurrentTasks: 10
+  slow: 10
+  bufferSize: 32
 --- !u!4 &2581637
 Transform:
   m_ObjectHideFlags: 0
