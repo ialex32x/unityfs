@@ -54,7 +54,6 @@ namespace UnityFS.Editor
                 EditorGUILayout.HelpBox("Nothing", MessageType.Warning);
                 return;
             }
-            _sv = GUILayout.BeginScrollView(_sv);
             var rescan = false;
             GUILayout.Space(4f);
             GUILayout.BeginHorizontal();
@@ -77,6 +76,7 @@ namespace UnityFS.Editor
             {
                 BundleBuilder.Scan(_data, _targetPlatform);
             }
+            _sv = GUILayout.BeginScrollView(_sv);
             foreach (var bundle in _bundles)
             {
                 InspectBundle(bundle);
@@ -331,7 +331,7 @@ namespace UnityFS.Editor
 
                 Block("Bundle Splits", () =>
                 {
-                    for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
+                    for (int splitIndex = 0, splitCount = bundle.splits.Count; splitIndex < splitCount; splitIndex++)
                     {
                         var split = bundle.splits[splitIndex];
                         var splitName = string.IsNullOrEmpty(split.name) ? "(default)" : split.name;
@@ -386,6 +386,44 @@ namespace UnityFS.Editor
                                     }
                                 }
                             });
+                        }, () =>
+                        {
+                            GUI.color = Color.yellow;
+                            var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(20f));
+                            rect.y -= 2f;
+                            rect.height += 1f;
+                            EditorGUI.BeginDisabledGroup(splitIndex == 0);
+                            if (GUI.Button(rect, Text("moveup.split", "▲", "向前移动")))
+                            {
+                                var newSplitIndex = splitIndex - 1;
+                                Defer(() =>
+                                {
+                                    bundle.splits.Remove(split);
+                                    bundle.splits.Insert(newSplitIndex, split);
+                                    _data.MarkAsDirty();
+                                });
+                            }
+                            EditorGUI.EndDisabledGroup();
+                            GUI.color = _GUIColor;
+                        }, () =>
+                        {
+                            GUI.color = Color.yellow;
+                            var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(20f));
+                            rect.y -= 2f;
+                            rect.height += 1f;
+                            EditorGUI.BeginDisabledGroup(splitIndex == splitCount - 1);
+                            if (GUI.Button(rect, Text("movedown.split", "▼", "向后移动")))
+                            {
+                                var newSplitIndex = splitIndex + 1;
+                                Defer(() =>
+                                {
+                                    bundle.splits.Remove(split);
+                                    bundle.splits.Insert(newSplitIndex, split);
+                                    _data.MarkAsDirty();
+                                });
+                            }
+                            EditorGUI.EndDisabledGroup();
+                            GUI.color = _GUIColor;
                         }, () =>
                         {
                             GUI.color = Color.red;
