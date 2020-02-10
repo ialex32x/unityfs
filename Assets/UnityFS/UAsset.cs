@@ -59,6 +59,7 @@ namespace UnityFS
             if (_disposed)
             {
                 Debug.LogError($"uasset already disposed ({_assetPath})");
+                return null;
             }
             return _object;
         }
