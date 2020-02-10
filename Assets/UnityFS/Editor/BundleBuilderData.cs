@@ -93,7 +93,7 @@ namespace UnityFS.Editor
                     {
                         baseName += "_" + count;
                     }
-                    slice.name = GetBundleName(bundleName, baseName);
+                    slice.name = GetBundleName(bundleName, baseName).ToLower();
                 }
                 return slice;
             }
