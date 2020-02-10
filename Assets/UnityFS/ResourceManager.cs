@@ -83,7 +83,7 @@ namespace UnityFS
                 Debug.LogWarning("[EditorOnly] ResourceManager 未初始化时使用了资源接口, 默认采用编辑器模式运行.");
                 Initialize(new ResourceManagerArgs()
                 {
-                    devMode = true, 
+                    devMode = true,
                 });
             }
 #endif
@@ -123,10 +123,16 @@ namespace UnityFS
             throw new NotImplementedException();
         }
 
-        // 检查本地包文件是否有效
-        public static bool IsBundleFileValid(string bundleName)
+        // 资源包是否立即可用 (本地有效)
+        public static bool IsBundleAvailable(string bundleName)
         {
-            return GetAssetProvider().IsBundleFileValid(bundleName);
+            return GetAssetProvider().IsBundleAvailable(bundleName);
+        }
+
+        // 资源是否立即可用 (本地有效)
+        public static bool IsAssetAvailable(string assetPath)
+        {
+            return GetAssetProvider().IsAssetAvailable(assetPath);
         }
 
         public static UAsset LoadAsset(string assetPath)

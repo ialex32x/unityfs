@@ -537,7 +537,7 @@ namespace UnityFS
         }
 
         // 检查是否存在有效的本地包
-        public bool IsBundleFileValid(string bundleName)
+        public bool IsBundleAvailable(string bundleName)
         {
             Manifest.BundleInfo bundleInfo;
             if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
@@ -772,6 +772,28 @@ namespace UnityFS
             return GetAsset(assetPath, true, type);
         }
 
+        // 检查资源是否本地直接可用
+        public bool IsAssetAvailable(string assetPath)
+        {
+            WeakReference assetRef;
+            var transformedAssetPath = TransformAssetPath(assetPath);
+            if (_assets.TryGetValue(transformedAssetPath, out assetRef) && assetRef.IsAlive)
+            {
+                var asset = assetRef.Target as UAsset;
+                if (asset != null)
+                {
+                    return true;
+                }
+            }
+            string bundleName;
+            if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
+            {
+                return IsBundleAvailable(bundleName);
+            }
+            return false;
+        }
+
+        // 查找资源 assetPath 对应的 bundle.name
         public string Find(string assetPath)
         {
             string bundleName;
