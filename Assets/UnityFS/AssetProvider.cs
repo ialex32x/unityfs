@@ -23,6 +23,8 @@ namespace UnityFS
 
         // 资源是否立即可用 (本地有效)
         bool IsAssetAvailable(string assetPath);
+        
+        bool IsAssetExists(string assetPath);
 
         // 资源包是否立即可用 (本地有效)
         bool IsBundleAvailable(string bundleName);

@@ -126,6 +126,11 @@ namespace UnityFS
             return File.Exists(assetPath);
         }
 
+        public bool IsAssetExists(string assetPath)
+        {
+            return File.Exists(assetPath);
+        }
+
         public IFileSystem GetFileSystem(string bundleName)
         {
             return new OrdinaryFileSystem(null);

@@ -135,6 +135,11 @@ namespace UnityFS
             return GetAssetProvider().IsAssetAvailable(assetPath);
         }
 
+        public static bool IsAssetExists(string assetPath)
+        {
+            return GetAssetProvider().IsAssetExists(assetPath);
+        }
+
         public static UAsset LoadAsset(string assetPath)
         {
             return GetAssetProvider().GetAsset(assetPath, null);

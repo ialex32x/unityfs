@@ -102,6 +102,11 @@ namespace UnityFS
             return File.Exists(assetPath);
         }
 
+        public bool IsAssetExists(string assetPath)
+        {
+            return File.Exists(assetPath);
+        }
+
         public string Find(string assetPath)
         {
             return "assetdatabase";

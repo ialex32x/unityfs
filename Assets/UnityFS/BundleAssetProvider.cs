@@ -467,6 +467,8 @@ namespace UnityFS
         private void SetManifest(Manifest manifest)
         {
             _manifest = manifest;
+            _assetPath2Bundle.Clear();
+            _bundlesMap.Clear();
             foreach (var bundle in _manifest.bundles)
             {
                 _bundlesMap[bundle.name] = bundle;
@@ -791,6 +793,11 @@ namespace UnityFS
                 return IsBundleAvailable(bundleName);
             }
             return false;
+        }
+
+        public bool IsAssetExists(string assetPath)
+        {
+            return Find(assetPath) != null;
         }
 
         // 查找资源 assetPath 对应的 bundle.name
