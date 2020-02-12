@@ -49,7 +49,7 @@ namespace Examples
             Debug.Log($"task complete: {task.name}");
         }
 
-        void Awake()
+        void Start()
         {
             Object.DontDestroyOnLoad(gameObject);
             gameObject.AddComponent<UnityFS.Utils.TaskInspector>();

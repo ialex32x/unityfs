@@ -51,14 +51,8 @@ namespace UnityFS
 
         public event Action completed
         {
-            add
-            {
-                value();
-            }
-
-            remove
-            {
-            }
+            add { value(); }
+            remove { }
         }
 
         public UAsset GetAsset(string assetPath, Type type)

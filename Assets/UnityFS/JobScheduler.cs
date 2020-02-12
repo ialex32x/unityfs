@@ -42,9 +42,22 @@ namespace UnityFS
             }
         }
 
+        // main thread only
         public static Coroutine DispatchCoroutine(IEnumerator co)
         {
             return _mb.StartCoroutine(co);
+        }
+
+        private static IEnumerator _AfterSeconds(Action action, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            action();
+        }
+
+        // main thread only
+        public static void DispatchAfter(Action action, float seconds)
+        {
+            _mb.StartCoroutine(_AfterSeconds(action, seconds));
         }
 
         public static void DispatchMainAnyway(Action action)
