@@ -174,7 +174,14 @@ namespace UnityFS
             {
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
-                callback(this);
+                try
+                {
+                    callback(this);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogErrorFormat("UBundle Exception: {0}\n{1}", _info.name, exception);
+                }
             }
         }
     }

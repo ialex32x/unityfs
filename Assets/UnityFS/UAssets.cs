@@ -73,7 +73,14 @@ namespace UnityFS
             {
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
-                callback(this);
+                try
+                {
+                    callback(this);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogErrorFormat("UAssets Exception: {0}", exception);
+                }
             }
         }
     }
