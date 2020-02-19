@@ -528,8 +528,7 @@ namespace UnityFS.Editor
 
         protected override void SelectionChanged(IList<int> selectedIds)
         {
-            Debug.Log(Event.current.type);
-            ShowBundleReport();
+            // ShowBundleReport();
         }
 
         private void OnSortingChanged(MultiColumnHeader multiColumnHeader)
