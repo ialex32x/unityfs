@@ -22,9 +22,9 @@ namespace UnityFS
     public static class ResourceManager
     {
         // 资源加载器
-        static IAssetProvider _assetProvider;
-        static IAssetsAnalyzer _analyzer;
-        static IAssetProviderListener _listener;
+        private static IAssetProvider _assetProvider;
+        private static IAssetsAnalyzer _analyzer;
+        private static IAssetProviderListener _listener;
 
         public static void SetListener(IAssetProviderListener listener)
         {
