@@ -64,6 +64,10 @@ namespace UnityFS.Utils
 
         private void onAssetLoaded(UAsset asset)
         {
+            if (_callbacks == null)
+            {
+                return;
+            }
             var shadows = _callbacks;
             var count = shadows.Count;
             if (count > 0)
