@@ -16,6 +16,28 @@ namespace UnityFS.Utils
             _root = root;
         }
 
+        public PrefabPools(GameObject root, bool dontDestroyOnLoad = true)
+        {
+            if (root != null)
+            {
+                _root = root.transform;
+                if (dontDestroyOnLoad)
+                {
+                    Object.DontDestroyOnLoad(root);
+                }
+            }
+        }
+
+        public PrefabPools()
+        {
+            _root = null;
+        }
+
+        public PrefabPool.Handle Instantiate(string assetPath)
+        {
+            return GetPrefabPool(assetPath).Instantiate();
+        }
+
         public PrefabPool GetPrefabPool(string assetPath, int capacity = 0)
         {
             if (_prefabPools == null)

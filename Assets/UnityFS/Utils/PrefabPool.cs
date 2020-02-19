@@ -8,6 +8,95 @@ namespace UnityFS.Utils
 
     public class PrefabPool
     {
+        public struct Handle
+        {
+            public static readonly Handle Empty = new Handle();
+
+            private GameObject _gameObject;
+            private PrefabPool _pool;
+
+            public GameObject gameObject { get { return _gameObject; } }
+
+            public bool isValid { get { return _gameObject != null; } }
+
+            public string name { get { return _gameObject?.name; } set { if (_gameObject != null) _gameObject.name = value; } }
+
+            public Transform transform
+            {
+                get { return _gameObject?.transform; }
+            }
+
+            public Transform parent
+            {
+                get { return transform?.parent; }
+                set
+                {
+                    if (_gameObject != null)
+                    {
+                        _gameObject.transform.parent = value;
+                    }
+                }
+            }
+
+            public bool activeSelf
+            {
+                get { return _gameObject != null ? _gameObject.activeSelf : false; }
+            }
+
+            public bool activeInHierarchy
+            {
+                get { return _gameObject != null ? _gameObject.activeInHierarchy : false; }
+            }
+
+            public Handle(PrefabPool pool)
+            {
+                _pool = pool;
+                _gameObject = _pool != null ? _pool._Instantiate() : null;
+            }
+
+            public Handle(PrefabPool pool, GameObject gameObject)
+            {
+                _pool = pool;
+                _gameObject = gameObject;
+            }
+
+            public void SetParent(Transform parent, bool worldPositionStays = true)
+            {
+                if (_gameObject != null)
+                {
+                    _gameObject.transform.SetParent(parent, worldPositionStays);
+                }
+            }
+
+            public void SetActive(bool bActive)
+            {
+                if (_gameObject != null)
+                {
+                    _gameObject.SetActive(bActive);
+                }
+            }
+
+            public T GetComponent<T>()
+            where T : Component
+            {
+                return _gameObject?.GetComponent<T>();
+            }
+
+            public Component GetComponent(Type type)
+            {
+                return _gameObject?.GetComponent(type);
+            }
+
+            public void Destroy()
+            {
+                if (_pool != null)
+                {
+                    var gameObject = _gameObject;
+                    _gameObject = null;
+                    _pool.Destroy(gameObject);
+                }
+            }
+        }
         private UAsset _asset;
         private int _count;
         private int _capacity;
@@ -88,7 +177,17 @@ namespace UnityFS.Utils
             }
         }
 
-        public GameObject Instantiate()
+        public Handle Instantiate()
+        {
+            var gameObject = _Instantiate();
+            if (gameObject != null)
+            {
+                return new Handle(this, gameObject);
+            }
+            return Handle.Empty;
+        }
+
+        private GameObject _Instantiate()
         {
             if (!_asset.isLoaded)
             {

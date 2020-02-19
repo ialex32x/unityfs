@@ -14,6 +14,8 @@ namespace Examples
         public int slow = 0;
         public int bufferSize = 0;
 
+        private UnityFS.Utils.PrefabPools _pools;
+
         public void OnStartupTask(UnityFS.Manifest.BundleInfo[] bundles)
         {
             var sum = 0;
@@ -52,6 +54,7 @@ namespace Examples
         void Start()
         {
             Object.DontDestroyOnLoad(gameObject);
+            _pools = new UnityFS.Utils.PrefabPools(new GameObject("_GameObjectPool"));
             gameObject.AddComponent<UnityFS.Utils.TaskInspector>();
 
             // 可用下载地址列表 (会依次重试, 次数超过地址数量时反复重试最后一个地址)
@@ -111,23 +114,14 @@ namespace Examples
                 // 加载资源, 得到原始 Asset 对象
                 UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 1.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
                 UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 2.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 3.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 4.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 5.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 6.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 7.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 8.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
-                UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 9.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
 
                 UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 1.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 2.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 3.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 4.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 5.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 6.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 7.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 8.prefab");
-                UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 9.prefab");
+
+                var handle = _pools.Instantiate("Assets/Examples/Prefabs/Cube 9.prefab");
+                StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
+                {
+                    handle.Destroy();
+                }, 10f));
 
                 // 加载资源, 通过辅助方法直接创建 GameObject
                 UnityFS.ResourceManager.Instantiate("Assets/Examples/Prefabs/Cube 1.prefab")
