@@ -82,23 +82,23 @@ namespace UnityFS.Editor
                     autoResize = false,
                     allowToggleVisibility = false
                 },
+                // new MultiColumnHeaderState.Column
+                // {
+                //     headerContent = new GUIContent("StreamingAssets"),
+                //     headerTextAlignment = TextAlignment.Left,
+                //     sortedAscending = true,
+                //     sortingArrowAlignment = TextAlignment.Left,
+                //     width = 110,
+                //     minWidth = 60,
+                //     autoResize = true
+                // },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("StreamingAssets"),
+                    headerContent = new GUIContent("StreamingAssets/Load/Filter"),
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
-                    width = 110,
-                    minWidth = 60,
-                    autoResize = true
-                },
-                new MultiColumnHeaderState.Column
-                {
-                    headerContent = new GUIContent("Load/Filter"),
-                    headerTextAlignment = TextAlignment.Left,
-                    sortedAscending = true,
-                    sortingArrowAlignment = TextAlignment.Left,
-                    width = 95,
+                    width = 200,
                     minWidth = 60,
                     autoResize = true,
                     allowToggleVisibility = true
@@ -109,7 +109,7 @@ namespace UnityFS.Editor
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
-                    width = 70,
+                    width = 270,
                     minWidth = 60,
                     autoResize = true
                 },
@@ -417,32 +417,16 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        if (bundleInfo != null)
+                        var popupWidth = (cellRect.width - 20f) * 0.5f;
+                        cellRect.width = 20f;
+                        var streamingAssets = EditorGUI.Toggle(cellRect, bundleInfo.streamingAssets);
+                        if (streamingAssets != bundleInfo.streamingAssets)
                         {
-                            var streamingAssets = EditorGUI.Toggle(cellRect, bundleInfo.streamingAssets);
-                            if (streamingAssets != bundleInfo.streamingAssets)
-                            {
-                                bundleInfo.streamingAssets = streamingAssets;
-                                _data.MarkAsDirty();
-                            }
-
-                            // var platforms = (BundleAssetPlatforms)EditorGUI.EnumFlagsField(cellRect, bundleInfo.platforms);
-                            // if (platforms != bundleInfo.platforms)
-                            // {
-                            //     bundleInfo.platforms = platforms;
-                            //     _data.MarkAsDirty();
-                            // }
+                            bundleInfo.streamingAssets = streamingAssets;
+                            _data.MarkAsDirty();
                         }
-                    }
-                    else if (item.depth == 1)
-                    {
-                    }
-                    break;
-                case 4:
-                    if (item.depth == 0)
-                    {
-                        var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        cellRect.width *= 0.5f;
+                        cellRect.x += cellRect.width;
+                        cellRect.width = popupWidth;
                         var load = (Manifest.BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
                         if (load != bundleInfo.load)
                         {
@@ -450,6 +434,7 @@ namespace UnityFS.Editor
                             _data.MarkAsDirty();
                         }
                         cellRect.x += cellRect.width;
+                        cellRect.width = popupWidth;
                         var type = (Manifest.BundleType)EditorGUI.EnumPopup(cellRect, bundleInfo.type);
                         if (type != bundleInfo.type)
                         {
@@ -476,7 +461,7 @@ namespace UnityFS.Editor
                         // }
                     }
                     break;
-                case 5:
+                case 4:
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
@@ -505,7 +490,7 @@ namespace UnityFS.Editor
                         }
                     }
                     break;
-                case 6:
+                case 5:
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
