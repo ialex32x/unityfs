@@ -104,9 +104,8 @@ namespace UnityFS.Editor
             {
                 if (CollectAsset(data, bundle, asset))
                 {
-                    if (!bundle.assetsOrder.Contains(asset))
+                    if (bundle.AddAssetOrder(asset))
                     {
-                        bundle.assetsOrder.Add(asset);
                         data.MarkAsDirty();
                     }
                 }

@@ -528,6 +528,7 @@ namespace UnityFS.Editor
 
         protected override void SelectionChanged(IList<int> selectedIds)
         {
+            Debug.Log(Event.current.type);
             ShowBundleReport();
         }
 

@@ -133,7 +133,7 @@ namespace UnityFS.Editor
             public int priority;
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
 
-            public List<Object> assetsOrder = new List<Object>();
+            public List<string> assetsGuidOrder = new List<string>();
 
             public List<BundleSplit> splits = new List<BundleSplit>();
 
@@ -142,11 +142,34 @@ namespace UnityFS.Editor
                 return v < 0 ? int.MaxValue : v;
             }
 
+            public static string GetAssetGUID(Object asset)
+            {
+                var assetPath = AssetDatabase.GetAssetOrScenePath(asset);
+                var guid = AssetDatabase.AssetPathToGUID(assetPath);
+                return guid;
+            }
+
+            public bool AddAssetOrder(Object asset)
+            {
+                var guid = GetAssetGUID(asset);
+                if (!assetsGuidOrder.Contains(guid))
+                {
+                    assetsGuidOrder.Add(guid);
+                    return true;
+                }
+                return false;
+            }
+
             public void Slice()
             {
                 foreach (var split in splits)
                 {
-                    split.assets.Sort((a, b) => Neg2Inf(assetsOrder.IndexOf(a)) - Neg2Inf(assetsOrder.IndexOf(b)));
+                    split.assets.Sort((a, b) =>
+                    {
+                        var da = GetAssetGUID(a);
+                        var db = GetAssetGUID(b);
+                        return Neg2Inf(assetsGuidOrder.IndexOf(da)) - Neg2Inf(assetsGuidOrder.IndexOf(db));
+                    });
                     split.Slice(name);
                 }
             }
