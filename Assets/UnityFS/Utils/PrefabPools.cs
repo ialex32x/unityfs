@@ -33,7 +33,12 @@ namespace UnityFS.Utils
             _root = null;
         }
 
-        public PrefabPool.Handle Instantiate(string assetPath)
+        public PrefabPool.Handle Alloc(string assetPath)
+        {
+            return GetPrefabPool(assetPath).GetHandle();
+        }
+
+        public GameObject Instantiate(string assetPath)
         {
             return GetPrefabPool(assetPath).Instantiate();
         }

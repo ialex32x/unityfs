@@ -51,7 +51,7 @@ namespace UnityFS.Utils
             public Handle(PrefabPool pool)
             {
                 _pool = pool;
-                _gameObject = _pool != null ? _pool._Instantiate() : null;
+                _gameObject = _pool != null ? _pool.Instantiate() : null;
             }
 
             public Handle(PrefabPool pool, GameObject gameObject)
@@ -87,7 +87,7 @@ namespace UnityFS.Utils
                 return _gameObject?.GetComponent(type);
             }
 
-            public void Destroy()
+            public void Release()
             {
                 if (_pool != null)
                 {
@@ -177,9 +177,9 @@ namespace UnityFS.Utils
             }
         }
 
-        public Handle Instantiate()
+        public Handle GetHandle()
         {
-            var gameObject = _Instantiate();
+            var gameObject = Instantiate();
             if (gameObject != null)
             {
                 return new Handle(this, gameObject);
@@ -187,7 +187,7 @@ namespace UnityFS.Utils
             return Handle.Empty;
         }
 
-        private GameObject _Instantiate()
+        public GameObject Instantiate()
         {
             if (!_asset.isLoaded)
             {

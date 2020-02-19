@@ -117,10 +117,10 @@ namespace Examples
 
                 UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 1.prefab");
 
-                var handle = _pools.Instantiate("Assets/Examples/Prefabs/Cube 9.prefab");
+                var handle = _pools.Alloc("Assets/Examples/Prefabs/Cube 9.prefab");
                 StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
                 {
-                    handle.Destroy();
+                    handle.Release();
                 }, 10f));
 
                 // 加载资源, 通过辅助方法直接创建 GameObject
