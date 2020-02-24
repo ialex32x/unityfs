@@ -161,7 +161,7 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat("UZipArchiveBundleAsset {0} released [{1}]", _assetPath, bManaged);
+                    // Debug.LogFormat("UZipArchiveBundleAsset {0} released [{1}]", _assetPath, bManaged);
                     _disposed = true;
                     JobScheduler.DispatchMain(() => // resurrecting 
                     {
@@ -293,7 +293,7 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat("UAssetBundleAsset {0} released [{1}] {2}", _assetPath, bManaged, _bundle.name);
+                    // Debug.LogFormat("UAssetBundleAsset {0} released [{1}] {2}", _assetPath, bManaged, _bundle.name);
                     _disposed = true;
                     JobScheduler.DispatchMain(() => // resurrecting 
                     {
@@ -505,7 +505,7 @@ namespace UnityFS
                         }
                         else
                         {
-                            PrintLog($"read from streamingassets failed: {bundle.name}");
+                            Debug.LogWarningFormat("read from streamingassets failed: {0}", bundle.name);
                             DownloadBundleFile(bundle);
                         }
                         bundle.RemoveRef();
@@ -566,15 +566,10 @@ namespace UnityFS
             Debug.LogError(exception);
         }
 
-        private void PrintLog(string message)
-        {
-            Debug.Log(message);
-        }
-
         protected void Unload(UBundle bundle)
         {
             _bundles.Remove(bundle.name);
-            PrintLog($"bundle unloaded: {bundle.name}");
+            // Debug.LogFormat("bundle unloaded: {0}", bundle.name);
         }
 
         private void _AddDependencies(UBundle bundle, string[] dependencies)

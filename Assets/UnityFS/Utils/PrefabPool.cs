@@ -104,6 +104,9 @@ namespace UnityFS.Utils
         private List<Action> _callbacks;
         private Transform _root;
 
+        private Quaternion _localRotation;
+        private Vector3 _localScale;
+
         // 实例化数量
         public int count { get { return _count; } }
 
@@ -157,6 +160,12 @@ namespace UnityFS.Utils
             {
                 return;
             }
+            var prefab = asset.GetObject() as GameObject;
+            if (prefab != null)
+            {
+                _localRotation = prefab.transform.localRotation;
+                _localScale = prefab.transform.localScale;
+            }
             var shadows = _callbacks;
             var count = shadows.Count;
             if (count > 0)
@@ -197,10 +206,10 @@ namespace UnityFS.Utils
             var count = _gameObjects != null ? _gameObjects.Count : 0;
             if (count > 0)
             {
-                var old = _gameObjects[count - 1];
+                var gameObject = _gameObjects[count - 1];
                 _gameObjects.RemoveAt(count - 1);
                 _count++;
-                return old;
+                return gameObject;
             }
             var prefab = _asset.GetObject() as GameObject;
             if (prefab != null)
@@ -226,8 +235,17 @@ namespace UnityFS.Utils
             }
             else
             {
-                gameObject.transform.SetParent(_root);
+#if UNITY_EDITOR
+                if (_gameObjects != null && _gameObjects.Contains(gameObject))
+                {
+                    Debug.LogErrorFormat("重复销毁 GameObject: {0}", _asset.assetPath);
+                    return;
+                }
+#endif
+                gameObject.transform.SetParent(_root, false);
                 gameObject.SetActive(false);
+                gameObject.transform.localRotation = _localRotation;
+                gameObject.transform.localScale = _localScale;
                 if (_gameObjects == null)
                 {
                     _gameObjects = new List<GameObject>();
@@ -236,13 +254,6 @@ namespace UnityFS.Utils
                 }
                 else
                 {
-#if UNITY_EDITOR
-                    if (_gameObjects.Contains(gameObject))
-                    {
-                        Debug.LogErrorFormat("重复销毁 GameObject: {0}", _asset.assetPath);
-                        return;
-                    }
-#endif
                     _gameObjects.Add(gameObject);
                     --_count;
                 }
