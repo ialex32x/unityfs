@@ -34,10 +34,10 @@ namespace UnityFS
                     }
                     var entry = new FileEntry();
                     var fileInfo = new FileInfo(file);
-                    entry.name = file;
+                    entry.name = file.Replace('\\', '/');
                     entry.size = (int)fileInfo.Length;
                     entry.checksum = string.Empty;
-                    Debug.LogFormat("walk: {0}", entry.name);
+                    // Debug.LogFormat("walk: {0}", entry.name);
                     _fileListManifest.files.Add(entry);
                 }
                 var dirs = Directory.GetDirectories(path);
