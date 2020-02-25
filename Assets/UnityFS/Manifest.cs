@@ -26,6 +26,7 @@ namespace UnityFS
             ZipArchive = 1,     // 打 zip 包
             // SceneBundle,     // 打场景 ab 包
             FileList = 2,       // 仅生成文件清单
+            FileSystem = 3,     // 零散资源直接文件存储
         }
 
         // 资源包清单

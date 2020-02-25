@@ -133,6 +133,11 @@ namespace UnityFS
                 }
             }
 
+            protected override bool IsAvailable()
+            {
+                throw new NotImplementedException();
+            }
+
             public override byte[] ReadAllBytes()
             {
                 return null;
@@ -268,6 +273,11 @@ namespace UnityFS
                 }
             }
 
+            protected override bool IsAvailable()
+            {
+                return _bundle.Exists(_assetPath);
+            }
+
             public override byte[] ReadAllBytes()
             {
                 return _bundle.ReadAllBytes(_assetPath);
@@ -300,6 +310,11 @@ namespace UnityFS
             : base(bundleInfo)
             {
                 _provider = provider;
+            }
+
+            public bool IsAvailable()
+            {
+                return _provider.IsBundleFileAvailable(_info);
             }
 
             protected override void OnRelease()
@@ -372,6 +387,11 @@ namespace UnityFS
                 _bundle = bundle;
                 _bundle.AddRef();
                 _bundle.completed += OnBundleLoaded;
+            }
+
+            protected override bool IsAvailable()
+            {
+                return _bundle.IsAvailable();
             }
 
             public override byte[] ReadAllBytes()

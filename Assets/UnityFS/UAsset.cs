@@ -39,14 +39,22 @@ namespace UnityFS
             }
         }
 
+        // 是否是有效资源 (不存在的资源返回 false)
         public bool isValid
         {
             get { return IsValid(); }
         }
 
+        // 是否已经加载完成
         public bool isLoaded
         {
             get { return _loaded; }
+        }
+
+        // 是否本地直接可用 (即使直接可用, 加载过程仍然可能且应该认为是异步的)
+        public bool isAvailable
+        {
+            get { return IsAvailable(); }
         }
 
         public string assetPath
@@ -67,6 +75,11 @@ namespace UnityFS
         protected virtual bool IsValid()
         {
             return true;
+        }
+
+        protected virtual bool IsAvailable()
+        {
+            return false;
         }
 
         // 为 filesystem 提供兼容性接口 (每次调用返回一份拷贝数据)

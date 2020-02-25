@@ -139,6 +139,34 @@ namespace UnityFS.Utils
             onComplete();
         }
 
+        public static bool IsFileValid(string fullPath, FileEntry fileEntry)
+        {
+            try
+            {
+                var metaPath = fullPath + Metadata.Ext;
+                if (File.Exists(fullPath))
+                {
+                    if (File.Exists(metaPath))
+                    {
+                        var json = File.ReadAllText(metaPath);
+                        var metadata = JsonUtility.FromJson<Metadata>(json);
+                        // quick but unsafe
+                        if (metadata != null && metadata.checksum == fileEntry.checksum && metadata.size == fileEntry.size)
+                        {
+                            return true;
+                        }
+                        File.Delete(metaPath);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(exception);
+            }
+            return false;
+        }
+
+
         // 检查本地 bundle 是否有效
         public static bool IsBundleFileValid(string fullPath, Manifest.BundleInfo bundleInfo)
         {

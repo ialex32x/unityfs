@@ -48,6 +48,11 @@ namespace UnityFS
                 }
             }
 
+            protected override bool IsAvailable()
+            {
+                return true;
+            }
+
             protected override bool IsValid()
             {
                 return true;

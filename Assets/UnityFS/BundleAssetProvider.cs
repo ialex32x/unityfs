@@ -196,10 +196,16 @@ namespace UnityFS
         }
 
         // 检查是否存在有效的本地包
-        public bool IsBundleFileValid(Manifest.BundleInfo bundleInfo)
+        public bool IsBundleFileAvailable(Manifest.BundleInfo bundleInfo)
         {
             var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
             return Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo);
+        }
+
+        public bool IsFileAvailable(FileEntry fileEntry)
+        {
+            var fullPath = Path.Combine(_localPathRoot, fileEntry.name);
+            return Utils.Helpers.IsFileValid(fullPath, fileEntry);
         }
 
         // 检查是否存在有效的本地包
@@ -208,7 +214,7 @@ namespace UnityFS
             Manifest.BundleInfo bundleInfo;
             if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
             {
-                return IsBundleFileValid(bundleInfo);
+                return IsBundleFileAvailable(bundleInfo);
             }
             return false;
         }
@@ -352,13 +358,25 @@ namespace UnityFS
             _tasks.Clear();
         }
 
+        // 获取包信息
+        public Manifest.BundleInfo GetBundleInfo(string bundleName)
+        {
+            Manifest.BundleInfo bundleInfo;
+            if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
+            {
+                return bundleInfo;
+            }
+            return null;
+        }
+
+        // 获取包对象 (会直接进入加载队列)
         public UBundle GetBundle(string bundleName)
         {
             UBundle bundle;
             if (!_bundles.TryGetValue(bundleName, out bundle))
             {
-                Manifest.BundleInfo bundleInfo;
-                if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
+                var bundleInfo = GetBundleInfo(bundleName);
+                if (bundleInfo != null)
                 {
                     switch (bundleInfo.type)
                     {
@@ -444,7 +462,7 @@ namespace UnityFS
             if (_assets.TryGetValue(transformedAssetPath, out assetRef) && assetRef.IsAlive)
             {
                 var asset = assetRef.Target as UAsset;
-                if (asset != null)
+                if (asset != null && asset.isAvailable)
                 {
                     return true;
                 }
@@ -452,7 +470,17 @@ namespace UnityFS
             string bundleName;
             if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
             {
-                return IsBundleAvailable(bundleName);
+                var bundleInfo = GetBundleInfo(bundleName);
+                if (bundleInfo != null)
+                {
+                    if (bundleInfo.type == Manifest.BundleType.FileSystem)
+                    {
+                        // var fileEntry = lookup file entry by assetPath in filesystem bundle (info);
+                        // return IsFileAvailable(fileEntry);
+                        throw new NotImplementedException();
+                    }
+                    return IsBundleAvailable(bundleName);
+                }
             }
             return false;
         }
