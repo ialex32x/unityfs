@@ -15,344 +15,8 @@ namespace UnityFS
     IFileSystem GetFileSystem(string bundleName)
     UAsset GetAsset(string assetPath)
     */
-    public class BundleAssetProvider : IAssetProvider
+    public partial class BundleAssetProvider : IAssetProvider
     {
-        public class ZipFileSystem : AbstractFileSystem
-        {
-            private bool _disposed;
-            private UZipArchiveBundle _bundle;
-
-            public ZipFileSystem(UZipArchiveBundle bundle)
-            {
-                _bundle = bundle;
-                _bundle.AddRef();
-                _bundle.completed += OnBundleLoaded;
-            }
-
-            ~ZipFileSystem()
-            {
-                _disposed = true;
-                JobScheduler.DispatchMain(() => // resurrecting 
-                {
-                    _bundle.completed -= OnBundleLoaded;
-                    _bundle.RemoveRef();
-                });
-            }
-
-            private void OnBundleLoaded(UBundle bundle)
-            {
-                if (_disposed)
-                {
-                    return;
-                }
-                Complete();
-            }
-
-            public override bool Exists(string filename)
-            {
-                return _bundle.Exists(filename);
-            }
-
-            public override byte[] ReadAllBytes(string filename)
-            {
-                return _bundle.ReadAllBytes(filename);
-            }
-
-            public override Stream OpenRead(string filename)
-            {
-                return _bundle.OpenRead(filename);
-            }
-        }
-
-        public class UZipArchiveBundle : UBundle
-        {
-            private ZipFile _zipFile;
-            private BundleAssetProvider _provider;
-
-            public UZipArchiveBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
-            : base(bundleInfo)
-            {
-                _provider = provider;
-            }
-
-            protected override void OnRelease()
-            {
-                base.OnRelease();
-                if (_zipFile != null)
-                {
-                    _zipFile.Close();
-                    _zipFile = null;
-                }
-                _provider.Unload(this);
-            }
-
-            public bool Exists(string filename)
-            {
-                if (_zipFile != null)
-                {
-                    var entry = _zipFile.FindEntry(filename, false);
-                    if (entry >= 0)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            // 打开压缩包中的文件, 返回其文件流
-            public Stream OpenRead(string filename)
-            {
-                if (_zipFile != null)
-                {
-                    var entry = _zipFile.GetEntry(filename);
-                    if (entry != null)
-                    {
-                        return _zipFile.GetInputStream(entry);
-                    }
-                }
-                return null;
-            }
-
-            public byte[] ReadAllBytes(string filename)
-            {
-                if (_zipFile != null)
-                {
-                    var entry = _zipFile.GetEntry(filename);
-                    if (entry != null)
-                    {
-                        using (var stream = _zipFile.GetInputStream(entry))
-                        {
-                            var buffer = new byte[entry.Size];
-                            stream.Read(buffer, 0, buffer.Length);
-                            return buffer;
-                        }
-                    }
-                }
-                return null;
-            }
-
-            public override void Load(Stream stream)
-            {
-                _zipFile = new ZipFile(stream);
-                _zipFile.IsStreamOwner = true;
-                _loaded = true;
-                // Debug.Log($"ziparchive loaded {name}");
-                if (_IsDependenciesLoaded())
-                {
-                    OnLoaded();
-                }
-            }
-        }
-
-        // Zip 包中的文件资源
-        protected class UZipArchiveBundleAsset : UAsset
-        {
-            protected UZipArchiveBundle _bundle;
-
-            public UZipArchiveBundleAsset(UZipArchiveBundle bundle, string assetPath)
-            : base(assetPath)
-            {
-                _bundle = bundle;
-                _bundle.AddRef();
-                _bundle.completed += OnBundleLoaded;
-            }
-
-            protected override void Dispose(bool bManaged)
-            {
-                if (!_disposed)
-                {
-                    // Debug.LogFormat("UZipArchiveBundleAsset {0} released [{1}]", _assetPath, bManaged);
-                    _disposed = true;
-                    JobScheduler.DispatchMain(() => // resurrecting 
-                    {
-                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
-                        _bundle.completed -= OnBundleLoaded;
-                        _bundle.RemoveRef();
-                    });
-                }
-            }
-
-            public override byte[] ReadAllBytes()
-            {
-                return _bundle.ReadAllBytes(_assetPath);
-            }
-
-            public Stream OpenRead()
-            {
-                return _bundle.OpenRead(_assetPath);
-            }
-
-            protected virtual void OnBundleLoaded(UBundle bundle)
-            {
-                if (_disposed)
-                {
-                    return;
-                }
-                // _bundle.ReadAllBytes(_assetPath);
-                Complete();
-            }
-        }
-
-        // AssetBundle 资源包
-        protected class UAssetBundleBundle : UBundle
-        {
-            private Stream _stream; // manage the stream lifecycle (dispose after assetbundle.unload)
-            private AssetBundle _assetBundle;
-            private BundleAssetProvider _provider;
-
-            public UAssetBundleBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
-            : base(bundleInfo)
-            {
-                _provider = provider;
-            }
-
-            protected override void OnRelease()
-            {
-                base.OnRelease();
-                if (_assetBundle != null)
-                {
-                    _assetBundle.Unload(true);
-                    _assetBundle = null;
-                }
-                if (_stream != null)
-                {
-                    _stream.Close();
-                    _stream.Dispose();
-                    _stream = null;
-                }
-                if (_provider != null)
-                {
-                    _provider.Unload(this);
-                    _provider = null;
-                }
-            }
-
-            // stream 生命周期将被 UAssetBundleBundle 托管
-            public override void Load(Stream stream)
-            {
-                _stream = stream;
-                var request = AssetBundle.LoadFromStreamAsync(stream);
-                request.completed += OnAssetBundleLoaded;
-            }
-
-            public AssetBundle GetAssetBundle()
-            {
-                return _assetBundle;
-            }
-
-            private void OnAssetBundleLoaded(AsyncOperation op)
-            {
-                var request = op as AssetBundleCreateRequest;
-                if (request != null)
-                {
-                    _assetBundle = request.assetBundle;
-                }
-                _loaded = true;
-                // Debug.Log($"assetbundle loaded {name}");
-                if (_IsDependenciesLoaded())
-                {
-                    OnLoaded();
-                }
-            }
-        }
-
-        // 从 AssetBundle 资源包载入 (不实际调用 assetbundle.LoadAsset)
-        protected class UAssetBundleAsset : UAsset
-        {
-            protected UAssetBundleBundle _bundle;
-
-            public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath)
-            : base(assetPath)
-            {
-                _bundle = bundle;
-                _bundle.AddRef();
-                _bundle.completed += OnBundleLoaded;
-            }
-
-            public override byte[] ReadAllBytes()
-            {
-                var assetBundle = _bundle.GetAssetBundle();
-                if (assetBundle != null)
-                {
-                    var path = _assetPath;
-                    if (!path.EndsWith(".bytes"))
-                    {
-                        path += ".bytes";
-                    }
-                    var textAsset = assetBundle.LoadAsset<TextAsset>(path);
-                    if (textAsset != null)
-                    {
-                        return textAsset.bytes;
-                    }
-                }
-                return null;
-                // throw new NotSupportedException();
-            }
-
-            protected override void Dispose(bool bManaged)
-            {
-                if (!_disposed)
-                {
-                    // Debug.LogFormat("UAssetBundleAsset {0} released [{1}] {2}", _assetPath, bManaged, _bundle.name);
-                    _disposed = true;
-                    JobScheduler.DispatchMain(() => // resurrecting 
-                    {
-                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
-                        _bundle.completed -= OnBundleLoaded;
-                        _bundle.RemoveRef();
-                    });
-                }
-            }
-
-            protected virtual void OnBundleLoaded(UBundle bundle)
-            {
-                if (_disposed)
-                {
-                    return;
-                }
-                Complete();
-            }
-        }
-
-        // 从 AssetBundle 资源包载入 (会调用 assetbundle.LoadAsset 载入实际资源)
-        protected class UAssetBundleConcreteAsset : UAssetBundleAsset
-        {
-            private Type _type;
-
-            public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type)
-            : base(bundle, assetPath)
-            {
-                _type = type;
-            }
-
-            protected override void OnBundleLoaded(UBundle bundle)
-            {
-                if (_disposed)
-                {
-                    Complete();
-                    return;
-                }
-                // assert (bundle == _bundle)
-                var assetBundle = _bundle.GetAssetBundle();
-                if (assetBundle != null)
-                {
-                    var request = _type != null ? assetBundle.LoadAssetAsync(_assetPath, _type) : assetBundle.LoadAssetAsync(_assetPath);
-                    request.completed += OnAssetLoaded;
-                }
-                else
-                {
-                    Complete(); // failed
-                }
-            }
-
-            private void OnAssetLoaded(AsyncOperation op)
-            {
-                var request = op as AssetBundleRequest;
-                _object = request.asset;
-                Complete();
-            }
-        }
-
         // 资源路径 => 资源包 的快速映射
         private Dictionary<string, string> _assetPath2Bundle = new Dictionary<string, string>();
         private Dictionary<string, Manifest.BundleInfo> _bundlesMap = new Dictionary<string, Manifest.BundleInfo>();
@@ -704,6 +368,9 @@ namespace UnityFS
                         case Manifest.BundleType.ZipArchive:
                             bundle = new UZipArchiveBundle(this, bundleInfo);
                             break;
+                        case Manifest.BundleType.FileList:
+                            bundle = new UFileListBundle(this, bundleInfo);
+                            break;
                     }
 
                     if (bundle != null)
@@ -826,33 +493,45 @@ namespace UnityFS
                 var bundle = this.GetBundle(bundleName);
                 if (bundle != null)
                 {
-                    bundle.AddRef();
-                    var assetBundleUBundle = bundle as UAssetBundleBundle;
-                    if (assetBundleUBundle != null)
+                    try
                     {
+                        bundle.AddRef();
                         ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-                        if (concrete)
+                        asset = bundle.CreateAsset(assetPath, type, concrete);
+                        if (asset != null)
                         {
-                            asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath, type);
-                        }
-                        else
-                        {
-                            asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
-                        }
-                        _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
-                    }
-                    else
-                    {
-                        var zipArchiveBundle = bundle as UZipArchiveBundle;
-                        if (zipArchiveBundle != null)
-                        {
-                            ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-                            asset = new UZipArchiveBundleAsset(zipArchiveBundle, assetPath);
                             _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
+                            return asset;
                         }
+                        // var assetBundleUBundle = bundle as UAssetBundleBundle;
+                        // if (assetBundleUBundle != null)
+                        // {
+                        //     ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
+                        //     if (concrete)
+                        //     {
+                        //         asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath, type);
+                        //     }
+                        //     else
+                        //     {
+                        //         asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
+                        //     }
+                        //     _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
+                        // }
+                        // else
+                        // {
+                        //     var zipArchiveBundle = bundle as UZipArchiveBundle;
+                        //     if (zipArchiveBundle != null)
+                        //     {
+                        //         ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
+                        //         asset = new UZipArchiveBundleAsset(zipArchiveBundle, assetPath);
+                        //         _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
+                        //     }
+                        // }
                     }
-                    bundle.RemoveRef();
-                    return asset;
+                    finally
+                    {
+                        bundle.RemoveRef();
+                    }
                 }
                 // 不是 Unity 资源包, 不能实例化 AssetBundleUAsset
             }

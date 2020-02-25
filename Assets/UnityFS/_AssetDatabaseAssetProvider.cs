@@ -9,6 +9,74 @@ namespace UnityFS
     // 仅编辑器运行时可用
     public class AssetDatabaseAssetProvider : IAssetProvider
     {
+        // 仅调试用, 模拟文件列表 (不带过滤)
+        protected class UAssetDatabaseFileListAsset : UAsset
+        {
+            private FileListManifest _fileListManifest;
+
+            public UAssetDatabaseFileListAsset(string assetPath)
+            : base(assetPath)
+            {
+                _fileListManifest = new FileListManifest();
+                WalkDirectory(assetPath);
+                Complete();
+            }
+
+            private void WalkDirectory(string path)
+            {
+                var files = Directory.GetFiles(path);
+                for (int i = 0, size = files.Length; i < size; i++)
+                {
+                    var file = files[i];
+                    if (file.EndsWith(".meta"))
+                    {
+                        continue;
+                    }
+                    var entry = new FileEntry();
+                    var fileInfo = new FileInfo(file);
+                    entry.name = file;
+                    entry.size = (int)fileInfo.Length;
+                    entry.checksum = string.Empty;
+                    Debug.LogFormat("walk: {0}", entry.name);
+                    _fileListManifest.files.Add(entry);
+                }
+                var dirs = Directory.GetDirectories(path);
+                for (int i = 0, size = dirs.Length; i < size; i++)
+                {
+                    var dir = dirs[i];
+                    WalkDirectory(dir);
+                }
+            }
+
+            protected override bool IsValid()
+            {
+                return true;
+            }
+
+            public override byte[] ReadAllBytes()
+            {
+                return null;
+            }
+
+            public override object GetValue()
+            {
+                return _fileListManifest;
+            }
+
+            protected override void Dispose(bool bManaged)
+            {
+                if (!_disposed)
+                {
+                    // Debug.LogFormat("UAssetDatabaseFileListAsset {0} released {1}", _assetPath, bManaged);
+                    _disposed = true;
+                    JobScheduler.DispatchMain(() =>
+                    {
+                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                    });
+                }
+            }
+        }
+
         protected class UAssetDatabaseAsset : UAsset
         {
             public UAssetDatabaseAsset(string assetPath, Type type)
@@ -37,7 +105,7 @@ namespace UnityFS
             {
                 if (!_disposed)
                 {
-                    Debug.LogFormat("UAssetDatabaseAsset {0} released {1}", _assetPath, bManaged);
+                    // Debug.LogFormat("UAssetDatabaseAsset {0} released {1}", _assetPath, bManaged);
                     _disposed = true;
                     JobScheduler.DispatchMain(() =>
                     {
@@ -69,7 +137,11 @@ namespace UnityFS
                 }
             }
             ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-            if (File.Exists(assetPath))
+            if (Directory.Exists(assetPath))
+            {
+                asset = new UAssetDatabaseFileListAsset(assetPath);
+            }
+            else if (File.Exists(assetPath))
             {
                 asset = new UAssetDatabaseAsset(assetPath, type);
             }

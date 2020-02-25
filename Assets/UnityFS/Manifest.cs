@@ -14,17 +14,18 @@ namespace UnityFS
         public enum BundleLoad
         {
             Startup,
-            Important, 
+            Important,
             Normal,
-            Optional, 
+            Optional,
         }
 
         [Serializable]
         public enum BundleType
         {
-            AssetBundle,
-            ZipArchive,
-            // SceneBundle,
+            AssetBundle = 0,    // 打资源 ab 包
+            ZipArchive = 1,     // 打 zip 包
+            // SceneBundle,     // 打场景 ab 包
+            FileList = 2,       // 仅生成文件清单
         }
 
         // 资源包清单
@@ -45,21 +46,27 @@ namespace UnityFS
         public List<BundleInfo> bundles = new List<BundleInfo>(); // bundle 清单
     }
 
-    //TODO: for streamingassets reader
+    [Serializable]
+    public class FileEntry
+    {
+        public string name;
+        public int size;
+        public string checksum;
+    }
+
+    // for streamingassets reader
     [Serializable]
     public class EmbeddedManifest
     {
         public const string FileName = "streamingassets-manifest.json";
         public const string BundlesPath = "Assets/StreamingAssets/bundles";
 
-        [Serializable]
-        public class BundleInfo
-        {
-            public string name;     // 文件名
-            public int size;        // 文件大小
-            public string checksum; // 文件校验值
-        }
+        public List<FileEntry> bundles = new List<FileEntry>(); // bundle 清单
+    }
 
-        public List<BundleInfo> bundles = new List<BundleInfo>(); // bundle 清单
+    [Serializable]
+    public class FileListManifest
+    {
+        public List<FileEntry> files = new List<FileEntry>();
     }
 }

@@ -72,7 +72,7 @@ namespace Examples
             {
                 devMode = developMode,
                 slow = slow,
-                concurrentTasks = concurrentTasks, 
+                concurrentTasks = concurrentTasks,
                 bufferSize = bufferSize,
                 localPathRoot = localPathRoot,
                 urls = urls,
@@ -140,6 +140,20 @@ namespace Examples
                     scene.UnloadScene();
                     scene = null;
                 }, 20f));
+
+                var fileList = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Files");
+                fileList.completed += self =>
+                {
+                    var fileListManifest = self.GetValue() as UnityFS.FileListManifest;
+                    if (fileListManifest != null)
+                    {
+                        for (int i = 0, size = fileListManifest.files.Count; i < size; i++)
+                        {
+                            var item = fileListManifest.files[i];
+                            Debug.LogFormat("file list entry:{0} size:{1} check:{2}", item.name, item.size, item.checksum);
+                        }
+                    }
+                };
             };
         }
     }

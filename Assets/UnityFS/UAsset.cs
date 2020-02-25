@@ -72,6 +72,8 @@ namespace UnityFS
         // 为 filesystem 提供兼容性接口 (每次调用返回一份拷贝数据)
         public abstract byte[] ReadAllBytes();
 
+        public virtual object GetValue() { return null; }
+
         public UAsset(string assetPath)
         {
             _assetPath = assetPath;

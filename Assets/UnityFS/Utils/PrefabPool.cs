@@ -8,18 +8,48 @@ namespace UnityFS.Utils
 
     public class PrefabPool
     {
-        public struct Handle
+        public class Handle
         {
-            public static readonly Handle Empty = new Handle();
+            public static readonly Handle Empty = null;
 
             private GameObject _gameObject;
             private PrefabPool _pool;
+            private List<Action> _callbacks;
 
             public GameObject gameObject { get { return _gameObject; } }
 
             public bool isValid { get { return _gameObject != null; } }
 
+            public bool isLoaded { get { return _pool.isLoaded; } }
+
             public string name { get { return _gameObject?.name; } set { if (_gameObject != null) _gameObject.name = value; } }
+
+            public event Action completed
+            {
+                add
+                {
+                    if (_pool.isLoaded)
+                    {
+                        value();
+                    }
+                    else
+                    {
+                        if (_callbacks == null)
+                        {
+                            _callbacks = new List<Action>();
+                        }
+                        _callbacks.Add(value);
+                    }
+                }
+
+                remove
+                {
+                    if (_callbacks != null)
+                    {
+                        _callbacks.Remove(value);
+                    }
+                }
+            }
 
             public Transform transform
             {
@@ -51,13 +81,41 @@ namespace UnityFS.Utils
             public Handle(PrefabPool pool)
             {
                 _pool = pool;
-                _gameObject = _pool != null ? _pool.Instantiate() : null;
+                _gameObject = null;
+                _pool.completed += OnPoolCompleted;
             }
 
             public Handle(PrefabPool pool, GameObject gameObject)
             {
                 _pool = pool;
                 _gameObject = gameObject;
+            }
+
+            private void OnPoolCompleted()
+            {
+                _gameObject = _pool.Instantiate();
+                if (_callbacks == null)
+                {
+                    return;
+                }
+                var shadows = _callbacks;
+                var count = shadows.Count;
+                if (count > 0)
+                {
+                    _callbacks = null;
+                    for (var i = 0; i < count; i++)
+                    {
+                        var cb = shadows[i];
+                        try
+                        {
+                            cb();
+                        }
+                        catch (Exception exception)
+                        {
+                            UnityEngine.Debug.LogErrorFormat("Handle({0}) Exception: {1}", _pool.assetPath, exception);
+                        }
+                    }
+                }
             }
 
             public void SetParent(Transform parent, bool worldPositionStays = true)
@@ -93,6 +151,7 @@ namespace UnityFS.Utils
                 {
                     var gameObject = _gameObject;
                     _gameObject = null;
+                    _pool.completed -= OnPoolCompleted;
                     _pool.Destroy(gameObject);
                 }
             }
@@ -118,6 +177,10 @@ namespace UnityFS.Utils
             get { return _capacity; }
             set { _capacity = value; }
         }
+
+        public bool isLoaded { get { return _asset.isLoaded; } }
+
+        public string assetPath { get { return _asset.assetPath; } }
 
         public event Action completed
         {
@@ -188,12 +251,7 @@ namespace UnityFS.Utils
 
         public Handle GetHandle()
         {
-            var gameObject = Instantiate();
-            if (gameObject != null)
-            {
-                return new Handle(this, gameObject);
-            }
-            return Handle.Empty;
+            return new Handle(this);
         }
 
         public GameObject Instantiate()

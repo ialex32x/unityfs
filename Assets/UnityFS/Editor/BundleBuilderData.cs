@@ -226,15 +226,25 @@ namespace UnityFS.Editor
         }
     }
 
-    public class ZipArchiveEntry
+    public class ZipArchiveBuildEntry
     {
         public string name;
         public List<string> assets = new List<string>();
     }
 
-    public class ZipArchiveManifest
+    public class ZipArchiveBuild
     {
-        public List<ZipArchiveEntry> archives = new List<ZipArchiveEntry>();
+        public List<ZipArchiveBuildEntry> archives = new List<ZipArchiveBuildEntry>();
+    }
+
+    public class FileListBuildEntry
+    {
+        public string name;
+    }
+
+    public class FileListBuild
+    {
+        public List<FileListBuildEntry> fileLists = new List<FileListBuildEntry>();
     }
 
     public class SceneBundleBuild

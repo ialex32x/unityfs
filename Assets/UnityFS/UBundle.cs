@@ -164,7 +164,7 @@ namespace UnityFS
             }
         }
 
-        // 载入资源包内容
+        // 载入资源包内容 (生命周期转由 UAssetBundleBundle 管理)
         public abstract void Load(Stream stream);
 
         // 调用所有回调
@@ -184,5 +184,7 @@ namespace UnityFS
                 }
             }
         }
+
+        public abstract UAsset CreateAsset(string assetPath, Type type, bool concrete);
     }
 }
