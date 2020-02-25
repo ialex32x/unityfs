@@ -219,15 +219,15 @@ namespace UnityFS.Utils
 
         private void onAssetLoaded(UAsset asset)
         {
-            if (_callbacks == null)
-            {
-                return;
-            }
             var prefab = asset.GetObject() as GameObject;
             if (prefab != null)
             {
                 _localRotation = prefab.transform.localRotation;
                 _localScale = prefab.transform.localScale;
+            }
+            if (_callbacks == null)
+            {
+                return;
             }
             var shadows = _callbacks;
             var count = shadows.Count;
