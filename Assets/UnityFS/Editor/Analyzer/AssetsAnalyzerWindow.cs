@@ -12,7 +12,7 @@ namespace UnityFS.Editor
     public class AssetsAnalyzerWindow : EditorWindow, IAssetsAnalyzer
     {
         private AnalyzerTimeline _timeline;
-
+        private string _csvPath = "assets_access_report.csv";
         private bool _pinned;
         private int _toFrameIndex;
 
@@ -25,16 +25,19 @@ namespace UnityFS.Editor
         public void OnAssetAccess(string assetPath)
         {
             Debug.Log($"[analyzer] access {assetPath}");
+            _timeline?.AccessAsset(assetPath);
         }
 
         public void OnAssetClose(string assetPath)
         {
             Debug.Log($"[analyzer] close {assetPath}");
+            _timeline?.CloseAsset(assetPath);
         }
 
         public void OnAssetOpen(string assetPath)
         {
             Debug.Log($"[analyzer] open {assetPath}");
+            _timeline?.OpenAsset(assetPath);
         }
 
         void OnEnable()
@@ -84,8 +87,38 @@ namespace UnityFS.Editor
             }
         }
 
+        void WriteCSV(string path, AnalyzerAsset[] assets)
+        {
+            using (var fs = File.Open(path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write))
+            {
+                using (var ss = new StreamWriter(fs))
+                {
+                    ss.WriteLine("assetPath,time");
+                    foreach (var asset in assets)
+                    {
+                        ss.WriteLine("{0},{1}", asset.assetPath, asset.firstOpenTime);
+                    }
+                }
+            }
+        }
+
         void OnGUI()
         {
+            var csvPath = EditorGUILayout.TextField("CSV File Path", _csvPath);
+            if (csvPath != _csvPath)
+            {
+                _csvPath = csvPath;
+                EditorPrefs.SetString("unityfs.csv", _csvPath);
+            }
+            EditorGUI.BeginDisabledGroup(_timeline == null);
+            if (GUILayout.Button("Save"))
+            {
+                var values = _timeline.assets.Values;
+                var copy = new AnalyzerAsset[values.Count];
+                values.CopyTo(copy, 0);
+                WriteCSV(_csvPath, copy);
+            }
+            EditorGUI.EndDisabledGroup();
             if (_timeline == null)
             {
                 EditorGUILayout.HelpBox("Idle", MessageType.Info);

@@ -17,6 +17,7 @@ namespace UnityFS.Editor
     public class AnalyzerAsset
     {
         public string assetPath;
+        public float firstOpenTime;
         public List<AnalyzerState> states = new List<AnalyzerState>();
 
         public AnalyzerState GetState(int frameIndex)
@@ -84,6 +85,7 @@ namespace UnityFS.Editor
                 asset = assets[assetPath] = new AnalyzerAsset()
                 {
                     assetPath = assetPath,
+                    firstOpenTime = _frameTime,
                 };
             }
             return asset;
