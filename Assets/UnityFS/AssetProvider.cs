@@ -29,7 +29,7 @@ namespace UnityFS
         // 资源包是否立即可用 (本地有效)
         bool IsBundleAvailable(string bundleName);
 
-        void Open();
+        void Open(ResourceManagerArgs args);
         void Close();
     }
 }

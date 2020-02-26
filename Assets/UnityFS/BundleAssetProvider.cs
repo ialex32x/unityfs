@@ -69,14 +69,9 @@ namespace UnityFS
             _concurrentTasks = Math.Max(1, Math.Min(concurrentTasks, 4)); // 并发下载任务数量 
         }
 
-        public void Open()
+        public void Open(ResourceManagerArgs args)
         {
-            Initialize();
-        }
-
-        private void Initialize()
-        {
-            Utils.Helpers.GetManifest(_localPathRoot, manifest =>
+            Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, manifest =>
             {
                 new StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
                 {
@@ -94,7 +89,8 @@ namespace UnityFS
                         for (int i = 0, size = startups.Length; i < size; i++)
                         {
                             var bundleInfo = startups[i];
-                            AddDownloadTask(DownloadTask.Create(bundleInfo, _localPathRoot, -1, 10, self =>
+                            var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
+                            AddDownloadTask(DownloadTask.Create(bundleInfo, bundlePath, -1, 10, self =>
                             {
                                 RemoveDownloadTask(self);
                                 if (_tasks.Count == 0)
@@ -177,7 +173,8 @@ namespace UnityFS
         {
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
-            AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, _localPathRoot, -1, 10, self =>
+            var bundlePath = Path.Combine(_localPathRoot, bundle.name);
+            AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, bundlePath, -1, 10, self =>
             {
                 RemoveDownloadTask(self);
                 if (!LoadBundleFile(bundle, _localPathRoot))
@@ -189,7 +186,7 @@ namespace UnityFS
         }
 
         // 检查是否存在有效的本地包
-        public bool IsBundleFileAvailable(Manifest.BundleInfo bundleInfo)
+        public bool IsBundleAvailable(Manifest.BundleInfo bundleInfo)
         {
             var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
             return Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo);
@@ -207,7 +204,7 @@ namespace UnityFS
             Manifest.BundleInfo bundleInfo;
             if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
             {
-                return IsBundleFileAvailable(bundleInfo);
+                return IsBundleAvailable(bundleInfo);
             }
             return false;
         }
@@ -466,13 +463,14 @@ namespace UnityFS
                 var bundleInfo = GetBundleInfo(bundleName);
                 if (bundleInfo != null)
                 {
-                    if (bundleInfo.type == Manifest.BundleType.FileSystem)
+                    var bundleType = bundleInfo.type;
+                    if (bundleType == Manifest.BundleType.FileSystem)
                     {
                         // var fileEntry = lookup file entry by assetPath in filesystem bundle (info);
                         // return IsFileAvailable(fileEntry);
                         throw new NotImplementedException();
                     }
-                    return IsBundleAvailable(bundleName);
+                    return IsBundleAvailable(bundleInfo);
                 }
             }
             return false;
@@ -524,30 +522,6 @@ namespace UnityFS
                             _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
                             return asset;
                         }
-                        // var assetBundleUBundle = bundle as UAssetBundleBundle;
-                        // if (assetBundleUBundle != null)
-                        // {
-                        //     ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-                        //     if (concrete)
-                        //     {
-                        //         asset = new UAssetBundleConcreteAsset(assetBundleUBundle, assetPath, type);
-                        //     }
-                        //     else
-                        //     {
-                        //         asset = new UAssetBundleAsset(assetBundleUBundle, assetPath);
-                        //     }
-                        //     _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
-                        // }
-                        // else
-                        // {
-                        //     var zipArchiveBundle = bundle as UZipArchiveBundle;
-                        //     if (zipArchiveBundle != null)
-                        //     {
-                        //         ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
-                        //         asset = new UZipArchiveBundleAsset(zipArchiveBundle, assetPath);
-                        //         _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);
-                        //     }
-                        // }
                     }
                     finally
                     {

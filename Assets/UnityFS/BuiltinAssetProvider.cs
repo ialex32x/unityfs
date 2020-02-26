@@ -146,7 +146,7 @@ namespace UnityFS
             return new UEditorScene(GetAsset(assetPath, null)).LoadAdditive();
         }
 
-        public void Open()
+        public void Open(ResourceManagerArgs args)
         {
             ResourceManager.GetListener().OnSetManifest();
         }

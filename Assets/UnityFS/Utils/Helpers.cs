@@ -11,42 +11,62 @@ namespace UnityFS.Utils
     public static class Helpers
     {
         // 基本流程:
-        // * 获取远程校验值 checksum.txt
-        // * 访问本地 manifest, 对比校验值 checksum
-        // * 确定最新 manifest
-        // * 创建 BundleAssetProvider
-        // * 加载代码包, 产生一个新的 (Zip)FileSystem 传递给脚本引擎 (Exists/ReadAllBytes)
-        // * 后续启动流程可由脚本接管
-        public static void GetManifest(string localPathRoot, Action<Manifest> callback)
+        // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
+        public static void GetManifest(string localPathRoot, string checksum, int size, Action<Manifest> callback)
         {
+            if (checksum != null && size != 0)
+            {
+                GetManifestDirect(localPathRoot, checksum, size, true, callback);
+                return;
+            }
             if (!Directory.Exists(localPathRoot))
             {
                 Directory.CreateDirectory(localPathRoot);
             }
-            UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, localPathRoot, 0, 10, checksumTask =>
+            var checksumPath = Path.Combine(localPathRoot, Manifest.ChecksumFileName);
+            UnityFS.DownloadTask.Create(Manifest.ChecksumFileName, null, 0, 0, checksumPath, 0, 10, checksumTask =>
             {
-                var checksum = File.ReadAllText(checksumTask.path);
-                Debug.Log($"read checksum {checksum}");
-                var manifestPath = Path.Combine(localPathRoot, "manifest.json");
-                Manifest manifest = null;
-                if (OpenManifestFile(manifestPath, checksum, out manifest))
+                var checksumJson = File.ReadAllText(checksumTask.path);
+                try
                 {
-                    callback(manifest);
-                }
-                else
-                {
-                    UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, localPathRoot, 0, 10, manifestTask =>
+                    if (checksumJson.Length == 4)
                     {
-                        var manifestJson = File.ReadAllText(manifestTask.path);
-                        manifest = JsonUtility.FromJson<Manifest>(manifestJson);
-                        callback(manifest);
-                    }).SetDebugMode(true).Run();
+                        // 兼容旧文件
+                        GetManifestDirect(localPathRoot, checksumJson, 0, false, callback);
+                    }
+                    else
+                    {
+                        var fileEntry = JsonUtility.FromJson<FileEntry>(checksumJson);
+                        GetManifestDirect(localPathRoot, fileEntry.checksum, fileEntry.size, true, callback);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogErrorFormat("[GetManifest] failed to get checksum:{0}\n{1}", checksumJson, exception);
                 }
             }).SetDebugMode(true).Run();
         }
 
+        // 已知清单文件校验值和大小的情况下, 可以使用此接口, 略过 checksum 文件的获取 
+        public static void GetManifestDirect(string localPathRoot, string checksum, int size, bool compressed, Action<Manifest> callback)
+        {
+            var manifestPath = Path.Combine(localPathRoot, Manifest.ManifestFileName);
+            var manifest = ParseManifestFile(manifestPath, checksum, size, compressed);
+            if (manifest != null)
+            {
+                callback(manifest);
+            }
+            else
+            {
+                UnityFS.DownloadTask.Create(Manifest.ManifestFileName, checksum, size, 0, manifestPath, 0, 10, manifestTask =>
+                {
+                    callback(ParseManifest(File.OpenRead(manifestTask.path), compressed));
+                }).SetDebugMode(true).Run();
+            }
+        }
+
         // 打开指定的清单文件 (带校验)
-        public static bool OpenManifestFile(string filePath, string checksum, out Manifest manifest)
+        public static Manifest ParseManifestFile(string filePath, string checksum, int size, bool compressed)
         {
             if (File.Exists(filePath))
             {
@@ -54,22 +74,45 @@ namespace UnityFS.Utils
                 {
                     var crc = new Crc16();
                     crc.Update(fs);
-                    if (crc.hex == checksum)
+                    if (crc.hex == checksum && fs.Length == size)
                     {
                         fs.Seek(0, SeekOrigin.Begin);
-                        var bytes = new byte[fs.Position];
-                        var read = fs.Read(bytes, 0, bytes.Length);
-                        if (read == bytes.Length)
-                        {
-                            var json = Encoding.UTF8.GetString(bytes);
-                            manifest = JsonUtility.FromJson<Manifest>(json);
-                            return manifest != null;
-                        }
+                        return ParseManifest(fs, compressed);
                     }
                 }
             }
-            manifest = null;
-            return false;
+            return null;
+        }
+
+        private static Manifest ParseManifestPlain(Stream stream)
+        {
+            var read = new MemoryStream();
+            var bytes = new byte[256];
+            do
+            {
+                var n = stream.Read(bytes, 0, bytes.Length);
+                if (n <= 0)
+                {
+                    break;
+                }
+                read.Write(bytes, 0, n);
+            } while (true);
+            var data = read.ToArray();
+            // Debug.LogFormat("read manifest data {0}", data.Length);
+            var json = Encoding.UTF8.GetString(data);
+            return JsonUtility.FromJson<Manifest>(json);
+        }
+
+        private static Manifest ParseManifest(Stream stream, bool compressed)
+        {
+            if (compressed)
+            {
+                using (var gz = new ICSharpCode.SharpZipLib.GZip.GZipInputStream(stream))
+                {
+                    return ParseManifestPlain(gz);
+                }
+            }
+            return ParseManifestPlain(stream);
         }
 
         public static Manifest.BundleInfo[] CollectStartupBundles(Manifest manifest, string localPathRoot)
@@ -121,7 +164,8 @@ namespace UnityFS.Utils
                     // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
                     continue;
                 }
-                var task = DownloadTask.Create(bundleInfo, localPathRoot, -1, 10, null).SetDebugMode(true);
+                var bundlePath = Path.Combine(localPathRoot, bundleInfo.name);
+                var task = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, null).SetDebugMode(true);
                 var progress = -1.0f;
                 task.Run();
                 while (!task.isDone)
@@ -137,7 +181,7 @@ namespace UnityFS.Utils
             onComplete();
         }
 
-        public static bool IsFileValid(string fullPath, FileEntry fileEntry)
+        public static bool IsFileValid(string fullPath, string checksum, int size)
         {
             try
             {
@@ -149,7 +193,7 @@ namespace UnityFS.Utils
                         var json = File.ReadAllText(metaPath);
                         var metadata = JsonUtility.FromJson<Metadata>(json);
                         // quick but unsafe
-                        if (metadata != null && metadata.checksum == fileEntry.checksum && metadata.size == fileEntry.size)
+                        if (metadata != null && metadata.checksum == checksum && metadata.size == size)
                         {
                             return true;
                         }
@@ -159,38 +203,20 @@ namespace UnityFS.Utils
             }
             catch (Exception exception)
             {
-                Debug.LogError(exception);
+                Debug.LogErrorFormat("[Exception] IsFileValie:{0} (checksum:{1} size:{2})\n{3}", fullPath, checksum, size, exception);
             }
             return false;
         }
 
+        public static bool IsFileValid(string fullPath, FileEntry fileEntry)
+        {
+            return IsFileValid(fullPath, fileEntry.checksum, fileEntry.size);
+        }
 
         // 检查本地 bundle 是否有效
         public static bool IsBundleFileValid(string fullPath, Manifest.BundleInfo bundleInfo)
         {
-            try
-            {
-                var metaPath = fullPath + Metadata.Ext;
-                if (File.Exists(fullPath))
-                {
-                    if (File.Exists(metaPath))
-                    {
-                        var json = File.ReadAllText(metaPath);
-                        var metadata = JsonUtility.FromJson<Metadata>(json);
-                        // quick but unsafe
-                        if (metadata != null && metadata.checksum == bundleInfo.checksum && metadata.size == bundleInfo.size)
-                        {
-                            return true;
-                        }
-                        File.Delete(metaPath);
-                    }
-                }
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError(exception);
-            }
-            return false;
+            return IsFileValid(fullPath, bundleInfo.checksum, bundleInfo.size);
         }
 
         public static FileStream GetBundleStream(string fullPath, Manifest.BundleInfo bundleInfo)

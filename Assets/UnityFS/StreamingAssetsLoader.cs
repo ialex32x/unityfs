@@ -32,7 +32,7 @@ namespace UnityFS
 
         public IEnumerator OpenManifestCo(Action<StreamingAssetsLoader> callback)
         {
-            var uri = _streamingAssetsPathRoot + EmbeddedManifest.FileName;
+            var uri = _streamingAssetsPathRoot + Manifest.EmbeddedManifestFileName;
             var uwr = UnityWebRequest.Get(uri);
             yield return uwr.SendWebRequest();
             try

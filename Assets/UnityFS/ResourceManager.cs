@@ -6,13 +6,15 @@ namespace UnityFS
 {
     using UnityEngine;
 
-    public struct ResourceManagerArgs
+    public class ResourceManagerArgs
     {
         public bool devMode;
         public int slow;
         public int bufferSize;
         public int concurrentTasks;
         public string localPathRoot;
+        public string manifestChecksum;
+        public int manifestSize;
         public Func<string, string> assetPathTransformer;
         public IList<string> urls;
         public Action oncomplete;
@@ -76,7 +78,7 @@ namespace UnityFS
             {
                 args.oninitialize();
             }
-            _assetProvider.Open();
+            _assetProvider.Open(args);
             if (args.oncomplete != null)
             {
                 _assetProvider.completed += args.oncomplete;

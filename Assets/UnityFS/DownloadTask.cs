@@ -118,7 +118,7 @@ namespace UnityFS
 
         public static DownloadTask Create(
             Manifest.BundleInfo bundleInfo,
-            string filePathRoot,
+            string filePathRoot, // 文件本地存储目标路径
             int retry,
             int timeout,
             Action<DownloadTask> callback)
@@ -149,7 +149,7 @@ namespace UnityFS
             task._retry = retry;
             task._timeout = timeout;
             task._urlIndex = 0;
-            task._finalPath = Path.Combine(filePathRoot, name);
+            task._finalPath = filePathRoot;
             task.SetUrl();
             return task;
         }
@@ -238,9 +238,9 @@ namespace UnityFS
                 {
                     try
                     {
-                        if (File.Exists(tempPath)) // 处理续传
+                        var fileInfo = new FileInfo(tempPath);
+                        if (fileInfo.Exists) // 处理续传
                         {
-                            var fileInfo = new FileInfo(tempPath);
                             fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
                             partialSize = (int)fileInfo.Length;
                             if (partialSize > _size) // 目标文件超过期望大小, 直接废弃
@@ -256,6 +256,10 @@ namespace UnityFS
                         }
                         else // 创建下载文件
                         {
+                            if (!Directory.Exists(fileInfo.DirectoryName))
+                            {
+                                Directory.CreateDirectory(fileInfo.DirectoryName);
+                            }
                             fileStream = File.Open(tempPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                             fileStream.SetLength(0);
                         }
@@ -340,7 +344,7 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        // PrintError($"write exception: {exception}");
+                        PrintError($"write exception: {exception}");
                         error = $"write exception: {exception}";
                         success = false;
                     }
@@ -358,7 +362,7 @@ namespace UnityFS
                     break;
                 }
                 Thread.Sleep(1000);
-                PrintError($"[retry] ({_destroy}) download failed ({error})");
+                PrintError($"[retry] download failed ({error})");
             }
             PrintDebug("download task thread exited");
         }

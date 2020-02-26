@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using ICSharpCode.SharpZipLib.Zip;
+using ICSharpCode.SharpZipLib.GZip;
 
 namespace UnityFS.Editor
 {
@@ -303,22 +304,22 @@ namespace UnityFS.Editor
         {
             if (embeddedManifest.bundles.Count > 0)
             {
-                if (!Directory.Exists(EmbeddedManifest.BundlesPath))
+                if (!Directory.Exists(Manifest.EmbeddedBundlesPath))
                 {
-                    Directory.CreateDirectory(EmbeddedManifest.BundlesPath);
+                    Directory.CreateDirectory(Manifest.EmbeddedBundlesPath);
                 }
-                File.Copy(Path.Combine(outputPath, EmbeddedManifest.FileName), Path.Combine(EmbeddedManifest.BundlesPath, EmbeddedManifest.FileName), true);
+                File.Copy(Path.Combine(outputPath, Manifest.EmbeddedManifestFileName), Path.Combine(Manifest.EmbeddedBundlesPath, Manifest.EmbeddedManifestFileName), true);
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
-                    File.Copy(Path.Combine(outputPath, bundleInfo.name), Path.Combine(EmbeddedManifest.BundlesPath, bundleInfo.name), true);
+                    File.Copy(Path.Combine(outputPath, bundleInfo.name), Path.Combine(Manifest.EmbeddedBundlesPath, bundleInfo.name), true);
                 }
                 AssetDatabase.Refresh();
                 // cleanup
-                foreach (var file in Directory.GetFiles(EmbeddedManifest.BundlesPath))
+                foreach (var file in Directory.GetFiles(Manifest.EmbeddedBundlesPath))
                 {
                     var fi = new FileInfo(file);
                     var match = false;
-                    if (fi.Name == EmbeddedManifest.FileName || fi.Name == EmbeddedManifest.FileName + ".meta")
+                    if (fi.Name == Manifest.EmbeddedManifestFileName || fi.Name == Manifest.EmbeddedManifestFileName + ".meta")
                     {
                         continue;
                     }
@@ -339,9 +340,9 @@ namespace UnityFS.Editor
             }
             else
             {
-                if (Directory.Exists(EmbeddedManifest.BundlesPath))
+                if (Directory.Exists(Manifest.EmbeddedBundlesPath))
                 {
-                    Directory.Delete(EmbeddedManifest.BundlesPath);
+                    Directory.Delete(Manifest.EmbeddedBundlesPath);
                 }
             }
         }
@@ -349,8 +350,8 @@ namespace UnityFS.Editor
         private static HashSet<string> builtinFiles = new HashSet<string>(new string[] {
             "AssetBundles",
             "AssetBundles.manifest",
-            "checksum.txt",
-            "manifest.json",
+            Manifest.ChecksumFileName,
+            Manifest.ManifestFileName,
         });
 
         private static string NormalizeFileName(string filename)
@@ -412,7 +413,7 @@ namespace UnityFS.Editor
                 {
                     match = true;
                 }
-                if (!match && filename == EmbeddedManifest.FileName && embeddedManifest.bundles.Count > 0)
+                if (!match && filename == Manifest.EmbeddedManifestFileName && embeddedManifest.bundles.Count > 0)
                 {
                     match = true;
                 }
@@ -816,11 +817,19 @@ namespace UnityFS.Editor
         private static void OutputManifest(Manifest manifest, string outputPath)
         {
             var json = JsonUtility.ToJson(manifest);
-            var jsonChecksum = Utils.Crc16.ToString(Utils.Crc16.ComputeChecksum(System.Text.Encoding.UTF8.GetBytes(json)));
-            var manifestPath = Path.Combine(outputPath, "manifest.json");
-            var manifestChecksumPath = Path.Combine(outputPath, "checksum.txt");
-            File.WriteAllText(manifestPath, json);
-            File.WriteAllText(manifestChecksumPath, jsonChecksum);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            var manifestPath = Path.Combine(outputPath, Manifest.ManifestFileName);
+            var manifestChecksumPath = Path.Combine(outputPath, Manifest.ChecksumFileName);
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+            using (var outputStream = new GZipOutputStream(File.Open(manifestPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write)))
+            {
+                outputStream.Write(bytes, 0, bytes.Length);
+            }
+            var fileEntry = GenFileEntry(Manifest.ManifestFileName, manifestPath);
+            File.WriteAllText(manifestChecksumPath, JsonUtility.ToJson(fileEntry));
         }
 
         // write embedded manifest to streamingassets 
@@ -829,7 +838,7 @@ namespace UnityFS.Editor
             if (embeddedManifest.bundles.Count > 0)
             {
                 var json = JsonUtility.ToJson(embeddedManifest);
-                var manifestPath = Path.Combine(outputPath, "streamingassets-manifest.json");
+                var manifestPath = Path.Combine(outputPath, Manifest.EmbeddedManifestFileName);
                 File.WriteAllText(manifestPath, json);
             }
         }

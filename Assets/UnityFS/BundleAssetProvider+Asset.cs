@@ -314,7 +314,7 @@ namespace UnityFS
 
             public bool IsAvailable()
             {
-                return _provider.IsBundleFileAvailable(_info);
+                return _provider.IsBundleAvailable(_info);
             }
 
             protected override void OnRelease()

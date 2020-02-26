@@ -13,10 +13,15 @@ namespace UnityFS
     public interface ITask
     {
         bool isRunning { get; }
+        bool isDone { get; }
         float progress { get; }
         int size { get; }
+        int priority { get; }
         string name { get; }
         string path { get; }
         string url { get; }
+
+        void Run();
+        void Abort();
     }
 }

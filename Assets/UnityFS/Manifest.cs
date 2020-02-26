@@ -10,6 +10,11 @@ namespace UnityFS
     [Serializable]
     public class Manifest
     {
+        public const string ManifestFileName = "manifest.json";
+        public const string ChecksumFileName = "checksum.txt";
+        public const string EmbeddedManifestFileName = "streamingassets-manifest.json";
+        public const string EmbeddedBundlesPath = "Assets/StreamingAssets/bundles";
+
         [Serializable]
         public enum BundleLoad
         {
@@ -59,9 +64,6 @@ namespace UnityFS
     [Serializable]
     public class EmbeddedManifest
     {
-        public const string FileName = "streamingassets-manifest.json";
-        public const string BundlesPath = "Assets/StreamingAssets/bundles";
-
         public List<FileEntry> bundles = new List<FileEntry>(); // bundle 清单
     }
 

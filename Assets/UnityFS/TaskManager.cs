@@ -78,8 +78,6 @@ namespace UnityFS
     //             if (!task.isRunning && !task.isDone)
     //             {
     //                 _runningTasks++;
-    //                 task.slow = _slow;
-    //                 task.bufferSize = _bufferSize;
     //                 task.Run();
     //                 ResourceManager.GetListener().OnTaskStart(task);
     //                 break;
