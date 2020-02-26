@@ -281,7 +281,7 @@ namespace UnityFS.Editor
             // }
             if (assetBundleBuilds.Length != 0)
             {
-                assetBundleManifest = BuildPipeline.BuildAssetBundles(outputPath, assetBundleBuilds, BuildAssetBundleOptions.None, targetPlatform);
+                assetBundleManifest = BuildAssetBundles(outputPath, assetBundleBuilds, targetPlatform);
             }
             if (zipArchiveBuilds.Length != 0)
             {
@@ -345,37 +345,81 @@ namespace UnityFS.Editor
             }
         }
 
+        private static HashSet<string> builtinFiles = new HashSet<string>(new string[] {
+            "AssetBundles",
+            "AssetBundles.manifest",
+            "checksum.txt",
+            "manifest.json",
+        });
+
+        private static string NormalizeFileName(string filename)
+        {
+            return filename.Replace('\\', '/');
+        }
+
+        private static void CleanupRecursively(string innerPath, string relativeDir, FileListBuild fileListBuild)
+        {
+            foreach (var dir in Directory.GetDirectories(innerPath))
+            {
+                var info = new DirectoryInfo(dir);
+                CleanupRecursively(dir, relativeDir + '/' + info.Name, fileListBuild);
+            }
+
+            foreach (var file in Directory.GetFiles(innerPath))
+            {
+                var fi = new FileInfo(file);
+                var filename = NormalizeFileName(relativeDir + '/' + fi.Name);
+                var match = false;
+
+                if (fileListBuild != null)
+                {
+                    foreach (var entry in fileListBuild.fileEntrys)
+                    {
+                        // Debug.LogFormat("!! {0} {1}", file, filename);
+                        if (filename == entry)
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                if (!match)
+                {
+                    fi.Delete();
+                }
+            }
+        }
+
         private static void Cleanup(string outputPath,
                                     AssetBundleManifest assetBundleManifest,
                                     ZipArchiveBuild zipArchiveManifest,
                                     FileListBuild fileListBuild,
                                     EmbeddedManifest embeddedManifest)
         {
+            foreach (var dir in Directory.GetDirectories(outputPath))
+            {
+                CleanupRecursively(dir, "Assets", fileListBuild);
+            }
+
             foreach (var file in Directory.GetFiles(outputPath))
             {
-                var fi = new FileInfo(file);
                 var match = false;
-                if (
-                    fi.Name == "AssetBundles" ||
-                    fi.Name == "AssetBundles.manifest" ||
-                    fi.Name == "checksum.txt" ||
-                    fi.Name == "manifest.json"
-                )
+                var fi = new FileInfo(file);
+                var filename = fi.Name;
+
+                if (builtinFiles.Contains(filename))
                 {
                     match = true;
                 }
-                if (fi.Name == EmbeddedManifest.FileName)
+                if (!match && filename == EmbeddedManifest.FileName && embeddedManifest.bundles.Count > 0)
                 {
-                    if (embeddedManifest.bundles.Count > 0)
-                    {
-                        match = true;
-                    }
+                    match = true;
                 }
                 if (!match && assetBundleManifest != null)
                 {
                     foreach (var assetBundle in assetBundleManifest.GetAllAssetBundles())
                     {
-                        if (fi.Name == assetBundle || fi.Name == assetBundle + ".manifest")
+                        if (filename == assetBundle || filename == assetBundle + ".manifest")
                         {
                             match = true;
                             break;
@@ -386,7 +430,7 @@ namespace UnityFS.Editor
                 {
                     foreach (var zipArchive in zipArchiveManifest.archives)
                     {
-                        if (fi.Name == zipArchive.name)
+                        if (filename == zipArchive.name)
                         {
                             match = true;
                             break;
@@ -397,16 +441,17 @@ namespace UnityFS.Editor
                 {
                     foreach (var fileList in fileListBuild.fileLists)
                     {
-                        if (fi.Name == fileList.name)
+                        if (filename == fileList.name)
                         {
                             match = true;
                             break;
                         }
                     }
                 }
+
                 if (!match)
                 {
-                    // Debug.LogWarning("delete unused file: " + fi.Name);
+                    // Debug.LogWarning("delete unused file: " + filename);
                     try
                     {
                         fi.Delete();
@@ -440,17 +485,35 @@ namespace UnityFS.Editor
                             var assetPath = AssetDatabase.GetAssetPath(asset);
                             var fileEntry = GenFileEntry(assetPath, assetPath);
                             manifest.files.Add(fileEntry);
-                            // Debug.LogFormat("gen {0}", fileEntry.name);
+                            var outFilePath = Path.Combine(outputPath, assetPath).Replace('\\', '/');
+                            var dir = Path.GetDirectoryName(outFilePath);
+                            try
+                            {
+                                if (!Directory.Exists(dir))
+                                {
+                                    Directory.CreateDirectory(dir);
+                                }
+                                File.Copy(assetPath, outFilePath, true);
+                                build.fileEntrys.Add(assetPath);
+                            }
+                            catch (Exception exception)
+                            {
+                                Debug.LogErrorFormat("copy file list file failed: {0}\n{1}", outFilePath, exception);
+                            }
+                            // FileUtil.CopyFileOrDirectory(assetPath, outPath);
+                            // Debug.LogFormat("gen {0} from {1}", outFilePath, assetPath);
                         }
                     }
                 }
-                using (var sw = new StreamWriter(File.Open(filename, FileMode.Truncate, FileAccess.Write, FileShare.Write)))
-                {
-                    var jsonString = JsonUtility.ToJson(manifest);
-                    sw.Write(jsonString);
-                }
+                var jsonString = JsonUtility.ToJson(manifest);
+                File.WriteAllText(filename, jsonString);
             }
             return build;
+        }
+
+        public static AssetBundleManifest BuildAssetBundles(string outputPath, AssetBundleBuild[] assetBundleBuilds, BuildTarget targetPlatform)
+        {
+            return BuildPipeline.BuildAssetBundles(outputPath, assetBundleBuilds, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         public static ZipArchiveBuild BuildZipArchives(string outputPath, BundleBuilderData.BundleInfo[] builds, BuildTarget targetPlatform)
@@ -463,8 +526,8 @@ namespace UnityFS.Editor
                     name = bundle.name,
                 };
                 build.archives.Add(entry);
-                var filename = Path.Combine(outputPath, bundle.name);
-                using (var zip = new ZipOutputStream(File.Open(filename, FileMode.Truncate, FileAccess.Write, FileShare.Write)))
+                var zipArchiveFileName = Path.Combine(outputPath, bundle.name);
+                using (var zip = new ZipOutputStream(File.Open(zipArchiveFileName, FileMode.Create, FileAccess.Write, FileShare.Write)))
                 {
                     zip.IsStreamOwner = true;
                     foreach (var split in bundle.splits)

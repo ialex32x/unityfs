@@ -244,6 +244,7 @@ namespace UnityFS.Editor
 
     public class FileListBuild
     {
+        public List<string> fileEntrys = new List<string>(); // 记录了打包过程中需要复制的文件路径 (AssetPath)
         public List<FileListBuildEntry> fileLists = new List<FileListBuildEntry>();
     }
 
