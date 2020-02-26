@@ -371,7 +371,7 @@ namespace UnityFS.Editor
                         match = true;
                     }
                 }
-                if (!match)
+                if (!match && assetBundleManifest != null)
                 {
                     foreach (var assetBundle in assetBundleManifest.GetAllAssetBundles())
                     {
@@ -382,7 +382,7 @@ namespace UnityFS.Editor
                         }
                     }
                 }
-                if (!match)
+                if (!match && zipArchiveManifest != null)
                 {
                     foreach (var zipArchive in zipArchiveManifest.archives)
                     {
@@ -393,7 +393,7 @@ namespace UnityFS.Editor
                         }
                     }
                 }
-                if (!match)
+                if (!match && fileListBuild != null)
                 {
                     foreach (var fileList in fileListBuild.fileLists)
                     {
