@@ -23,7 +23,6 @@ namespace UnityFS
         private Dictionary<string, WeakReference> _assets = new Dictionary<string, WeakReference>();
         private Dictionary<string, WeakReference> _fileSystems = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
-        private List<string> _urls = new List<string>();
         private Func<string, string> _assetPathTransformer;
         private Manifest _manifest;
         private int _slow = 0;
@@ -61,19 +60,13 @@ namespace UnityFS
             }
         }
 
-        public BundleAssetProvider(string localPathRoot, IList<string> urls, int concurrentTasks, int slow, int bufferSize, Func<string, string> assetPathTransformer)
+        public BundleAssetProvider(string localPathRoot, int concurrentTasks, int slow, int bufferSize, Func<string, string> assetPathTransformer)
         {
             _slow = slow;
             _bufferSize = bufferSize;
             _localPathRoot = localPathRoot;
             _assetPathTransformer = assetPathTransformer;
-            _urls.AddRange(urls);
             _concurrentTasks = Math.Max(1, Math.Min(concurrentTasks, 4)); // 并发下载任务数量 
-        }
-
-        public void AddURLs(params string[] urls)
-        {
-            _urls.AddRange(urls);
         }
 
         public void Open()
@@ -83,7 +76,7 @@ namespace UnityFS
 
         private void Initialize()
         {
-            Utils.Helpers.GetManifest(_urls, _localPathRoot, manifest =>
+            Utils.Helpers.GetManifest(_localPathRoot, manifest =>
             {
                 new StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
                 {
@@ -101,7 +94,7 @@ namespace UnityFS
                         for (int i = 0, size = startups.Length; i < size; i++)
                         {
                             var bundleInfo = startups[i];
-                            AddDownloadTask(DownloadTask.Create(bundleInfo, _urls, _localPathRoot, -1, 10, self =>
+                            AddDownloadTask(DownloadTask.Create(bundleInfo, _localPathRoot, -1, 10, self =>
                             {
                                 RemoveDownloadTask(self);
                                 if (_tasks.Count == 0)
@@ -184,7 +177,7 @@ namespace UnityFS
         {
             // 无法打开现有文件, 下载新文件
             bundle.AddRef();
-            AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, _urls, _localPathRoot, -1, 10, self =>
+            AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, _localPathRoot, -1, 10, self =>
             {
                 RemoveDownloadTask(self);
                 if (!LoadBundleFile(bundle, _localPathRoot))

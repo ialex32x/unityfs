@@ -17,13 +17,13 @@ namespace UnityFS.Utils
         // * 创建 BundleAssetProvider
         // * 加载代码包, 产生一个新的 (Zip)FileSystem 传递给脚本引擎 (Exists/ReadAllBytes)
         // * 后续启动流程可由脚本接管
-        public static void GetManifest(IList<string> urls, string localPathRoot, Action<Manifest> callback)
+        public static void GetManifest(string localPathRoot, Action<Manifest> callback)
         {
             if (!Directory.Exists(localPathRoot))
             {
                 Directory.CreateDirectory(localPathRoot);
             }
-            UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, urls, localPathRoot, 0, 10, checksumTask =>
+            UnityFS.DownloadTask.Create("checksum.txt", null, 4, 0, localPathRoot, 0, 10, checksumTask =>
             {
                 var checksum = File.ReadAllText(checksumTask.path);
                 Debug.Log($"read checksum {checksum}");
@@ -35,7 +35,7 @@ namespace UnityFS.Utils
                 }
                 else
                 {
-                    UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, urls, localPathRoot, 0, 10, manifestTask =>
+                    UnityFS.DownloadTask.Create("manifest.json", checksum, 0, 0, localPathRoot, 0, 10, manifestTask =>
                     {
                         var manifestJson = File.ReadAllText(manifestTask.path);
                         manifest = JsonUtility.FromJson<Manifest>(manifestJson);
@@ -98,19 +98,17 @@ namespace UnityFS.Utils
         public static void DownloadBundles(
             string localPathRoot,
             Manifest.BundleInfo[] bundles,
-            IList<string> urls,
             StreamingAssetsLoader streamingAssets,
             Action<int, int, ITask> onProgress,
             Action onComplete)
         {
-            JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, urls, streamingAssets, onProgress, onComplete));
+            JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, streamingAssets, onProgress, onComplete));
         }
 
         // 当前任务数, 总任务数, 当前任务进度
         public static IEnumerator DownloadBundlesCo(
             string localPathRoot,
             Manifest.BundleInfo[] bundles,
-            IList<string> urls,
             StreamingAssetsLoader streamingAssets,
             Action<int, int, ITask> onProgress,
             Action onComplete)
@@ -123,7 +121,7 @@ namespace UnityFS.Utils
                     // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
                     continue;
                 }
-                var task = DownloadTask.Create(bundleInfo, urls, localPathRoot, -1, 10, null).SetDebugMode(true);
+                var task = DownloadTask.Create(bundleInfo, localPathRoot, -1, 10, null).SetDebugMode(true);
                 var progress = -1.0f;
                 task.Run();
                 while (!task.isDone)

@@ -33,7 +33,6 @@ namespace UnityFS
         private bool _running;
         private int _urlIndex;
         private string _url;
-        private IList<string> _urls;
 
         private bool _isDone;
         private string _error;
@@ -119,26 +118,28 @@ namespace UnityFS
 
         public static DownloadTask Create(
             Manifest.BundleInfo bundleInfo,
-            IList<string> urls,
             string filePathRoot,
             int retry,
             int timeout,
             Action<DownloadTask> callback)
         {
-            return Create(bundleInfo.name, bundleInfo.checksum, bundleInfo.size, bundleInfo.priority, urls, filePathRoot, retry, timeout, callback);
+            return Create(bundleInfo.name, bundleInfo.checksum, bundleInfo.size,
+                bundleInfo.priority,
+                filePathRoot,
+                retry,
+                timeout,
+                callback);
         }
 
         public static DownloadTask Create(
             string name, string checksum, int size,
             int priority,
-            IList<string> urls,
             string filePathRoot,
             int retry,
             int timeout,
             Action<DownloadTask> callback)
         {
             var task = new DownloadTask();
-            task._urls = urls;
             task._callback = callback;
             task._name = name;
             task._checksum = checksum;
@@ -147,6 +148,7 @@ namespace UnityFS
             task._priority = priority;
             task._retry = retry;
             task._timeout = timeout;
+            task._urlIndex = 0;
             task._finalPath = Path.Combine(filePathRoot, name);
             task.SetUrl();
             return task;
@@ -154,21 +156,29 @@ namespace UnityFS
 
         public void Run()
         {
-            _running = true;
-            ThreadPool.QueueUserWorkItem(new WaitCallback(DownloadExec));
+            if (!_running && !_destroy)
+            {
+                _running = true;
+                ThreadPool.QueueUserWorkItem(new WaitCallback(DownloadExec));
+            }
         }
 
         private void SetUrl()
         {
-            if (_urls[_urlIndex].EndsWith("/"))
+            var urls = ResourceManager.urls;
+            if (_urlIndex < urls.Count)
             {
-                _url = _urls[_urlIndex] + _name;
+                if (urls[_urlIndex].EndsWith("/"))
+                {
+                    _url = urls[_urlIndex] + _name;
+                }
+                else
+                {
+                    _url = urls[_urlIndex] + "/" + _name;
+                }
+                ++_urlIndex;
+                _url += "?checksum=" + (_checksum ?? DateTime.Now.Ticks.ToString());
             }
-            else
-            {
-                _url = _urls[_urlIndex] + "/" + _name;
-            }
-            _url += "?checksum=" + (_checksum ?? DateTime.Now.Ticks.ToString());
         }
 
         private bool Retry(int retry)
@@ -184,11 +194,7 @@ namespace UnityFS
             {
                 return false;
             }
-            if (_urlIndex < _urls.Count - 1)
-            {
-                ++_urlIndex;
-                SetUrl();
-            }
+            SetUrl();
             return true;
         }
 

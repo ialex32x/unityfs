@@ -21,10 +21,17 @@ namespace UnityFS
 
     public static class ResourceManager
     {
+        private static List<string> _urls = new List<string>();
         // 资源加载器
         private static IAssetProvider _assetProvider;
         private static IAssetsAnalyzer _analyzer;
         private static IAssetProviderListener _listener;
+
+        public static IList<string> urls
+        {
+            get { return _urls; }
+            set { _urls.Clear(); _urls.AddRange(value); }
+        }
 
         public static void SetListener(IAssetProviderListener listener)
         {
@@ -52,6 +59,7 @@ namespace UnityFS
 
         public static void Initialize(ResourceManagerArgs args)
         {
+            _urls.AddRange(args.urls);
             _listener = new EmptyAssetProviderListener();
             UnityFS.JobScheduler.Initialize();
 #if UNITY_EDITOR
@@ -62,7 +70,7 @@ namespace UnityFS
             else
 #endif
             {
-                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.urls, args.concurrentTasks, args.slow, args.bufferSize, args.assetPathTransformer);
+                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.concurrentTasks, args.slow, args.bufferSize, args.assetPathTransformer);
             }
             if (args.oninitialize != null)
             {

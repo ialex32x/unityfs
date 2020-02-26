@@ -256,6 +256,7 @@ namespace UnityFS.Editor
         // 生成打包 
         public static void Build(BundleBuilderData data, string outputPath, BuildTarget targetPlatform)
         {
+            Debug.Log($"building bundles...");
             BundleBuilder.Scan(data, targetPlatform);
             var assetBundleBuilds = GenerateAssetBundleBuilds(data);
             var zipArchiveBuilds = GenerateZipArchiveBuilds(data);
@@ -295,7 +296,7 @@ namespace UnityFS.Editor
             BuildManifest(data, outputPath, assetBundleManifest, zipArchiveBuild, fileListBuild, out embeddedManifest);
             PrepareStreamingAssets(data, outputPath, embeddedManifest);
             Cleanup(outputPath, assetBundleManifest, zipArchiveBuild, fileListBuild, embeddedManifest);
-            Debug.Log($"build bundles finished {DateTime.Now}. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
+            Debug.Log($"build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
         private static void PrepareStreamingAssets(BundleBuilderData data, string outputPath, EmbeddedManifest embeddedManifest)
