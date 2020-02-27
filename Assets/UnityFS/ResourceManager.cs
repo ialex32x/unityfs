@@ -19,6 +19,9 @@ namespace UnityFS
         public IList<string> urls;
         public Action oncomplete;
         public Action oninitialize;
+
+        public float asyncSimMin; // 伪装异步加载
+        public float asyncSimMax;
     }
 
     public static class ResourceManager
@@ -67,7 +70,7 @@ namespace UnityFS
 #if UNITY_EDITOR
             if (args.devMode)
             {
-                _assetProvider = new UnityFS.AssetDatabaseAssetProvider();
+                _assetProvider = new UnityFS.AssetDatabaseAssetProvider(args.asyncSimMin, args.asyncSimMax);
             }
             else
 #endif

@@ -76,6 +76,8 @@ namespace Examples
                 bufferSize = bufferSize,
                 localPathRoot = localPathRoot,
                 urls = urls,
+                asyncSimMin = 0.5f, 
+                asyncSimMax = 2f, 
                 oninitialize = () =>
                 {
                     UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件

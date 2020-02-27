@@ -9,6 +9,10 @@ namespace UnityFS
     // 仅编辑器运行时可用
     public class AssetDatabaseAssetProvider : IAssetProvider
     {
+        // 伪装异步加载过程
+        private float _asyncSimMin;
+        private float _asyncSimMax;
+
         // 仅调试用, 模拟文件列表 (不带过滤)
         protected class UAssetDatabaseFileListAsset : UAsset
         {
@@ -84,13 +88,35 @@ namespace UnityFS
 
         protected class UAssetDatabaseAsset : UAsset
         {
-            public UAssetDatabaseAsset(string assetPath, Type type)
+            private Type _type;
+
+            public UAssetDatabaseAsset(string assetPath, Type type, float delay)
             : base(assetPath)
             {
+                _type = type;
+                if (delay > 0f)
+                {
+                    JobScheduler.DispatchMainAfter(() =>
+                    {
+                        _OnAssetLoaded();
+                    }, delay);
+                }
+                else
+                {
+                    _OnAssetLoaded();
+                }
+            }
+
+            private void _OnAssetLoaded()
+            {
+                if (_disposed)
+                {
+                    return;
+                }
 #if UNITY_EDITOR
                 // Application.LoadLevelAdditiveAsync()
-                _object = type != null
-                    ? UnityEditor.AssetDatabase.LoadAssetAtPath(assetPath, type)
+                _object = _type != null
+                    ? UnityEditor.AssetDatabase.LoadAssetAtPath(assetPath, _type)
                     : UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
 #endif
                 Complete();
@@ -128,6 +154,12 @@ namespace UnityFS
             remove { }
         }
 
+        public AssetDatabaseAssetProvider(float asyncSimMin, float asyncSimMax)
+        {
+            _asyncSimMin = asyncSimMin;
+            _asyncSimMax = asyncSimMax;
+        }
+
         public UAsset GetAsset(string assetPath, Type type)
         {
             WeakReference assetRef;
@@ -148,7 +180,7 @@ namespace UnityFS
             }
             else if (File.Exists(assetPath))
             {
-                asset = new UAssetDatabaseAsset(assetPath, type);
+                asset = new UAssetDatabaseAsset(assetPath, type, Random.Range(_asyncSimMin, _asyncSimMax));
             }
             else
             {

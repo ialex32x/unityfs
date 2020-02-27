@@ -60,6 +60,11 @@ namespace UnityFS
             _mb.StartCoroutine(_AfterSeconds(action, seconds));
         }
 
+        public static void DispatchMainAfter(Action action, float seconds)
+        {
+            DispatchMain(() => _mb.StartCoroutine(_AfterSeconds(action, seconds)));
+        }
+
         public static void DispatchMainAnyway(Action action)
         {
             // Debug.Assert(_mb != null);
