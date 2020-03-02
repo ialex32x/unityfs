@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
 using ICSharpCode.SharpZipLib.Zip;
 
@@ -91,7 +92,7 @@ namespace UnityFS.Editor
         {
             using (var fs = File.Open(path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write))
             {
-                using (var ss = new StreamWriter(fs))
+                using (var ss = new StreamWriter(fs, Encoding.GetEncoding("gb2312")))
                 {
                     ss.WriteLine("assetPath,time");
                     foreach (var asset in assets)
