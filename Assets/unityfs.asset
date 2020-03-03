@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: unityfs
   m_EditorClassIdentifier: 
-  id: 26
+  id: 28
   bundles:
   - id: 1
     name: test1.pkg
@@ -207,3 +207,17 @@ MonoBehaviour:
         histroy:
         - db7d162e08a882244a4eddc108898b11
         - 471ba1dad829d6b45a75be93afc2cef9
+  - id: 27
+    name: bundle_27.pkg
+    note: 
+    type: 0
+    load: 0
+    platforms: -1
+    enabled: 1
+    streamingAssets: 1
+    priority: 0
+    targets:
+    - id: 28
+      enabled: 1
+      target: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
+    splits: []

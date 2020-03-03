@@ -7,8 +7,7 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
-    public class BundleBuilderData
-    : ScriptableObject
+    public class BundleBuilderData : ScriptableObject
     {
         public const string BundleBuilderDataPath = "Assets/unityfs.asset";
         public const string Ext = ".pkg";
@@ -246,9 +245,6 @@ namespace UnityFS.Editor
 
         public static BundleBuilderData Load()
         {
-            // var data = new BundleBuilderData();
-            // EditorJsonUtility.FromJsonOverwrite(BundleBuilderDataPath, data);
-
             var data = AssetDatabase.LoadMainAssetAtPath(BundleBuilderDataPath) as BundleBuilderData;
             if (data == null)
             {
@@ -263,9 +259,6 @@ namespace UnityFS.Editor
         public void MarkAsDirty()
         {
             EditorUtility.SetDirty(this);
-
-            // var json = EditorJsonUtility.ToJson(this, true);
-            // File.WriteAllText(BundleBuilderDataPath, json);
         }
 
         public void Cleanup()

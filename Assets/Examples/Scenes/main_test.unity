@@ -141,11 +141,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 603c0e9fccd19482ca000a5982bdeab7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  developMode: 0
+  developMode: 1
   downloadStartups: 1
   concurrentTasks: 10
   slow: 10
   bufferSize: 32
+  listDataPath: unityfs_asset_list
 --- !u!4 &2581637
 Transform:
   m_ObjectHideFlags: 0

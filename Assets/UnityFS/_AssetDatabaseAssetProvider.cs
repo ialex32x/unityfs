@@ -80,7 +80,7 @@ namespace UnityFS
                     _disposed = true;
                     JobScheduler.DispatchMain(() =>
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetClose(assetPath);
                     });
                 }
             }
@@ -140,7 +140,7 @@ namespace UnityFS
                     _disposed = true;
                     JobScheduler.DispatchMain(() =>
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetClose(assetPath);
                     });
                 }
             }
@@ -169,11 +169,11 @@ namespace UnityFS
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
-                    ResourceManager.GetAnalyzer().OnAssetAccess(assetPath);
+                    ResourceManager.GetAnalyzer()?.OnAssetAccess(assetPath);
                     return asset;
                 }
             }
-            ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
+            ResourceManager.GetAnalyzer()?.OnAssetOpen(assetPath);
             if (Directory.Exists(assetPath))
             {
                 asset = new UAssetDatabaseFileListAsset(assetPath);

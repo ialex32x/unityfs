@@ -341,11 +341,12 @@ namespace UnityFS
                 }
             }
             // no more task
-            var node = _backgroundQueue.First;
-            if (node != null)
-            {
-                GetBundle(node.Value);
-            }
+            //TODO: bug
+            // var node = _backgroundQueue.First;
+            // if (node != null)
+            // {
+            //     GetBundle(node.Value);
+            // }
         }
 
         public void Close()
@@ -546,7 +547,7 @@ namespace UnityFS
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
-                    ResourceManager.GetAnalyzer().OnAssetAccess(assetPath);
+                    ResourceManager.GetAnalyzer()?.OnAssetAccess(assetPath);
                     return asset;
                 }
             }
@@ -559,7 +560,7 @@ namespace UnityFS
                     try
                     {
                         bundle.AddRef();
-                        ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetOpen(assetPath);
                         asset = bundle.CreateAsset(assetPath, type, concrete);
                         if (asset != null)
                         {

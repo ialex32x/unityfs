@@ -75,6 +75,11 @@ namespace UnityFS.Editor
             return true;
         }
 
+        public static bool UnrecognizedAsset(string file)
+        {
+            return file.EndsWith(".xlsx");
+        }
+
         public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
         {
             if (asset == null)
@@ -94,6 +99,13 @@ namespace UnityFS.Editor
                     if (file.EndsWith(".meta"))
                     {
                         continue;
+                    }
+                    if (bundle.type == Manifest.BundleType.AssetBundle)
+                    {
+                        if (UnrecognizedAsset(file))
+                        {
+                            continue;
+                        }
                     }
                     var fileAsset = AssetDatabase.LoadMainAssetAtPath(file);
                     CollectAsset(data, bundle, fileAsset);

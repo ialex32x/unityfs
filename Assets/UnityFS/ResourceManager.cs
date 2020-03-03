@@ -22,6 +22,7 @@ namespace UnityFS
 
         public float asyncSimMin; // 伪装异步加载
         public float asyncSimMax;
+        public string listDataPath;
     }
 
     public static class ResourceManager
@@ -29,7 +30,7 @@ namespace UnityFS
         private static List<string> _urls = new List<string>();
         // 资源加载器
         private static IAssetProvider _assetProvider;
-        private static IAssetsAnalyzer _analyzer;
+        private static Analyzer.IAssetsAnalyzer _analyzer;
         private static IAssetProviderListener _listener;
 
         public static IList<string> urls
@@ -48,18 +49,22 @@ namespace UnityFS
             return _listener;
         }
 
-        public static void SetAnalyzer(IAssetsAnalyzer analyzer)
+        public static Analyzer.IAssetsAnalyzer GetAnalyzer()
         {
-            _analyzer = analyzer;
+            return _analyzer;
         }
 
-        public static IAssetsAnalyzer GetAnalyzer()
+        private static string NormalizedListPath(string fileName)
         {
-            if (_analyzer == null)
+            if (!fileName.EndsWith(".asset"))
             {
-                _analyzer = new EmptyAssetsAnalyzer();
+                fileName += ".asset";
             }
-            return _analyzer;
+            if (!fileName.StartsWith("Assets/"))
+            {
+                fileName = "Assets/" + fileName;
+            }
+            return fileName;
         }
 
         public static void Initialize(ResourceManagerArgs args)
@@ -68,6 +73,14 @@ namespace UnityFS
             _listener = new EmptyAssetProviderListener();
             UnityFS.JobScheduler.Initialize();
 #if UNITY_EDITOR
+            if (!string.IsNullOrEmpty(args.listDataPath))
+            {
+                var listData = UnityEditor.AssetDatabase.LoadMainAssetAtPath(NormalizedListPath(args.listDataPath)) as AssetListData;
+                if (listData != null)
+                {
+                    _analyzer = new Analyzer.DefaultAssetsAnalyzer(listData);
+                }
+            }
             if (args.devMode)
             {
                 _assetProvider = new UnityFS.AssetDatabaseAssetProvider(args.asyncSimMin, args.asyncSimMax);

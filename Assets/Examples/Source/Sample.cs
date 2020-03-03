@@ -13,6 +13,7 @@ namespace Examples
         public int concurrentTasks = 3;
         public int slow = 0;
         public int bufferSize = 0;
+        public string listDataPath;
 
         private UnityFS.Utils.PrefabPools _pools;
 
@@ -70,14 +71,15 @@ namespace Examples
 
             UnityFS.ResourceManager.Initialize(new UnityFS.ResourceManagerArgs()
             {
+                listDataPath = listDataPath, 
                 devMode = developMode,
                 slow = slow,
                 concurrentTasks = concurrentTasks,
                 bufferSize = bufferSize,
                 localPathRoot = localPathRoot,
                 urls = urls,
-                asyncSimMin = 0.5f, 
-                asyncSimMax = 2f, 
+                asyncSimMin = 0.5f,
+                asyncSimMax = 1f,
                 oninitialize = () =>
                 {
                     UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件

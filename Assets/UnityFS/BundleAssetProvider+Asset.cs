@@ -126,7 +126,7 @@ namespace UnityFS
                     _disposed = true;
                     JobScheduler.DispatchMain(() => // resurrecting 
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetClose(_assetPath);
                         _bundle.completed -= OnBundleLoaded;
                         _bundle.RemoveRef();
                     });
@@ -266,7 +266,7 @@ namespace UnityFS
                     _disposed = true;
                     JobScheduler.DispatchMain(() => // resurrecting 
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetClose(_assetPath);
                         _bundle.completed -= OnBundleLoaded;
                         _bundle.RemoveRef();
                     });
@@ -422,7 +422,7 @@ namespace UnityFS
                     _disposed = true;
                     JobScheduler.DispatchMain(() => // resurrecting 
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetClose(_assetPath);
                         _bundle.completed -= OnBundleLoaded;
                         _bundle.RemoveRef();
                     });

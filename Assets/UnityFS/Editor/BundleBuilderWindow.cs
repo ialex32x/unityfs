@@ -25,6 +25,22 @@ namespace UnityFS.Editor
             GetWindow<BundleBuilderWindow>().Show();
         }
 
+        public static void CreateAssetListData()
+        {
+            var index = 0;
+            do
+            {
+                var filePath = "Assets/unityfs_asset_list" + (index > 0 ? "_" + (index++) : "") + ".asset";
+                if (!File.Exists(filePath))
+                {
+                    var list = ScriptableObject.CreateInstance<AssetListData>();
+                    AssetDatabase.CreateAsset(list, filePath);
+                    AssetDatabase.Refresh();
+                    return;
+                }
+            } while (true);
+        }
+
         void OnEnable()
         {
             data = BundleBuilder.GetData();
@@ -54,6 +70,10 @@ namespace UnityFS.Editor
                         name = $"bundle_{data.id}{BundleBuilderData.Ext}",
                     });
                     _treeView.Reload();
+                }
+                if (GUILayout.Button("Add Asset List"))
+                {
+                    CreateAssetListData();
                 }
                 GUILayout.FlexibleSpace();
             }

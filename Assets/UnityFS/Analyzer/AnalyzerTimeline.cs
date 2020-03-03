@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using ICSharpCode.SharpZipLib.Zip;
 
-namespace UnityFS.Editor
+namespace UnityFS.Analyzer
 {
     using UnityEngine;
 
@@ -70,6 +70,7 @@ namespace UnityFS.Editor
         private float _frameStartTime;
         private float _frameTime;
         private AnalyzerFrame _currentFrame;
+        private AssetListData _listData;
         public List<AnalyzerFrame> frames = new List<AnalyzerFrame>();
         public Dictionary<string, AnalyzerAsset> assets = new Dictionary<string, AnalyzerAsset>();
 
@@ -77,9 +78,9 @@ namespace UnityFS.Editor
 
         public float frameTime { get { return _frameTime; } }
 
-        private AnalyzerAsset GetAsset(string assetPath)
+        // 返回 true 表示第一次访问此资源
+        private bool GetAsset(string assetPath, out AnalyzerAsset asset)
         {
-            AnalyzerAsset asset;
             if (!assets.TryGetValue(assetPath, out asset))
             {
                 asset = assets[assetPath] = new AnalyzerAsset()
@@ -87,8 +88,9 @@ namespace UnityFS.Editor
                     assetPath = assetPath,
                     firstOpenTime = _frameTime,
                 };
+                return true;
             }
-            return asset;
+            return false;
         }
 
         public void Start()
@@ -138,29 +140,35 @@ namespace UnityFS.Editor
             return _currentFrame;
         }
 
-        public void OpenAsset(string assetPath)
+        public bool OpenAsset(string assetPath)
         {
-            var asset = GetAsset(assetPath);
+            AnalyzerAsset asset;
+            var ret = GetAsset(assetPath, out asset);
             var state = asset.GetState(_frameIndex);
             state.open = true;
             state.refCount++;
             GetCurrentFrame().AddAsset(asset);
+            return ret;
         }
 
-        public void AccessAsset(string assetPath)
+        public bool AccessAsset(string assetPath)
         {
-            var asset = GetAsset(assetPath);
+            AnalyzerAsset asset;
+            var ret = GetAsset(assetPath, out asset);
             var state = asset.GetState(_frameIndex);
             state.refCount++;
             GetCurrentFrame().AddAsset(asset);
+            return ret;
         }
 
-        public void CloseAsset(string assetPath)
+        public bool CloseAsset(string assetPath)
         {
-            var asset = GetAsset(assetPath);
+            AnalyzerAsset asset;
+            var ret = GetAsset(assetPath, out asset);
             var state = asset.GetState(_frameIndex);
             state.open = false;
             GetCurrentFrame().AddAsset(asset);
+            return ret;
         }
     }
 }

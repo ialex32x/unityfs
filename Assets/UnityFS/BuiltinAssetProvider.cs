@@ -48,7 +48,7 @@ namespace UnityFS
                     _disposed = true;
                     JobScheduler.DispatchMain(() =>
                     {
-                        ResourceManager.GetAnalyzer().OnAssetClose(_assetPath);
+                        ResourceManager.GetAnalyzer()?.OnAssetClose(_assetPath);
                     });
                 }
             }
@@ -92,11 +92,11 @@ namespace UnityFS
                 asset = assetRef.Target as UAsset;
                 if (asset != null)
                 {
-                    ResourceManager.GetAnalyzer().OnAssetAccess(assetPath);
+                    ResourceManager.GetAnalyzer()?.OnAssetAccess(assetPath);
                     return asset;
                 }
             }
-            ResourceManager.GetAnalyzer().OnAssetOpen(assetPath);
+            ResourceManager.GetAnalyzer()?.OnAssetOpen(assetPath);
             asset = new UBuiltinAsset(assetPath, type);
             _assets[assetPath] = new WeakReference(asset);
             return asset;
