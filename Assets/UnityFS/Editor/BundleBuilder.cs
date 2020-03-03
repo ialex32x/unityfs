@@ -165,16 +165,6 @@ namespace UnityFS.Editor
                     {
                         return true;
                     }
-                    // foreach (var slice in split.slices)
-                    // {
-                    //     foreach (var assetGuid in slice.assetGuids)
-                    //     {
-                    //         if (assetGuid == assetObject)
-                    //         {
-                    //             return true;
-                    //         }
-                    //     }
-                    // }
                 }
             }
             return false;
