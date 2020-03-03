@@ -321,6 +321,20 @@ namespace UnityFS
             Schedule();
         }
 
+        //TODO: 待优化, 已经存在相同目标文件的任务时, 不再创建
+        private bool IsSameTaskRunning(DownloadTask expectedTask)
+        {
+            for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
+            {
+                var task = taskNode.Value;
+                if (task != expectedTask && task.path == expectedTask.path && task.isRunning)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void Schedule()
         {
             if (_activeTasks >= _concurrentTasks)
@@ -330,7 +344,7 @@ namespace UnityFS
             for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
             {
                 var task = taskNode.Value;
-                if (!task.isRunning && !task.isDone)
+                if (!task.isRunning && !task.isDone && !IsSameTaskRunning(task))
                 {
                     _activeTasks++;
                     task.slow = _slow;
@@ -341,16 +355,26 @@ namespace UnityFS
                 }
             }
             // no more task
-            // var node = _backgroundQueue.First;
-            // if (node != null)
-            // {
-            //     var bundleInfo = node.Value;
-            //     _backgroundQueue.Remove(node);
-            //     if (!IsBundleAvailable(bundleInfo))
-            //     {
-            //         GetBundle(node.Value);
-            //     }
-            // }
+            var node = _backgroundQueue.First;
+            if (node != null)
+            {
+                var bundleInfo = node.Value;
+                _backgroundQueue.Remove(node);
+                if (!IsBundleAvailable(bundleInfo))
+                {
+                    var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
+                    var idleTask = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, self =>
+                    {
+                        RemoveDownloadTask(self, true);
+                    }).SetDebugMode(true);
+                    _tasks.AddLast(idleTask);
+                    _activeTasks++;
+                    idleTask.slow = _slow;
+                    idleTask.bufferSize = _bufferSize;
+                    idleTask.Run();
+                    ResourceManager.GetListener().OnTaskStart(idleTask);
+                }
+            }
         }
 
         public void Close()

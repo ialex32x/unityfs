@@ -138,48 +138,48 @@ namespace UnityFS.Utils
             return pending.ToArray();
         }
 
-        public static void DownloadBundles(
-            string localPathRoot,
-            Manifest.BundleInfo[] bundles,
-            StreamingAssetsLoader streamingAssets,
-            Action<int, int, ITask> onProgress,
-            Action onComplete)
-        {
-            JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, streamingAssets, onProgress, onComplete));
-        }
+        // public static void DownloadBundles(
+        //     string localPathRoot,
+        //     Manifest.BundleInfo[] bundles,
+        //     StreamingAssetsLoader streamingAssets,
+        //     Action<int, int, ITask> onProgress,
+        //     Action onComplete)
+        // {
+        //     JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, streamingAssets, onProgress, onComplete));
+        // }
 
-        // 当前任务数, 总任务数, 当前任务进度
-        public static IEnumerator DownloadBundlesCo(
-            string localPathRoot,
-            Manifest.BundleInfo[] bundles,
-            StreamingAssetsLoader streamingAssets,
-            Action<int, int, ITask> onProgress,
-            Action onComplete)
-        {
-            for (int i = 0, size = bundles.Length; i < size; i++)
-            {
-                var bundleInfo = bundles[i];
-                if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
-                {
-                    // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
-                    continue;
-                }
-                var bundlePath = Path.Combine(localPathRoot, bundleInfo.name);
-                var task = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, null).SetDebugMode(true);
-                var progress = -1.0f;
-                task.Run();
-                while (!task.isDone)
-                {
-                    if (progress != task.progress)
-                    {
-                        progress = task.progress;
-                        onProgress(i, size, task);
-                    }
-                    yield return null;
-                }
-            }
-            onComplete();
-        }
+        // // 当前任务数, 总任务数, 当前任务进度
+        // public static IEnumerator DownloadBundlesCo(
+        //     string localPathRoot,
+        //     Manifest.BundleInfo[] bundles,
+        //     StreamingAssetsLoader streamingAssets,
+        //     Action<int, int, ITask> onProgress,
+        //     Action onComplete)
+        // {
+        //     for (int i = 0, size = bundles.Length; i < size; i++)
+        //     {
+        //         var bundleInfo = bundles[i];
+        //         if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
+        //         {
+        //             // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
+        //             continue;
+        //         }
+        //         var bundlePath = Path.Combine(localPathRoot, bundleInfo.name);
+        //         var task = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, null).SetDebugMode(true);
+        //         var progress = -1.0f;
+        //         task.Run();
+        //         while (!task.isDone)
+        //         {
+        //             if (progress != task.progress)
+        //             {
+        //                 progress = task.progress;
+        //                 onProgress(i, size, task);
+        //             }
+        //             yield return null;
+        //         }
+        //     }
+        //     onComplete();
+        // }
 
         public static bool IsFileValid(string fullPath, string checksum, int size)
         {

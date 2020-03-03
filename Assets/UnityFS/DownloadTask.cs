@@ -95,6 +95,7 @@ namespace UnityFS
             }
         }
 
+        // 最终本地存储目录
         public string path
         {
             get { return _finalPath; }
