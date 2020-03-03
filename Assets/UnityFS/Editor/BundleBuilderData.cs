@@ -199,6 +199,7 @@ namespace UnityFS.Editor
         public class BundleInfo
         {
             public int id;
+            public int buildOrder = 1000;
             public string name; // bundle filename
             public string note;
             public Manifest.BundleType type;

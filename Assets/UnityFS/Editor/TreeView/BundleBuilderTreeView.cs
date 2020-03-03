@@ -113,16 +113,16 @@ namespace UnityFS.Editor
                     minWidth = 60,
                     autoResize = true
                 },
-                // new MultiColumnHeaderState.Column
-                // {
-                //     headerContent = new GUIContent("Split"),
-                //     headerTextAlignment = TextAlignment.Left,
-                //     sortedAscending = true,
-                //     sortingArrowAlignment = TextAlignment.Left,
-                //     width = 70,
-                //     minWidth = 60,
-                //     autoResize = true
-                // },
+                new MultiColumnHeaderState.Column
+                {
+                    headerContent = new GUIContent("Build Order"),
+                    headerTextAlignment = TextAlignment.Left,
+                    sortedAscending = true,
+                    sortingArrowAlignment = TextAlignment.Left,
+                    width = 70,
+                    minWidth = 60,
+                    autoResize = true
+                },
             };
 
             // Assert.AreEqual(columns.Length, Enum.GetValues(typeof(MyColumns)).Length, "Number of columns should match number of enum values: You probably forgot to update one of them.");
@@ -494,18 +494,12 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        if (bundleInfo.type == Manifest.BundleType.AssetBundle)
+                        var buildOrder = EditorGUI.IntField(cellRect, bundleInfo.buildOrder);
+                        if (buildOrder != bundleInfo.buildOrder)
                         {
-                            // var splitObjects = EditorGUI.IntSlider(cellRect, bundleInfo.splitObjects, 0, 100);
-                            // if (splitObjects != bundleInfo.splitObjects)
-                            // {
-                            //     bundleInfo.splitObjects = splitObjects;
-                            //     _data.MarkAsDirty();
-                            // }
+                            bundleInfo.buildOrder = buildOrder;
+                            _data.MarkAsDirty();
                         }
-                        // else if (bundleInfo.type == BundleType.SceneBundle)
-                        // {
-                        // }
                     }
                     break;
             }

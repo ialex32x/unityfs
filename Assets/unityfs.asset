@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 28
   bundles:
   - id: 1
+    buildOrder: 1000
     name: test1.pkg
     note: "prefab\u6D4B\u8BD5\u5305"
     type: 0
@@ -105,6 +106,7 @@ MonoBehaviour:
         histroy:
         - e6ed50713350f7f4495cb1c101ea3a83
   - id: 3
+    buildOrder: 1000
     name: test2.pkg
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
     type: 1
@@ -133,6 +135,7 @@ MonoBehaviour:
         - e6471453252543c48af648e48b08262a
         - 2bd99bdd627371a4ab6980f7fa960b3e
   - id: 17
+    buildOrder: 1000
     name: bundle_17.pkg
     note: "\u5176\u4ED6\u5176\u4ED6"
     type: 0
@@ -156,6 +159,7 @@ MonoBehaviour:
         - e46dad9ccca72ad4587045373fba4ffa
         - ad80bd1399b82cc4ba0c7f4d055ac1ce
   - id: 19
+    buildOrder: 1000
     name: bundle_19.pkg
     note: "\u573A\u666F\u6D4B\u8BD5"
     type: 0
@@ -185,6 +189,7 @@ MonoBehaviour:
         - 3753d2e5af63eac439ba9b0f36641e6d
         - b35be9c075bfa7d4990280e18b1ac7fb
   - id: 25
+    buildOrder: 1000
     name: bundle_25.pkg
     note: "\u6587\u4EF6\u5217\u8868\u6D4B\u8BD5"
     type: 2
@@ -208,6 +213,7 @@ MonoBehaviour:
         - db7d162e08a882244a4eddc108898b11
         - 471ba1dad829d6b45a75be93afc2cef9
   - id: 27
+    buildOrder: 1000
     name: bundle_27.pkg
     note: 
     type: 0
@@ -220,4 +226,17 @@ MonoBehaviour:
     - id: 28
       enabled: 1
       target: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
-    splits: []
+    splits:
+    - name: 
+      sliceObjects: 0
+      rules: []
+      slices:
+      - name: bundle_27.pkg
+        capacity: 0
+        histroy:
+        - 2bd99bdd627371a4ab6980f7fa960b3e
+        - df4858d82a3ad344d88e9ce52e8cbaa0
+        - 846b46e40548c90498da55cb6cbab306
+        - ce7ab5d846e45ac4ca42d89d2dd9bbde
+        - b35be9c075bfa7d4990280e18b1ac7fb
+        - 2a5ab583c0072634e95457d9c3788741

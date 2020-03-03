@@ -43,11 +43,23 @@ namespace UnityFS.Editor
             return _data;
         }
 
+        private static int BundleComparer(BundleBuilderData.BundleInfo a, BundleBuilderData.BundleInfo b)
+        {
+            // streamingAssets 优先
+            if (a.streamingAssets == b.streamingAssets)
+            {
+                return a.buildOrder - b.buildOrder;
+            }
+            return a.streamingAssets ? -1 : 1;
+        }
+
         // 根据 targets 遍历产生所有实际资源列表 assets
         public static bool Scan(BundleBuilderData data, BuildTarget targetPlatform)
         {
             data.Cleanup();
-            foreach (var bundle in data.bundles)
+            var bundles = data.bundles.ToArray();
+            Array.Sort(bundles, BundleComparer);
+            foreach (var bundle in bundles)
             {
                 ScanBundle(data, bundle);
             }
@@ -117,12 +129,33 @@ namespace UnityFS.Editor
             }
         }
 
+        private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, AssetListData asset)
+        {
+            for (var index = 0; index < asset.timestamps.Count; index++)
+            {
+                var ts = asset.timestamps[index];
+                var assetPath = AssetDatabase.GUIDToAssetPath(ts.guid);
+
+                // 剔除 filelist 对象
+                if (!Directory.Exists(assetPath))
+                {
+                    var mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                    CollectAsset(data, bundle, mainAsset);
+                }
+            }
+            return true;
+        }
+
         // 最终资源
         private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
         {
             if (asset == null)
             {
                 return false;
+            }
+            if (asset is AssetListData)
+            {
+                return CollectAsset(data, bundle, asset as AssetListData);
             }
             for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
             {
