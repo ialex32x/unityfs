@@ -68,7 +68,10 @@ namespace UnityFS.Editor
                     Scan(data, bundle, target.target);
                 }
             }
-            bundle.Slice();
+            if (bundle.Slice())
+            {
+                data.MarkAsDirty();
+            }
             return true;
         }
 

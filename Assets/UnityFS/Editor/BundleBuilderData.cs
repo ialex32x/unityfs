@@ -31,6 +31,7 @@ namespace UnityFS.Editor
             Suffix,
         }
 
+        [Serializable]
         public class BundleSlice
         {
             public string name;
@@ -99,14 +100,19 @@ namespace UnityFS.Editor
                 }
             }
 
-            public void Slice(string bundleName)
+            public bool Slice(string bundleName)
             {
+                var dirty = false;
                 foreach (var asset in assets)
                 {
                     var assetPath = AssetDatabase.GetAssetPath(asset);
                     var guid = AssetDatabase.AssetPathToGUID(assetPath);
-                    AdjustBundleSlice(bundleName, guid);
+                    if (AdjustBundleSlice(bundleName, guid))
+                    {
+                        dirty = true;
+                    }
                 }
+                return dirty;
             }
 
             // 将 slice 切分命名插入 split 命名与文件后缀名之间
@@ -137,14 +143,14 @@ namespace UnityFS.Editor
                 return prefix + baseName + suffix;
             }
 
-            public void AdjustBundleSlice(string bundleName, string guid)
+            public bool AdjustBundleSlice(string bundleName, string guid)
             {
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];
                     if (oldSlice.AddHistory(guid))
                     {
-                        return;
+                        return false;
                     }
                 }
                 var count = this.slices.Count;
@@ -156,6 +162,7 @@ namespace UnityFS.Editor
                     this.slices.Add(newSlice);
                     newSlice.AddNew(guid);
                 }
+                return true;
             }
         }
 
@@ -199,12 +206,17 @@ namespace UnityFS.Editor
                 return guid;
             }
 
-            public void Slice()
+            public bool Slice()
             {
+                var dirty = false;
                 foreach (var split in splits)
                 {
-                    split.Slice(name);
+                    if (split.Slice(name))
+                    {
+                        dirty = true;
+                    }
                 }
+                return dirty;
             }
 
             public void Cleanup()
