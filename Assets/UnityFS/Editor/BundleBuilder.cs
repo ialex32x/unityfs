@@ -146,10 +146,35 @@ namespace UnityFS.Editor
                 {
                     if (!ContainsAsset(data, asset))
                     {
-                        split.assets.Add(asset);
+                        split.AddObject(asset);
                         data.MarkAsDirty();
                     }
                     return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool ContainsAsset(BundleBuilderData data, Object assetObject)
+        {
+            foreach (var bundle in data.bundles)
+            {
+                foreach (var split in bundle.splits)
+                {
+                    if (split.ContainsObject(assetObject))
+                    {
+                        return true;
+                    }
+                    // foreach (var slice in split.slices)
+                    // {
+                    //     foreach (var assetGuid in slice.assetGuids)
+                    //     {
+                    //         if (assetGuid == assetObject)
+                    //         {
+                    //             return true;
+                    //         }
+                    //     }
+                    // }
                 }
             }
             return false;
@@ -849,31 +874,6 @@ namespace UnityFS.Editor
                 if (bundle.name == bundleName)
                 {
                     return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool ContainsAsset(BundleBuilderData data, Object assetObject)
-        {
-            foreach (var bundle in data.bundles)
-            {
-                foreach (var split in bundle.splits)
-                {
-                    if (split.assets.Contains(assetObject))
-                    {
-                        return true;
-                    }
-                    // foreach (var slice in split.slices)
-                    // {
-                    //     foreach (var assetGuid in slice.assetGuids)
-                    //     {
-                    //         if (assetGuid == assetObject)
-                    //         {
-                    //             return true;
-                    //         }
-                    //     }
-                    // }
                 }
             }
             return false;

@@ -98,14 +98,23 @@ namespace UnityFS.Editor
             public List<BundleSplitRule> rules = new List<BundleSplitRule>();
 
             // scan 过程收集将要打入此 split 的所有资源的列表
-            [NonSerialized]
-            public List<Object> assets = new List<Object>();
+            private List<Object> _assets = new List<Object>();
 
             public List<BundleSlice> slices = new List<BundleSlice>();
 
+            public void AddObject(Object asset)
+            {
+                _assets.Add(asset);
+            }
+
+            public bool ContainsObject(Object asset)
+            {
+                return _assets.Contains(asset);
+            }
+
             public void Cleanup()
             {
-                assets.Clear();
+                _assets.Clear();
                 foreach (var slice in slices)
                 {
                     slice.Cleanup();
@@ -115,7 +124,7 @@ namespace UnityFS.Editor
             public bool Slice(string bundleName)
             {
                 var dirty = false;
-                foreach (var asset in assets)
+                foreach (var asset in _assets)
                 {
                     var assetPath = AssetDatabase.GetAssetPath(asset);
                     var guid = AssetDatabase.AssetPathToGUID(assetPath);
