@@ -21,13 +21,13 @@ namespace UnityFS
 
         public void Begin()
         {
+#if UNITY_EDITOR
             if (timestamps.Count != 0)
             {
                 timestamps.Clear();
-#if UNITY_EDITOR
                 EditorUtility.SetDirty(this);
-#endif
             }
+#endif
         }
 
         public void End()
@@ -36,6 +36,7 @@ namespace UnityFS
 
         public void AddObject(float time, string assetPath)
         {
+#if UNITY_EDITOR
             if (time < timeSeconds)
             {
                 var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
@@ -46,15 +47,14 @@ namespace UnityFS
                         time = time,
                         guid = assetGuid,
                     });
-#if UNITY_EDITOR
                     EditorUtility.SetDirty(this);
-#endif
                 }
                 else
                 {
                     Debug.LogWarningFormat(assetPath);
                 }
             }
+#endif
         }
     }
 }
