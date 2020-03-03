@@ -174,7 +174,7 @@ namespace UnityFS
         private void OpenBundle(UBundle bundle)
         {
             var filename = bundle.name;
-            if (LoadBundleFile(bundle, _localPathRoot))
+            if (LoadBundleFile(bundle))
             {
                 return;
             }
@@ -209,7 +209,7 @@ namespace UnityFS
             AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, bundlePath, -1, 10, self =>
             {
                 RemoveDownloadTask(self, bForeground);
-                if (!LoadBundleFile(bundle, _localPathRoot))
+                if (!LoadBundleFile(bundle))
                 {
                     bundle.Load(null);
                 }
@@ -241,9 +241,9 @@ namespace UnityFS
             return false;
         }
 
-        private bool LoadBundleFile(UBundle bundle, string localPathRoot)
+        private bool LoadBundleFile(UBundle bundle)
         {
-            var fullPath = Path.Combine(localPathRoot, bundle.name);
+            var fullPath = Path.Combine(_localPathRoot, bundle.name);
             var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
             if (fileStream != null)
             {
@@ -341,11 +341,15 @@ namespace UnityFS
                 }
             }
             // no more task
-            //TODO: bug
             // var node = _backgroundQueue.First;
             // if (node != null)
             // {
-            //     GetBundle(node.Value);
+            //     var bundleInfo = node.Value;
+            //     _backgroundQueue.Remove(node);
+            //     if (!IsBundleAvailable(bundleInfo))
+            //     {
+            //         GetBundle(node.Value);
+            //     }
             // }
         }
 
