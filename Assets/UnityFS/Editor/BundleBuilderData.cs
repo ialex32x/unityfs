@@ -57,6 +57,7 @@ namespace UnityFS.Editor
                 }
             }
 
+            // 将 slice 切分命名插入 split 命名与文件后缀名之间
             public static string GetBundleName(string name, string part)
             {
                 if (string.IsNullOrEmpty(part))
@@ -76,7 +77,7 @@ namespace UnityFS.Editor
                     prefix = name;
                     suffix = string.Empty;
                 }
-                return prefix + "_" + part + suffix;
+                return prefix + part + suffix;
             }
 
             public BundleSlice GetBundleSlice(string bundleName)
@@ -91,7 +92,7 @@ namespace UnityFS.Editor
                     var baseName = splitName;
                     if (this.sliceObjects != 0 && count != 0)
                     {
-                        baseName += "_" + count;
+                        baseName = "_" + baseName + "_" + count;
                     }
                     slice.name = GetBundleName(bundleName, baseName).ToLower();
                 }
