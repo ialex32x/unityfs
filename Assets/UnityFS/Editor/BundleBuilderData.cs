@@ -37,8 +37,20 @@ namespace UnityFS.Editor
             public string name;
             public int capacity;
 
-            [NonSerialized]
-            public List<string> assetGuids = new List<string>(); // 最终进入打包的所有资源对象
+            // 最终进入打包的所有资源对象
+            private List<string> _assetGuids;
+
+            public List<string> assetGuids
+            {
+                get
+                {
+                    if (_assetGuids == null)
+                    {
+                        _assetGuids = new List<string>();
+                    }
+                    return _assetGuids;
+                }
+            }
 
             public List<string> histroy = new List<string>();
 
