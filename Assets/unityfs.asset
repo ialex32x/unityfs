@@ -34,19 +34,6 @@ MonoBehaviour:
     - id: 13
       enabled: 1
       target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
-    assetsGuidOrder:
-    - df4858d82a3ad344d88e9ce52e8cbaa0
-    - 846b46e40548c90498da55cb6cbab306
-    - 668e963c9b20d8f4a9ff590b67836a18
-    - 992af6815f49f5c40a046b974de3c5d7
-    - 39c9918754758004abd0fc77903fefd3
-    - bb139e380276a5b4a8c47ec1c7d48c3f
-    - c6c8ccd62d337f64397a1b81602962ff
-    - 26da0e2a307e83d4abcc4678b485e810
-    - b94a6b52c1f97994ebf8dde96dd5f8db
-    - ce7ab5d846e45ac4ca42d89d2dd9bbde
-    - 111422be4e25c0b44a81e01b3fb08fbc
-    - a9acb3cd117fed445a2a6c70671571c9
     splits:
     - name: 
       sliceObjects: 0
@@ -82,11 +69,6 @@ MonoBehaviour:
     - id: 23
       enabled: 1
       target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
-    assetsGuidOrder:
-    - b35ac340fd756464da622a10bd306629
-    - 423169b27afc2744d9f06d44346b777e
-    - e6471453252543c48af648e48b08262a
-    - 2bd99bdd627371a4ab6980f7fa960b3e
     splits:
     - name: 
       sliceObjects: 0
@@ -104,9 +86,6 @@ MonoBehaviour:
     - id: 18
       enabled: 1
       target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
-    assetsGuidOrder:
-    - e46dad9ccca72ad4587045373fba4ffa
-    - ad80bd1399b82cc4ba0c7f4d055ac1ce
     splits:
     - name: 
       sliceObjects: 0
@@ -130,10 +109,6 @@ MonoBehaviour:
     - id: 24
       enabled: 1
       target: {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
-    assetsGuidOrder:
-    - 3753d2e5af63eac439ba9b0f36641e6d
-    - b35be9c075bfa7d4990280e18b1ac7fb
-    - b35ac340fd756464da622a10bd306629
     splits:
     - name: 
       sliceObjects: 0
@@ -151,9 +126,6 @@ MonoBehaviour:
     - id: 26
       enabled: 1
       target: {fileID: 102900000, guid: 2a5ab583c0072634e95457d9c3788741, type: 3}
-    assetsGuidOrder:
-    - db7d162e08a882244a4eddc108898b11
-    - 471ba1dad829d6b45a75be93afc2cef9
     splits:
     - name: 
       sliceObjects: 0

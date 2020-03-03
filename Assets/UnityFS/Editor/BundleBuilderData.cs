@@ -34,7 +34,47 @@ namespace UnityFS.Editor
         public class BundleSlice
         {
             public string name;
-            public List<Object> assets = new List<Object>(); // 最终进入打包的所有资源对象
+            public int capacity;
+
+            [NonSerialized]
+            public List<string> assetGuids = new List<string>(); // 最终进入打包的所有资源对象
+
+            public List<string> histroy = new List<string>();
+
+            public BundleSlice(string name, int cap)
+            {
+                this.name = name;
+                this.capacity = cap;
+            }
+
+            public void Cleanup()
+            {
+                assetGuids.Clear();
+            }
+
+            // 如果是历史资源, 将加入; 否则返回 false
+            public bool AddHistory(string guid)
+            {
+                if (histroy.Contains(guid))
+                {
+                    assetGuids.Add(guid);
+                    return true;
+                }
+                return false;
+            }
+
+            // 尝试添加资源
+            // 仅历史数量在切分容量剩余时可以加入
+            public bool AddNew(string guid)
+            {
+                if (capacity <= 0 || histroy.Count < capacity)
+                {
+                    assetGuids.Add(guid);
+                    histroy.Add(guid);
+                    return true;
+                }
+                return false;
+            }
         }
 
         [Serializable]
@@ -44,59 +84,78 @@ namespace UnityFS.Editor
             public int sliceObjects;
             public List<BundleSplitRule> rules = new List<BundleSplitRule>();
 
+            // scan 过程收集将要打入此 split 的所有资源的列表
             [NonSerialized]
             public List<Object> assets = new List<Object>();
-            [NonSerialized]
+
             public List<BundleSlice> slices = new List<BundleSlice>();
+
+            public void Cleanup()
+            {
+                assets.Clear();
+                foreach (var slice in slices)
+                {
+                    slice.Cleanup();
+                }
+            }
 
             public void Slice(string bundleName)
             {
                 foreach (var asset in assets)
                 {
-                    GetBundleSlice(bundleName).assets.Add(asset);
+                    var assetPath = AssetDatabase.GetAssetPath(asset);
+                    var guid = AssetDatabase.AssetPathToGUID(assetPath);
+                    AdjustBundleSlice(bundleName, guid);
                 }
             }
 
             // 将 slice 切分命名插入 split 命名与文件后缀名之间
-            public static string GetBundleName(string name, string part)
+            public string GetBundleName(string bundleName)
             {
-                if (string.IsNullOrEmpty(part))
+                var baseName = this.name ?? string.Empty;
+                if (this.sliceObjects != 0 && this.slices.Count != 0)
                 {
-                    return name;
+                    baseName = "_" + baseName + "_" + this.slices.Count;
                 }
-                var dot = name.LastIndexOf('.');
+                if (string.IsNullOrEmpty(baseName))
+                {
+                    return bundleName;
+                }
+                var dot = bundleName.LastIndexOf('.');
                 string prefix;
                 string suffix;
                 if (dot >= 0)
                 {
-                    prefix = name.Substring(0, dot);
-                    suffix = name.Substring(dot);
+                    prefix = bundleName.Substring(0, dot);
+                    suffix = bundleName.Substring(dot);
                 }
                 else
                 {
-                    prefix = name;
+                    prefix = bundleName;
                     suffix = string.Empty;
                 }
-                return prefix + part + suffix;
+                return prefix + baseName + suffix;
             }
 
-            public BundleSlice GetBundleSlice(string bundleName)
+            public void AdjustBundleSlice(string bundleName, string guid)
             {
-                var splitName = this.name ?? string.Empty;
-                var count = this.slices.Count;
-                var slice = count > 0 ? this.slices[count - 1] : null;
-                if (slice == null || this.sliceObjects >= 1 && slice.assets.Count >= this.sliceObjects)
+                for (var i = 0; i < this.slices.Count; i++)
                 {
-                    slice = new BundleSlice();
-                    this.slices.Add(slice);
-                    var baseName = splitName;
-                    if (this.sliceObjects != 0 && count != 0)
+                    var oldSlice = this.slices[i];
+                    if (oldSlice.AddHistory(guid))
                     {
-                        baseName = "_" + baseName + "_" + count;
+                        return;
                     }
-                    slice.name = GetBundleName(bundleName, baseName).ToLower();
                 }
-                return slice;
+                var count = this.slices.Count;
+                var lastSlice = count > 0 ? this.slices[count - 1] : null;
+                if (lastSlice == null || !lastSlice.AddNew(guid))
+                {
+                    var sliceName = GetBundleName(bundleName).ToLower();
+                    var newSlice = new BundleSlice(sliceName, this.sliceObjects);
+                    this.slices.Add(newSlice);
+                    newSlice.AddNew(guid);
+                }
             }
         }
 
@@ -107,9 +166,6 @@ namespace UnityFS.Editor
             public BundleAssetTypes assetTypes;
             public string keyword;
             public bool exclude;
-
-            [NonSerialized]
-            public List<Object> assets = new List<Object>();
         }
 
         public class Variable
@@ -134,14 +190,7 @@ namespace UnityFS.Editor
             public int priority;
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
 
-            public List<string> assetsGuidOrder = new List<string>();
-
             public List<BundleSplit> splits = new List<BundleSplit>();
-
-            private static int Neg2Inf(int v)
-            {
-                return v < 0 ? int.MaxValue : v;
-            }
 
             public static string GetAssetGUID(Object asset)
             {
@@ -150,27 +199,10 @@ namespace UnityFS.Editor
                 return guid;
             }
 
-            public bool AddAssetOrder(Object asset)
-            {
-                var guid = GetAssetGUID(asset);
-                if (!assetsGuidOrder.Contains(guid))
-                {
-                    assetsGuidOrder.Add(guid);
-                    return true;
-                }
-                return false;
-            }
-
             public void Slice()
             {
                 foreach (var split in splits)
                 {
-                    split.assets.Sort((a, b) =>
-                    {
-                        var da = GetAssetGUID(a);
-                        var db = GetAssetGUID(b);
-                        return Neg2Inf(assetsGuidOrder.IndexOf(da)) - Neg2Inf(assetsGuidOrder.IndexOf(db));
-                    });
                     split.Slice(name);
                 }
             }
@@ -179,8 +211,7 @@ namespace UnityFS.Editor
             {
                 foreach (var split in splits)
                 {
-                    split.assets.Clear();
-                    split.slices.Clear();
+                    split.Cleanup();
                 }
             }
         }

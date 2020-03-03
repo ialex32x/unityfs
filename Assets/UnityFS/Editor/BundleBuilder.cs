@@ -65,19 +65,14 @@ namespace UnityFS.Editor
             {
                 if (target.enabled)
                 {
-                    Scan(data, bundle, target);
+                    Scan(data, bundle, target.target);
                 }
             }
             bundle.Slice();
             return true;
         }
 
-        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, BundleBuilderData.BundleAssetTarget target)
-        {
-            Scan(data, bundle, target, target.target);
-        }
-
-        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, BundleBuilderData.BundleAssetTarget target, Object asset)
+        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
         {
             if (asset == null)
             {
@@ -89,7 +84,7 @@ namespace UnityFS.Editor
                 // 是一个目录
                 foreach (var directory in Directory.GetDirectories(targetPath))
                 {
-                    Scan(data, bundle, target, AssetDatabase.LoadMainAssetAtPath(directory));
+                    Scan(data, bundle, AssetDatabase.LoadMainAssetAtPath(directory));
                 }
                 foreach (var file in Directory.GetFiles(targetPath))
                 {
@@ -98,23 +93,22 @@ namespace UnityFS.Editor
                         continue;
                     }
                     var fileAsset = AssetDatabase.LoadMainAssetAtPath(file);
-                    Scan(data, bundle, target, fileAsset);
+                    CollectAsset(data, bundle, fileAsset);
                 }
             }
             else
             {
-                if (CollectAsset(data, bundle, asset))
-                {
-                    if (bundle.AddAssetOrder(asset))
-                    {
-                        data.MarkAsDirty();
-                    }
-                }
+                CollectAsset(data, bundle, asset);
             }
         }
 
-        public static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
+        // 最终资源
+        private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
         {
+            if (asset == null)
+            {
+                return false;
+            }
             for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
             {
                 var split = bundle.splits[splitIndex];
@@ -150,6 +144,7 @@ namespace UnityFS.Editor
                     if (!ContainsAsset(data, asset))
                     {
                         split.assets.Add(asset);
+                        data.MarkAsDirty();
                     }
                     return true;
                 }
@@ -228,10 +223,10 @@ namespace UnityFS.Editor
                     {
                         var bundleSlice = bundleSplit.slices[sliceIndex];
                         var assetNames = new List<string>();
-                        for (var assetIndex = 0; assetIndex < bundleSlice.assets.Count; assetIndex++)
+                        for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
                         {
-                            var asset = bundleSlice.assets[assetIndex];
-                            var assetPath = AssetDatabase.GetAssetPath(asset);
+                            var assetGuid = bundleSlice.assetGuids[assetIndex];
+                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             assetNames.Add(assetPath);
                         }
                         if (assetNames.Count != 0)
@@ -246,7 +241,7 @@ namespace UnityFS.Editor
                         }
                         else
                         {
-                            Debug.LogWarning($"empty build split {bundle.name}_{splitIndex}");
+                            Debug.Log($"skip empty bundle slice {bundleSlice.name}");
                         }
                     }
                 }
@@ -297,7 +292,7 @@ namespace UnityFS.Editor
             BuildManifest(data, outputPath, assetBundleManifest, zipArchiveBuild, fileListBuild, out embeddedManifest);
             PrepareStreamingAssets(data, outputPath, embeddedManifest);
             Cleanup(outputPath, assetBundleManifest, zipArchiveBuild, fileListBuild, embeddedManifest);
-            Debug.Log($"build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
+            Debug.Log($"{outputPath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
         private static void PrepareStreamingAssets(BundleBuilderData data, string outputPath, EmbeddedManifest embeddedManifest)
@@ -482,9 +477,9 @@ namespace UnityFS.Editor
                 {
                     foreach (var slice in split.slices)
                     {
-                        foreach (var asset in slice.assets)
+                        foreach (var assetGuid in slice.assetGuids)
                         {
-                            var assetPath = AssetDatabase.GetAssetPath(asset);
+                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             var fileEntry = GenFileEntry(assetPath, assetPath);
                             manifest.files.Add(fileEntry);
                             var outFilePath = Path.Combine(outputPath, assetPath).Replace('\\', '/');
@@ -536,9 +531,9 @@ namespace UnityFS.Editor
                     {
                         foreach (var slice in split.slices)
                         {
-                            foreach (var asset in slice.assets)
+                            foreach (var assetGuid in slice.assetGuids)
                             {
-                                BuildZipArchiveObject(zip, asset, entry);
+                                BuildZipArchiveObject(zip, assetGuid, entry);
                             }
                         }
                     }
@@ -547,9 +542,9 @@ namespace UnityFS.Editor
             return build;
         }
 
-        private static void BuildZipArchiveObject(ZipOutputStream zip, Object asset, ZipArchiveBuildEntry archiveEntry)
+        private static void BuildZipArchiveObject(ZipOutputStream zip, string assetGuid, ZipArchiveBuildEntry archiveEntry)
         {
-            var assetPath = AssetDatabase.GetAssetPath(asset);
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
             var fi = new FileInfo(assetPath);
             var name = ZipEntry.CleanName(assetPath);
             var entry = new ZipEntry(name);
@@ -734,9 +729,9 @@ namespace UnityFS.Editor
                         bundle.size = fileEntry.size;
                         bundle.load = bundleInfo.load;
                         bundle.priority = bundleInfo.priority;
-                        foreach (var asset in bundleSlice.assets)
+                        foreach (var assetGuid in bundleSlice.assetGuids)
                         {
-                            var assetPath = AssetDatabase.GetAssetPath(asset);
+                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             bundle.assets.Add(assetPath);
                         }
                         bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
@@ -866,16 +861,16 @@ namespace UnityFS.Editor
                     {
                         return true;
                     }
-                    foreach (var slice in split.slices)
-                    {
-                        foreach (var asset in slice.assets)
-                        {
-                            if (asset == assetObject)
-                            {
-                                return true;
-                            }
-                        }
-                    }
+                    // foreach (var slice in split.slices)
+                    // {
+                    //     foreach (var assetGuid in slice.assetGuids)
+                    //     {
+                    //         if (assetGuid == assetObject)
+                    //         {
+                    //             return true;
+                    //         }
+                    //     }
+                    // }
                 }
             }
             return false;

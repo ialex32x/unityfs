@@ -370,18 +370,15 @@ namespace UnityFS.Editor
                                     {
                                         EditorGUILayout.LabelField(slice.name);
                                     }
-                                    for (var assetIndex = 0; assetIndex < slice.assets.Count; assetIndex++)
+                                    for (var assetIndex = 0; assetIndex < slice.assetGuids.Count; assetIndex++)
                                     {
-                                        var asset = slice.assets[assetIndex];
-                                        var assetPath = string.Empty;
-                                        if (asset != null)
-                                        {
-                                            assetPath = AssetDatabase.GetAssetPath(asset);
-                                        }
+                                        var assetGuid = slice.assetGuids[assetIndex];
+                                        var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                        var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
                                         EditorGUILayout.BeginHorizontal();
                                         GUILayout.Space(20f);
                                         EditorGUILayout.TextField(assetPath);
-                                        EditorGUILayout.ObjectField(asset, typeof(Object), false);
+                                        EditorGUILayout.ObjectField(assetObject, typeof(Object), false);
                                         EditorGUILayout.EndHorizontal();
                                     }
                                 }
