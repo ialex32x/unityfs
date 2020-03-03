@@ -196,14 +196,6 @@ namespace UnityFS.Editor
             public bool exclude;
         }
 
-        public class Variable
-        {
-            public string name;
-
-            public int intValue;
-            public string stringValue;
-        }
-
         [Serializable]
         public class BundleInfo
         {
