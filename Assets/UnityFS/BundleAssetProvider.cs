@@ -27,6 +27,7 @@ namespace UnityFS
         private Manifest _manifest;
         private int _slow = 0;
         private int _bufferSize = 0;
+        private bool _backgroundSchedule = false;
         private int _activeTasks = 0; // 运行中的前台任务
         private int _concurrentTasks = 0; // 可并发数量
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
@@ -67,7 +68,7 @@ namespace UnityFS
             _bufferSize = bufferSize;
             _localPathRoot = localPathRoot;
             _assetPathTransformer = assetPathTransformer;
-            _concurrentTasks = Math.Max(1, Math.Min(concurrentTasks, 4)); // 并发下载任务数量 
+            _concurrentTasks = Math.Max(2, Math.Min(concurrentTasks, 4)); // 并发下载任务数量 
         }
 
         public void Open(ResourceManagerArgs args)
@@ -78,6 +79,7 @@ namespace UnityFS
                 {
                     _streamingAssets = streamingAssets;
                     var startups = new List<Manifest.BundleInfo>();
+                    var startupTasks = new List<DownloadTask>();
                     for (int i = 0, size = manifest.bundles.Count; i < size; i++)
                     {
                         var bundleInfo = manifest.bundles[i];
@@ -94,15 +96,20 @@ namespace UnityFS
                                     if (bundleInfo.startup)
                                     {
                                         startups.Add(bundleInfo);
-                                        AddDownloadTask(DownloadTask.Create(bundleInfo, fullPath, -1, 10, self =>
+                                        var task = DownloadTask.Create(bundleInfo, fullPath, -1, 10, self =>
                                         {
                                             RemoveDownloadTask(self, true);
-                                            if (_tasks.Count == 0)
+                                            if (startupTasks.Remove(self))
                                             {
-                                                SetManifest(manifest);
-                                                ResourceManager.GetListener().OnSetManifest();
+                                                if (startupTasks.Count == 0)
+                                                {
+                                                    SetManifest(manifest);
+                                                    ResourceManager.GetListener().OnSetManifest();
+                                                }
                                             }
-                                        }).SetDebugMode(true), false);
+                                        });
+                                        startupTasks.Add(task);
+                                        AddDownloadTask(task, false);
                                     }
                                     else
                                     {
@@ -168,6 +175,7 @@ namespace UnityFS
                 _callbacks.RemoveAt(0);
                 callback();
             }
+            IdleSchedule(120f);
         }
 
         // open file stream (file must be listed in manifest)
@@ -355,6 +363,28 @@ namespace UnityFS
                 }
             }
             // no more task
+            IdleSchedule(15f);
+        }
+
+        private void IdleSchedule(float delay)
+        {
+            // Debug.LogWarningFormat("no more task {0}, {1}", _backgroundQueue.Count, _backgroundSchedule);
+            if (_backgroundQueue.Count > 0 && !_backgroundSchedule)
+            {
+                _backgroundSchedule = true;
+                JobScheduler.DispatchAfter(DoIdleSchedule, delay);
+            }
+        }
+
+        private void DoIdleSchedule()
+        {
+            // Debug.LogWarningFormat("IdleSchedule.enter");
+            _backgroundSchedule = false;
+            if (_activeTasks != 0)
+            {
+                // Debug.LogWarningFormat("IdleSchedule.activeTask {0} ({1})", _activeTasks, _backgroundQueue.Count);
+                return;
+            }
             var node = _backgroundQueue.First;
             if (node != null)
             {
@@ -365,12 +395,14 @@ namespace UnityFS
                     var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
                     var idleTask = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, self =>
                     {
+                        // Debug.LogWarningFormat("idle task complete {0}", self.path);
                         RemoveDownloadTask(self, true);
                     }).SetDebugMode(true);
                     _tasks.AddLast(idleTask);
                     _activeTasks++;
                     idleTask.slow = _slow;
                     idleTask.bufferSize = _bufferSize;
+                    // Debug.LogWarningFormat("idle task start {0}", idleTask.path);
                     idleTask.Run();
                     ResourceManager.GetListener().OnTaskStart(idleTask);
                 }
