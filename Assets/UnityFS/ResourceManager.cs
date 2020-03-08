@@ -23,6 +23,7 @@ namespace UnityFS
         public float asyncSimMin; // 伪装异步加载
         public float asyncSimMax;
         public string listDataPath;
+        public string password;
     }
 
     public static class ResourceManager

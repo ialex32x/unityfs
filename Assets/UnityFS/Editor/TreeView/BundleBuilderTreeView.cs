@@ -94,11 +94,11 @@ namespace UnityFS.Editor
                 // },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("StreamingAssets/Load/Filter"),
+                    headerContent = new GUIContent("StreamingAssets?/Encrypted?/Load/Filter"),
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
-                    width = 200,
+                    width = 600,
                     minWidth = 60,
                     autoResize = true,
                     allowToggleVisibility = true
@@ -417,12 +417,20 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        var popupWidth = (cellRect.width - 20f) * 0.5f;
+                        var popupWidth = (cellRect.width - 20f - 20f) * 0.5f;
                         cellRect.width = 20f;
                         var streamingAssets = EditorGUI.Toggle(cellRect, bundleInfo.streamingAssets);
                         if (streamingAssets != bundleInfo.streamingAssets)
                         {
                             bundleInfo.streamingAssets = streamingAssets;
+                            _data.MarkAsDirty();
+                        }
+                        cellRect.x += cellRect.width;
+                        cellRect.width = 20f;
+                        var encrypted = EditorGUI.Toggle(cellRect, bundleInfo.encrypted);
+                        if (encrypted != bundleInfo.encrypted)
+                        {
+                            bundleInfo.encrypted = encrypted;
                             _data.MarkAsDirty();
                         }
                         cellRect.x += cellRect.width;

@@ -38,6 +38,7 @@ namespace UnityFS
         private string _localPathRoot;
         private StreamingAssetsLoader _streamingAssets;
         private bool _disposed;
+        private string _password;
 
         private List<Action> _callbacks = new List<Action>();
 
@@ -76,6 +77,7 @@ namespace UnityFS
 
         public void Open(ResourceManagerArgs args)
         {
+            _password = args.password;
             Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, manifest =>
             {
                 new StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
@@ -251,7 +253,7 @@ namespace UnityFS
                     {
                         if (stream != null)
                         {
-                            bundle.Load(stream);
+                            bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
                         }
                         else
                         {
@@ -312,7 +314,7 @@ namespace UnityFS
             var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
             if (fileStream != null)
             {
-                bundle.Load(fileStream); // 生命周期转由 UAssetBundleBundle 管理
+                bundle.Load(Utils.Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password)); // 生命周期转由 UAssetBundleBundle 管理
                 return true;
             }
             return false;
@@ -426,11 +428,11 @@ namespace UnityFS
         private void IdleSchedule(float delay)
         {
             // Debug.LogWarningFormat("no more task {0}, {1}", _backgroundQueue.Count, _backgroundSchedule);
-            if (_backgroundQueue.Count > 0 && !_backgroundSchedule)
-            {
-                _backgroundSchedule = true;
-                JobScheduler.DispatchAfter(DoIdleSchedule, delay);
-            }
+            // if (_backgroundQueue.Count > 0 && !_backgroundSchedule)
+            // {
+            //     _backgroundSchedule = true;
+            //     JobScheduler.DispatchAfter(DoIdleSchedule, delay);
+            // }
         }
 
         private void DoIdleSchedule()

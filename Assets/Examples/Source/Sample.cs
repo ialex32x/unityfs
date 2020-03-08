@@ -80,6 +80,7 @@ namespace Examples
                 urls = urls,
                 asyncSimMin = 0.5f,
                 asyncSimMax = 1f,
+                password = "test",
                 oninitialize = () =>
                 {
                     UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件

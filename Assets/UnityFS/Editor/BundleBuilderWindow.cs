@@ -67,16 +67,21 @@ namespace UnityFS.Editor
                     data.bundles.Add(new BundleBuilderData.BundleInfo()
                     {
                         id = ++data.id,
-                        name = $"bundle_{data.id}{BundleBuilderData.Ext}",
+                        name = $"bundle_{data.id}{BundleBuilderData.FileExt}",
                     });
                     _treeView.Reload();
                 }
+
                 if (GUILayout.Button("Add Asset List"))
                 {
                     CreateAssetListData();
                 }
+
                 GUILayout.FlexibleSpace();
+                EditorGUILayout.LabelField("Password", GUILayout.Width(70f));
+                data.encryptionKey = EditorGUILayout.TextField(data.encryptionKey, GUILayout.ExpandWidth(false));
             }
+
             GUILayout.EndArea();
             var treeViewRect = new Rect(5, 28, position.width - 10, position.height - 56);
             _treeView.OnContextMenu(treeViewRect);

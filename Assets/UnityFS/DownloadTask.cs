@@ -458,7 +458,7 @@ namespace UnityFS
                     {
                         var cb = _callback;
                         _callback = null;
-                        JobScheduler.DispatchMainAnyway(() =>
+                        JobScheduler.DispatchMain(() =>
                         {
                             cb(this);
                         });

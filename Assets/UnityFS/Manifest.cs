@@ -41,6 +41,8 @@ namespace UnityFS
             public BundleType type; // 资源包类型
             public BundleLoad load; // 加载级别
             public bool startup { get { return load == BundleLoad.Startup; } }    // 是否需要在启动前完成下载更新
+            public bool encrypted;
+            public int rsize;
             public int priority;    // 下载排队优先级
             public string name;     // 文件名
             public int size;        // 文件大小
@@ -57,6 +59,7 @@ namespace UnityFS
     {
         public string name;
         public int size;
+        public int rsize;
         public string checksum;
     }
 

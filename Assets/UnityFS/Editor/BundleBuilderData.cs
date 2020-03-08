@@ -10,7 +10,8 @@ namespace UnityFS.Editor
     public class BundleBuilderData : ScriptableObject
     {
         public const string BundleBuilderDataPath = "Assets/unityfs.asset";
-        public const string Ext = ".pkg";
+        public const string FileExt = ".pkg";
+        public const string EncryptedFileExt = ".pxx";
 
         [Serializable]
         public class BundleAssetTarget
@@ -199,6 +200,7 @@ namespace UnityFS.Editor
         public class BundleInfo
         {
             public int id;
+            public bool encrypted;
             public int buildOrder = 1000;
             public string name; // bundle filename
             public string note;
@@ -242,6 +244,7 @@ namespace UnityFS.Editor
         }
 
         public int id;
+        public string encryptionKey;
         public List<BundleInfo> bundles = new List<BundleInfo>();
 
         public static BundleBuilderData Load()

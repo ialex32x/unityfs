@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace UnityFS.Utils
 {
@@ -19,10 +20,12 @@ namespace UnityFS.Utils
                 GetManifestDirect(localPathRoot, checksum, size, true, callback);
                 return;
             }
+
             if (!Directory.Exists(localPathRoot))
             {
                 Directory.CreateDirectory(localPathRoot);
             }
+
             var checksumPath = Path.Combine(localPathRoot, Manifest.ChecksumFileName);
             UnityFS.DownloadTask.Create(Manifest.ChecksumFileName, null, 0, 0, checksumPath, 0, 10, checksumTask =>
             {
@@ -48,7 +51,8 @@ namespace UnityFS.Utils
         }
 
         // 已知清单文件校验值和大小的情况下, 可以使用此接口, 略过 checksum 文件的获取 
-        public static void GetManifestDirect(string localPathRoot, string checksum, int size, bool compressed, Action<Manifest> callback)
+        public static void GetManifestDirect(string localPathRoot, string checksum, int size, bool compressed,
+            Action<Manifest> callback)
         {
             var manifestPath = Path.Combine(localPathRoot, Manifest.ManifestFileName);
             var manifest = ParseManifestFile(manifestPath, checksum, size, compressed);
@@ -58,10 +62,10 @@ namespace UnityFS.Utils
             }
             else
             {
-                UnityFS.DownloadTask.Create(Manifest.ManifestFileName, checksum, size, 0, manifestPath, 0, 10, manifestTask =>
-                {
-                    callback(ParseManifest(File.OpenRead(manifestTask.path), compressed));
-                }).SetDebugMode(true).Run();
+                UnityFS.DownloadTask
+                    .Create(Manifest.ManifestFileName, checksum, size, 0, manifestPath, 0, 10,
+                        manifestTask => { callback(ParseManifest(File.OpenRead(manifestTask.path), compressed)); })
+                    .SetDebugMode(true).Run();
             }
         }
 
@@ -81,6 +85,7 @@ namespace UnityFS.Utils
                     }
                 }
             }
+
             return null;
         }
 
@@ -95,8 +100,10 @@ namespace UnityFS.Utils
                 {
                     break;
                 }
+
                 read.Write(bytes, 0, n);
             } while (true);
+
             var data = read.ToArray();
             // Debug.LogFormat("read manifest data {0}", data.Length);
             var json = Encoding.UTF8.GetString(data);
@@ -112,6 +119,7 @@ namespace UnityFS.Utils
                     return ParseManifestPlain(gz);
                 }
             }
+
             return ParseManifestPlain(stream);
         }
 
@@ -120,7 +128,8 @@ namespace UnityFS.Utils
             return CollectBundles(manifest, localPathRoot, info => info.startup);
         }
 
-        public static Manifest.BundleInfo[] CollectBundles(Manifest manifest, string localPathRoot, Func<Manifest.BundleInfo, bool> filter)
+        public static Manifest.BundleInfo[] CollectBundles(Manifest manifest, string localPathRoot,
+            Func<Manifest.BundleInfo, bool> filter)
         {
             var pending = new List<Manifest.BundleInfo>();
             for (int i = 0, size = manifest.bundles.Count; i < size; i++)
@@ -135,6 +144,7 @@ namespace UnityFS.Utils
                     }
                 }
             }
+
             return pending.ToArray();
         }
 
@@ -197,14 +207,17 @@ namespace UnityFS.Utils
                         {
                             return true;
                         }
+
                         File.Delete(metaPath);
                     }
                 }
             }
             catch (Exception exception)
             {
-                Debug.LogErrorFormat("[Exception] IsFileValie:{0} (checksum:{1} size:{2})\n{3}", fullPath, checksum, size, exception);
+                Debug.LogErrorFormat("[Exception] IsFileValie:{0} (checksum:{1} size:{2})\n{3}", fullPath, checksum,
+                    size, exception);
             }
+
             return false;
         }
 
@@ -225,7 +238,7 @@ namespace UnityFS.Utils
             {
                 if (IsBundleFileValid(fullPath, bundleInfo))
                 {
-                    var fileStream = System.IO.File.OpenRead(fullPath);
+                    var fileStream = File.OpenRead(fullPath);
                     return fileStream;
                 }
             }
@@ -233,6 +246,7 @@ namespace UnityFS.Utils
             {
                 Debug.LogError(exception);
             }
+
             return null;
         }
 
@@ -251,6 +265,32 @@ namespace UnityFS.Utils
         {
             yield return new WaitForSeconds(seconds);
             action();
+        }
+
+        public static Stream GetDecryptStream(Stream fin, Manifest.BundleInfo bundleInfo, string password)
+        {
+            if (bundleInfo.encrypted)
+            {
+                //TODO: 内存问题
+                var buffer = new byte[bundleInfo.rsize];
+                var seekableStream = new MemoryStream(buffer, false);
+                var phrase = password + bundleInfo.name;
+                var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase));
+                var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + "SALT"));
+                using (var algo = Rijndael.Create())
+                {
+                    algo.Padding = PaddingMode.Zeros;
+                    var decryptor = algo.CreateDecryptor(key, iv);
+                    using (var cstream = new CryptoStream(fin, decryptor, CryptoStreamMode.Read))
+                    {
+                        cstream.Read(buffer, 0, buffer.Length);
+                    }
+                }
+                fin.Close();
+                return seekableStream;
+            }
+
+            return fin;
         }
     }
 }
