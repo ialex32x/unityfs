@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using ICSharpCode.SharpZipLib.Zip;
 
@@ -32,6 +33,8 @@ namespace UnityFS
         private int _concurrentTasks = 0; // 可并发数量
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
         private LinkedList<Manifest.BundleInfo> _backgroundQueue = new LinkedList<Manifest.BundleInfo>();
+        private LinkedList<IEnumerator> _bundleLoaders = new LinkedList<IEnumerator>();
+        private LinkedList<IEnumerator> _assetLoaders = new LinkedList<IEnumerator>();
         private string _localPathRoot;
         private StreamingAssetsLoader _streamingAssets;
         private bool _disposed;
@@ -149,6 +152,60 @@ namespace UnityFS
                     }
                 });
             });
+        }
+
+        protected void _LoadBundle(IEnumerator e)
+        {
+            _bundleLoaders.AddLast(e);
+            if (_bundleLoaders.Count == 1)
+            {
+                JobScheduler.DispatchCoroutine(_BundleLoader());
+            }
+        }
+
+        protected void _LoadAsset(IEnumerator e)
+        {
+            _assetLoaders.AddLast(e);
+            if (_assetLoaders.Count == 1)
+            {
+                JobScheduler.DispatchCoroutine(_AssetLoader());
+            }
+        }
+
+        private IEnumerator _BundleLoader()
+        {
+            while (true)
+            {
+                var first = _bundleLoaders.First;
+                if (first == null)
+                {
+                    break;
+                }
+                var value = first.Value;
+                while (value.MoveNext())
+                {
+                    yield return value.Current;
+                }
+                _bundleLoaders.Remove(first);
+            }
+        }
+
+        private IEnumerator _AssetLoader()
+        {
+            while (true)
+            {
+                var first = _assetLoaders.First;
+                if (first == null)
+                {
+                    break;
+                }
+                var value = first.Value;
+                while (value.MoveNext())
+                {
+                    yield return value.Current;
+                }
+                _assetLoaders.Remove(first);
+            }
         }
 
         private string TransformAssetPath(string assetPath)
