@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 using ICSharpCode.SharpZipLib.Zip;
@@ -342,8 +343,22 @@ namespace UnityFS
             public override void Load(Stream stream)
             {
                 _stream = stream;
-                var request = AssetBundle.LoadFromStreamAsync(stream);
-                request.completed += OnAssetBundleLoaded;
+                _provider._LoadBundle(_Load());
+            }
+
+            public void _LoadAsset(IEnumerator e)
+            {
+                _provider._LoadAsset(e);
+            }
+
+            private IEnumerator _Load()
+            {
+                AddRef();
+                yield return null;
+                var request = AssetBundle.LoadFromStreamAsync(_stream);
+                yield return request;
+                OnAssetBundleLoaded(request.assetBundle);
+                RemoveRef();
             }
 
             public AssetBundle GetAssetBundle()
@@ -351,13 +366,9 @@ namespace UnityFS
                 return _assetBundle;
             }
 
-            private void OnAssetBundleLoaded(AsyncOperation op)
+            private void OnAssetBundleLoaded(AssetBundle assetBundle)
             {
-                var request = op as AssetBundleCreateRequest;
-                if (request != null)
-                {
-                    _assetBundle = request.assetBundle;
-                }
+                _assetBundle = assetBundle;
                 _loaded = true;
                 // Debug.Log($"assetbundle loaded {name}");
                 if (_IsDependenciesLoaded())
@@ -461,8 +472,7 @@ namespace UnityFS
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
                 {
-                    var request = _type != null ? assetBundle.LoadAssetAsync(_assetPath, _type) : assetBundle.LoadAssetAsync(_assetPath);
-                    request.completed += OnAssetLoaded;
+                    _bundle._LoadAsset(_Load(assetBundle));
                 }
                 else
                 {
@@ -470,10 +480,20 @@ namespace UnityFS
                 }
             }
 
-            private void OnAssetLoaded(AsyncOperation op)
+            private IEnumerator _Load(AssetBundle assetBundle)
             {
-                var request = op as AssetBundleRequest;
-                _object = request.asset;
+                var request = _type != null ? assetBundle.LoadAssetAsync(_assetPath, _type) : assetBundle.LoadAssetAsync(_assetPath);
+                yield return request;
+                OnAssetLoaded(request.asset);
+            }
+
+            private void OnAssetLoaded(Object asset)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+                _object = asset;
                 Complete();
             }
         }
