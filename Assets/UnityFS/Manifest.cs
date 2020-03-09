@@ -14,6 +14,7 @@ namespace UnityFS
         public const string ChecksumFileName = "checksum.txt";
         public const string EmbeddedManifestFileName = "streamingassets-manifest.json";
         public const string EmbeddedBundlesPath = "Assets/StreamingAssets/bundles";
+        public const string EncryptionSalt = "SALT";
 
         [Serializable]
         public enum BundleLoad

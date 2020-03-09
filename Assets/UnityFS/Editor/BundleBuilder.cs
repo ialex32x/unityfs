@@ -855,14 +855,15 @@ namespace UnityFS.Editor
             return fileName;
         }
 
-        private static FileEntry EncryptFile(string outputPath, List<string> filelist, string password, string name,
+        private static FileEntry EncryptFile(string outputPath, List<string> filelist, string keyphrase, string name,
             bool hasUnityManifest)
         {
             var encFileName = ReplaceFileExt(name, BundleBuilderData.FileExt, BundleBuilderData.EncryptedFileExt);
             var filePath = Path.Combine(outputPath, name);
             var bytes = File.ReadAllBytes(filePath);
+            var password = keyphrase + encFileName;
             var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password));
-            var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password + "SALT"));
+            var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password + Manifest.EncryptionSalt));
             var encFilePath = Path.Combine(outputPath, encFileName);
             filelist.Add(encFileName);
             filelist.Add(name);
@@ -900,7 +901,7 @@ namespace UnityFS.Editor
         {
             if (encrypted)
             {
-                return EncryptFile(outputPath, filelist, data.encryptionKey + name, name, hasUnityManifest);
+                return EncryptFile(outputPath, filelist, data.encryptionKey, name, hasUnityManifest);
             }
 
             var filePath = Path.Combine(outputPath, name);

@@ -272,11 +272,10 @@ namespace UnityFS.Utils
             if (bundleInfo.encrypted)
             {
                 //TODO: 内存问题
-                var buffer = new byte[bundleInfo.rsize];
-                var seekableStream = new MemoryStream(buffer, false);
+                var buffer = new byte[bundleInfo.size];
                 var phrase = password + bundleInfo.name;
                 var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase));
-                var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + "SALT"));
+                var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + Manifest.EncryptionSalt));
                 using (var algo = Rijndael.Create())
                 {
                     algo.Padding = PaddingMode.Zeros;
@@ -287,6 +286,7 @@ namespace UnityFS.Utils
                     }
                 }
                 fin.Close();
+                var seekableStream = new MemoryStream(buffer, 0, bundleInfo.rsize, false);
                 return seekableStream;
             }
 
