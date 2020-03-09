@@ -28,7 +28,7 @@ namespace UnityFS
         private Manifest _manifest;
         private int _slow = 0;
         private int _bufferSize = 0;
-        private bool _backgroundSchedule = false;
+//        private bool _backgroundSchedule = false;
         private int _activeTasks = 0; // 运行中的前台任务
         private int _concurrentTasks = 0; // 可并发数量
         private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
@@ -438,34 +438,34 @@ namespace UnityFS
         private void DoIdleSchedule()
         {
             // Debug.LogWarningFormat("IdleSchedule.enter");
-            _backgroundSchedule = false;
-            if (_activeTasks != 0)
-            {
-                // Debug.LogWarningFormat("IdleSchedule.activeTask {0} ({1})", _activeTasks, _backgroundQueue.Count);
-                return;
-            }
-            var node = _backgroundQueue.First;
-            if (node != null)
-            {
-                var bundleInfo = node.Value;
-                _backgroundQueue.Remove(node);
-                if (!IsBundleAvailable(bundleInfo))
-                {
-                    var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
-                    var idleTask = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, self =>
-                    {
-                        // Debug.LogWarningFormat("idle task complete {0}", self.path);
-                        RemoveDownloadTask(self, true);
-                    }).SetDebugMode(true);
-                    _tasks.AddLast(idleTask);
-                    _activeTasks++;
-                    idleTask.slow = _slow;
-                    idleTask.bufferSize = _bufferSize;
-                    // Debug.LogWarningFormat("idle task start {0}", idleTask.path);
-                    idleTask.Run();
-                    ResourceManager.GetListener().OnTaskStart(idleTask);
-                }
-            }
+//            _backgroundSchedule = false;
+//            if (_activeTasks != 0)
+//            {
+//                // Debug.LogWarningFormat("IdleSchedule.activeTask {0} ({1})", _activeTasks, _backgroundQueue.Count);
+//                return;
+//            }
+//            var node = _backgroundQueue.First;
+//            if (node != null)
+//            {
+//                var bundleInfo = node.Value;
+//                _backgroundQueue.Remove(node);
+//                if (!IsBundleAvailable(bundleInfo))
+//                {
+//                    var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
+//                    var idleTask = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, self =>
+//                    {
+//                        // Debug.LogWarningFormat("idle task complete {0}", self.path);
+//                        RemoveDownloadTask(self, true);
+//                    }).SetDebugMode(true);
+//                    _tasks.AddLast(idleTask);
+//                    _activeTasks++;
+//                    idleTask.slow = _slow;
+//                    idleTask.bufferSize = _bufferSize;
+//                    // Debug.LogWarningFormat("idle task start {0}", idleTask.path);
+//                    idleTask.Run();
+//                    ResourceManager.GetListener().OnTaskStart(idleTask);
+//                }
+//            }
         }
 
         public void Close()

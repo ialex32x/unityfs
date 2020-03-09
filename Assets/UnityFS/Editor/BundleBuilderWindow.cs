@@ -120,7 +120,7 @@ namespace UnityFS.Editor
                 {
                     EditorApplication.delayCall += () =>
                     {
-                        BundleBuilder.Build(data, "out/AssetBundles", EditorUserBuildSettings.activeBuildTarget);
+                        BundleBuilder.Build(data, EditorUserBuildSettings.activeBuildTarget);
                     };
                 }
             }

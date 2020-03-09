@@ -11,7 +11,8 @@ namespace UnityFS.Editor
     {
         public const string BundleBuilderDataPath = "Assets/unityfs.asset";
         public const string FileExt = ".pkg";
-        public const string EncryptedFileExt = ".pxx";
+//        public const string EncryptedFileExt = ".pxx";
+//        public const string PathForRawAssetBundles = "raw";
 
         [Serializable]
         public class BundleAssetTarget
@@ -246,6 +247,8 @@ namespace UnityFS.Editor
         public int id;
         public string encryptionKey;
         public List<BundleInfo> bundles = new List<BundleInfo>();
+        public string assetBundlePath = "out/bundles";
+        public string packagePath = "out/packages";
 
         public static BundleBuilderData Load()
         {

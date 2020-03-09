@@ -349,7 +349,7 @@ namespace UnityFS.Editor
         }
 
         // 生成打包 
-        public static void Build(BundleBuilderData data, string outputPath, BuildTarget targetPlatform)
+        public static void Build(BundleBuilderData data, BuildTarget targetPlatform)
         {
             Debug.Log($"building bundles...");
             var filelist = new List<string>();
@@ -358,9 +358,14 @@ namespace UnityFS.Editor
             var zipArchiveBuilds = GenerateZipArchiveBuilds(data);
             var fileListBuilds = GenerateFileListBuilds(data);
             // var sceneBundleBuilds = GenerateSceneBundleBuilds(data);
-            if (!Directory.Exists(outputPath))
+            if (!Directory.Exists(data.assetBundlePath))
             {
-                Directory.CreateDirectory(outputPath);
+                Directory.CreateDirectory(data.assetBundlePath);
+            }
+
+            if (!Directory.Exists(data.packagePath))
+            {
+                Directory.CreateDirectory(data.packagePath);
             }
 
             AssetBundleManifest assetBundleManifest = null;
@@ -379,30 +384,29 @@ namespace UnityFS.Editor
             // }
             if (assetBundleBuilds.Length != 0)
             {
-                assetBundleManifest = BuildAssetBundles(outputPath, assetBundleBuilds, targetPlatform);
+                assetBundleManifest = BuildAssetBundles(data.assetBundlePath, assetBundleBuilds, targetPlatform);
             }
 
             if (zipArchiveBuilds.Length != 0)
             {
-                zipArchiveBuild = BuildZipArchives(outputPath, zipArchiveBuilds, targetPlatform);
+                zipArchiveBuild = BuildZipArchives(data.packagePath, zipArchiveBuilds, targetPlatform);
             }
 
             if (fileListBuilds.Length != 0)
             {
-                fileListBuild = BuildFileLists(outputPath, fileListBuilds, targetPlatform);
+                fileListBuild = BuildFileLists(data.packagePath, fileListBuilds, targetPlatform);
             }
 
             EmbeddedManifest embeddedManifest;
-            BuildManifest(data, filelist, outputPath, assetBundleManifest, zipArchiveBuild, fileListBuild,
+            BuildManifest(data, filelist, assetBundleManifest, zipArchiveBuild, fileListBuild,
                 out embeddedManifest);
-            PrepareStreamingAssets(data, outputPath, embeddedManifest);
-            Cleanup(outputPath, filelist, assetBundleManifest, zipArchiveBuild, fileListBuild, embeddedManifest);
+            PrepareStreamingAssets(data, embeddedManifest);
+            Cleanup(data, filelist, assetBundleManifest, zipArchiveBuild, fileListBuild, embeddedManifest);
             Debug.Log(
-                $"{outputPath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
+                $"{data.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Length} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
-        private static void PrepareStreamingAssets(BundleBuilderData data, string outputPath,
-            EmbeddedManifest embeddedManifest)
+        private static void PrepareStreamingAssets(BundleBuilderData data, EmbeddedManifest embeddedManifest)
         {
             if (embeddedManifest.bundles.Count > 0)
             {
@@ -411,11 +415,11 @@ namespace UnityFS.Editor
                     Directory.CreateDirectory(Manifest.EmbeddedBundlesPath);
                 }
 
-                File.Copy(Path.Combine(outputPath, Manifest.EmbeddedManifestFileName),
+                File.Copy(Path.Combine(data.packagePath, Manifest.EmbeddedManifestFileName),
                     Path.Combine(Manifest.EmbeddedBundlesPath, Manifest.EmbeddedManifestFileName), true);
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
-                    File.Copy(Path.Combine(outputPath, bundleInfo.name),
+                    File.Copy(Path.Combine(data.packagePath, bundleInfo.name),
                         Path.Combine(Manifest.EmbeddedBundlesPath, bundleInfo.name), true);
                 }
 
@@ -459,8 +463,8 @@ namespace UnityFS.Editor
 
         private static HashSet<string> builtinFiles = new HashSet<string>(new string[]
         {
-            "AssetBundles",
-            "AssetBundles.manifest",
+//            "AssetBundles",
+//            "AssetBundles.manifest",
             Manifest.ChecksumFileName,
             Manifest.ManifestFileName,
         });
@@ -504,18 +508,18 @@ namespace UnityFS.Editor
             }
         }
 
-        private static void Cleanup(string outputPath, List<string> filelist,
+        private static void Cleanup(BundleBuilderData data, List<string> filelist,
             AssetBundleManifest assetBundleManifest,
             ZipArchiveBuild zipArchiveManifest,
             FileListBuild fileListBuild,
             EmbeddedManifest embeddedManifest)
         {
-            foreach (var dir in Directory.GetDirectories(outputPath))
+            foreach (var dir in Directory.GetDirectories(data.packagePath))
             {
                 CleanupRecursively(dir, "Assets", fileListBuild);
             }
 
-            foreach (var file in Directory.GetFiles(outputPath))
+            foreach (var file in Directory.GetFiles(data.packagePath))
             {
                 var match = false;
                 var fi = new FileInfo(file);
@@ -855,28 +859,21 @@ namespace UnityFS.Editor
             return fileName;
         }
 
-        private static FileEntry EncryptFile(string outputPath, List<string> filelist, string keyphrase, string name,
-            bool hasUnityManifest)
+        private static FileEntry EncryptFile(BundleBuilderData data, List<string> filelist, string assetBundlePath,
+            string name)
         {
-            var encFileName = ReplaceFileExt(name, BundleBuilderData.FileExt, BundleBuilderData.EncryptedFileExt);
-            var filePath = Path.Combine(outputPath, name);
-            var bytes = File.ReadAllBytes(filePath);
-            var password = keyphrase + encFileName;
+            var rawFilePath = Path.Combine(assetBundlePath, name);
+            var encFilePath = Path.Combine(data.packagePath, name);
+            var bytes = File.ReadAllBytes(rawFilePath);
+            var password = data.encryptionKey + name;
             var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password));
             var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password + Manifest.EncryptionSalt));
-            var encFilePath = Path.Combine(outputPath, encFileName);
-            filelist.Add(encFileName);
             filelist.Add(name);
-            if (hasUnityManifest)
-            {
-                filelist.Add(encFileName + ".manifest");
-                filelist.Add(name + ".manifest");
-            }
-
             if (File.Exists(encFilePath))
             {
                 File.Delete(encFilePath);
             }
+
             using (var fout = File.Open(encFilePath, FileMode.Create, FileAccess.Write, FileShare.Write))
             {
                 using (var algo = Rijndael.Create())
@@ -891,51 +888,51 @@ namespace UnityFS.Editor
                 }
             }
 
-            var fileEntry = GenFileEntry(encFileName, encFilePath);
+            var fileEntry = GenFileEntry(name, encFilePath);
             fileEntry.rsize = bytes.Length;
             return fileEntry;
         }
 
         public static FileEntry EncryptFileEntry(BundleBuilderData data, List<string> filelist, bool encrypted,
-            string outputPath, string name, bool hasUnityManifest)
+            string name, bool bUnityAssetBundles)
         {
             if (encrypted)
             {
-                return EncryptFile(outputPath, filelist, data.encryptionKey, name, hasUnityManifest);
+                return EncryptFile(data, filelist, bUnityAssetBundles ? data.assetBundlePath : data.packagePath, name);
             }
 
-            var filePath = Path.Combine(outputPath, name);
-            filelist.Add(name);
-            if (hasUnityManifest)
+            var targetFilePath = Path.Combine(data.packagePath, name);
+            if (bUnityAssetBundles)
             {
-                filelist.Add(name + ".manifest");
+                var rawFilePath = Path.Combine(data.assetBundlePath, name);
+                File.Copy(rawFilePath, targetFilePath, true);
             }
+            filelist.Add(name);
 
-            return GenFileEntry(name, filePath);
+            return GenFileEntry(name, targetFilePath);
         }
 
         private static string[] CheckIfEncrypt(BundleBuilderData data, string[] srcAssetBundles)
         {
-            for (var i = 0; i < srcAssetBundles.Length; i++)
-            {
-                var assetBundle = srcAssetBundles[i];
-                BundleBuilderData.BundleInfo bundleInfo;
-                BundleBuilderData.BundleSlice bundleSlice;
-                if (TryGetBundleSlice(data, assetBundle, out bundleInfo, out bundleSlice))
-                {
-                    if (bundleInfo.encrypted)
-                    {
-                        srcAssetBundles[i] = ReplaceFileExt(assetBundle, BundleBuilderData.FileExt,
-                            BundleBuilderData.EncryptedFileExt);
-                    }
-                }
-            }
-
+//            for (var i = 0; i < srcAssetBundles.Length; i++)
+//            {
+//                var assetBundle = srcAssetBundles[i];
+//                BundleBuilderData.BundleInfo bundleInfo;
+//                BundleBuilderData.BundleSlice bundleSlice;
+//                if (TryGetBundleSlice(data, assetBundle, out bundleInfo, out bundleSlice))
+//                {
+//                    if (bundleInfo.encrypted)
+//                    {
+//                        srcAssetBundles[i] = ReplaceFileExt(assetBundle, BundleBuilderData.FileExt,
+//                            BundleBuilderData.EncryptedFileExt);
+//                    }
+//                }
+//            }
             return srcAssetBundles;
         }
 
         // 生成清单
-        public static void BuildManifest(BundleBuilderData data, List<string> filelist, string outputPath,
+        public static void BuildManifest(BundleBuilderData data, List<string> filelist,
             AssetBundleManifest assetBundleManifest,
             ZipArchiveBuild zipArchiveManifest,
             FileListBuild fileListManifest,
@@ -953,7 +950,7 @@ namespace UnityFS.Editor
                     if (TryGetBundleSlice(data, assetBundle, out bundleInfo, out bundleSlice))
                     {
                         // Debug.Log(bundleInfo.name);
-                        var fileEntry = EncryptFileEntry(data, filelist, bundleInfo.encrypted, outputPath,
+                        var fileEntry = EncryptFileEntry(data, filelist, bundleInfo.encrypted,
                             bundleSlice.name, true);
                         var bundle = new Manifest.BundleInfo();
 
@@ -986,7 +983,7 @@ namespace UnityFS.Editor
                 foreach (var zipArchive in zipArchiveManifest.archives)
                 {
                     var bundleInfo = GetBundleInfo(data, zipArchive.name);
-                    var fileEntry = EncryptFileEntry(data, filelist, bundleInfo.encrypted, outputPath, zipArchive.name,
+                    var fileEntry = EncryptFileEntry(data, filelist, bundleInfo.encrypted, zipArchive.name,
                         false);
                     var bundle = new Manifest.BundleInfo();
 
@@ -1018,7 +1015,7 @@ namespace UnityFS.Editor
                 foreach (var fileList in fileListManifest.fileLists)
                 {
                     var bundleInfo = GetBundleInfo(data, fileList.name);
-                    var fileListPath = Path.Combine(outputPath, fileList.name);
+                    var fileListPath = Path.Combine(data.packagePath, fileList.name);
                     var fileEntry = GenFileEntry(fileList.name, fileListPath);
                     var bundle = new Manifest.BundleInfo();
 
@@ -1045,23 +1042,17 @@ namespace UnityFS.Editor
                 }
             }
 
-            if (!Directory.Exists(outputPath))
-            {
-                Directory.CreateDirectory(outputPath);
-            }
-
-            OutputManifest(data, filelist, manifest, outputPath);
-            OutputEmbeddedManifest(data, filelist, embeddedManifest, outputPath);
+            OutputManifest(data, filelist, manifest);
+            OutputEmbeddedManifest(data, filelist, embeddedManifest);
         }
 
         // write manifest & checksum of manifest 
-        private static void OutputManifest(BundleBuilderData data, List<string> filelist, Manifest manifest,
-            string outputPath)
+        private static void OutputManifest(BundleBuilderData data, List<string> filelist, Manifest manifest)
         {
             var json = JsonUtility.ToJson(manifest);
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            var manifestPath = Path.Combine(outputPath, Manifest.ManifestFileName);
-            var manifestChecksumPath = Path.Combine(outputPath, Manifest.ChecksumFileName);
+            var bytes = Encoding.UTF8.GetBytes(json);
+            var manifestPath = Path.Combine(data.packagePath, Manifest.ManifestFileName);
+            var manifestChecksumPath = Path.Combine(data.packagePath, Manifest.ChecksumFileName);
             if (File.Exists(manifestPath))
             {
                 File.Delete(manifestPath);
@@ -1073,18 +1064,18 @@ namespace UnityFS.Editor
                 outputStream.Write(bytes, 0, bytes.Length);
             }
 
-            var fileEntry = EncryptFileEntry(data, filelist, false, outputPath, Manifest.ManifestFileName, false);
+            var fileEntry = EncryptFileEntry(data, filelist, false, Manifest.ManifestFileName, false);
             File.WriteAllText(manifestChecksumPath, JsonUtility.ToJson(fileEntry));
         }
 
         // write embedded manifest to streamingassets 
         private static void OutputEmbeddedManifest(BundleBuilderData data, List<string> filelist,
-            EmbeddedManifest embeddedManifest, string outputPath)
+            EmbeddedManifest embeddedManifest)
         {
             if (embeddedManifest.bundles.Count > 0)
             {
                 var json = JsonUtility.ToJson(embeddedManifest);
-                var manifestPath = Path.Combine(outputPath, Manifest.EmbeddedManifestFileName);
+                var manifestPath = Path.Combine(data.packagePath, Manifest.EmbeddedManifestFileName);
                 File.WriteAllText(manifestPath, json);
                 filelist.Add(Manifest.EmbeddedManifestFileName);
             }

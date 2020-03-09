@@ -247,3 +247,5 @@ MonoBehaviour:
         - ce7ab5d846e45ac4ca42d89d2dd9bbde
         - b35be9c075bfa7d4990280e18b1ac7fb
         - 2a5ab583c0072634e95457d9c3788741
+  assetBundlePath: out/bundles
+  packagePath: out/packages
