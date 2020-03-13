@@ -135,7 +135,7 @@ namespace UnityFS.Editor
                 {
                     EditorApplication.delayCall += () =>
                     {
-                        BundleBuilder.Build(data, EditorUserBuildSettings.activeBuildTarget);
+                        BundleBuilder.Build(data, "", EditorUserBuildSettings.activeBuildTarget);
                     };
                 }
             }

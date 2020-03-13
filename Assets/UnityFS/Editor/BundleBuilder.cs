@@ -330,10 +330,10 @@ namespace UnityFS.Editor
         }
 
         // 生成打包 
-        public static void Build(BundleBuilderData data, BuildTarget buildTarget)
+        public static void Build(BundleBuilderData data, string outputPath, BuildTarget buildTarget)
         {
             Debug.Log($"building bundles...");
-            var buildInfo = new PackageBuildInfo(data, buildTarget);
+            var buildInfo = new PackageBuildInfo(data, outputPath, buildTarget);
             Scan(data, buildTarget);
 
             var assetBundleBuilds = GenerateAssetBundleBuilds(data);
