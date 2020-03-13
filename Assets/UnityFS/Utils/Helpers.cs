@@ -71,11 +71,19 @@ namespace UnityFS.Utils
 
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
-        public static void GetManifest(string localPathRoot, string checksum, int size, Action<Manifest> callback)
+        public static void GetManifest(string localPathRoot, string checksum, int size, int rsize, string password,
+            Action<Manifest> callback)
         {
-            if (checksum != null && size != 0)
+            if (checksum != null && size != 0 && rsize != 0)
             {
-                GetManifestDirect(localPathRoot, checksum, size, true, callback);
+                var fileEntry = new FileEntry()
+                {
+                    name = Manifest.ManifestFileName,
+                    checksum = checksum,
+                    size = size,
+                    rsize = rsize
+                };
+                GetManifestDirect(localPathRoot, fileEntry, password, callback);
                 return;
             }
 
@@ -85,21 +93,13 @@ namespace UnityFS.Utils
             }
 
             var checksumPath = Path.Combine(localPathRoot, Manifest.ChecksumFileName);
-            UnityFS.DownloadTask.Create(Manifest.ChecksumFileName, null, 0, 0, checksumPath, 0, 10, checksumTask =>
+            DownloadTask.Create(Manifest.ChecksumFileName, null, 0, 0, checksumPath, 0, 10, checksumTask =>
             {
                 var checksumJson = File.ReadAllText(checksumTask.path);
                 try
                 {
-                    if (checksumJson.Length == 4)
-                    {
-                        // 兼容旧文件
-                        GetManifestDirect(localPathRoot, checksumJson, 0, false, callback);
-                    }
-                    else
-                    {
-                        var fileEntry = JsonUtility.FromJson<FileEntry>(checksumJson);
-                        GetManifestDirect(localPathRoot, fileEntry.checksum, fileEntry.size, true, callback);
-                    }
+                    var fileEntry = JsonUtility.FromJson<FileEntry>(checksumJson);
+                    GetManifestDirect(localPathRoot, fileEntry, password, callback);
                 }
                 catch (Exception exception)
                 {
@@ -109,26 +109,30 @@ namespace UnityFS.Utils
         }
 
         // 已知清单文件校验值和大小的情况下, 可以使用此接口, 略过 checksum 文件的获取 
-        public static void GetManifestDirect(string localPathRoot, string checksum, int size, bool compressed,
+        public static void GetManifestDirect(string localPathRoot, FileEntry fileEntry, string password,
             Action<Manifest> callback)
         {
             var manifestPath = Path.Combine(localPathRoot, Manifest.ManifestFileName);
-            var manifest = ParseManifestFile(manifestPath, checksum, size, compressed);
-            if (manifest != null)
+            var manifest_t = ParseManifestFile(manifestPath, fileEntry, password);
+            if (manifest_t != null)
             {
-                callback(manifest);
+                callback(manifest_t);
             }
             else
             {
-                UnityFS.DownloadTask
-                    .Create(Manifest.ManifestFileName, checksum, size, 0, manifestPath, 0, 10,
-                        manifestTask => { callback(ParseManifest(File.OpenRead(manifestTask.path), compressed)); })
+                DownloadTask
+                    .Create(Manifest.ManifestFileName, fileEntry.checksum, fileEntry.size, 0, manifestPath, 0, 10,
+                        manifestTask =>
+                        {
+                            var manifest = ParseManifestStream(File.OpenRead(manifestTask.path), fileEntry, password);
+                            callback(manifest);
+                        })
                     .SetDebugMode(true).Run();
             }
         }
 
         // 打开指定的清单文件 (带校验)
-        public static Manifest ParseManifestFile(string filePath, string checksum, int size, bool compressed)
+        public static Manifest ParseManifestFile(string filePath, FileEntry fileEntry, string password)
         {
             if (File.Exists(filePath))
             {
@@ -136,10 +140,10 @@ namespace UnityFS.Utils
                 {
                     var crc = new Crc16();
                     crc.Update(fs);
-                    if (crc.hex == checksum && fs.Length == size)
+                    if (crc.hex == fileEntry.checksum && fs.Length == fileEntry.size)
                     {
                         fs.Seek(0, SeekOrigin.Begin);
-                        return ParseManifest(fs, compressed);
+                        return ParseManifestStream(fs, fileEntry, password);
                     }
                 }
             }
@@ -147,38 +151,32 @@ namespace UnityFS.Utils
             return null;
         }
 
-        private static Manifest ParseManifestPlain(Stream stream)
+        private static Manifest ParseManifestStream(Stream secStream, FileEntry fileEntry, string password)
         {
-            var read = new MemoryStream();
-            var bytes = new byte[256];
-            do
+            secStream.Seek(0, SeekOrigin.Begin);
+            using (var zStream = GetDecryptStream(secStream, fileEntry, password))
             {
-                var n = stream.Read(bytes, 0, bytes.Length);
-                if (n <= 0)
+                using (var gz = new ICSharpCode.SharpZipLib.GZip.GZipInputStream(zStream))
                 {
-                    break;
-                }
+                    var read = new MemoryStream();
+                    var bytes = new byte[256];
+                    do
+                    {
+                        var n = gz.Read(bytes, 0, bytes.Length);
+                        if (n <= 0)
+                        {
+                            break;
+                        }
 
-                read.Write(bytes, 0, n);
-            } while (true);
+                        read.Write(bytes, 0, n);
+                    } while (true);
 
-            var data = read.ToArray();
-            // Debug.LogFormat("read manifest data {0}", data.Length);
-            var json = Encoding.UTF8.GetString(data);
-            return JsonUtility.FromJson<Manifest>(json);
-        }
-
-        private static Manifest ParseManifest(Stream stream, bool compressed)
-        {
-            if (compressed)
-            {
-                using (var gz = new ICSharpCode.SharpZipLib.GZip.GZipInputStream(stream))
-                {
-                    return ParseManifestPlain(gz);
+                    var data = read.ToArray();
+                    // Debug.LogFormat("read manifest data {0}", data.Length);
+                    var json = Encoding.UTF8.GetString(data);
+                    return JsonUtility.FromJson<Manifest>(json);
                 }
             }
-
-            return ParseManifestPlain(stream);
         }
 
         public static List<Manifest.BundleInfo> CollectStartupBundles(Manifest manifest, string localPathRoot)
@@ -338,6 +336,28 @@ namespace UnityFS.Utils
         {
             yield return new WaitForSeconds(seconds);
             action();
+        }
+
+        public static Stream GetDecryptStream(Stream fin, FileEntry fileEntry, string password)
+        {
+            //TODO: 内存问题
+            var buffer = new byte[fileEntry.size];
+            var phrase = password + fileEntry.name;
+            var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase));
+            var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + Manifest.EncryptionSalt));
+            using (var algo = Rijndael.Create())
+            {
+                algo.Padding = PaddingMode.Zeros;
+                var decryptor = algo.CreateDecryptor(key, iv);
+                using (var cstream = new CryptoStream(fin, decryptor, CryptoStreamMode.Read))
+                {
+                    cstream.Read(buffer, 0, buffer.Length);
+                }
+            }
+
+            fin.Close();
+            var seekableStream = new MemoryStream(buffer, 0, fileEntry.rsize, false);
+            return seekableStream;
         }
 
         public static Stream GetDecryptStream(Stream fin, Manifest.BundleInfo bundleInfo, string password)

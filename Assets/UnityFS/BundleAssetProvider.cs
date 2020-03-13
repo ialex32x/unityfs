@@ -76,15 +76,16 @@ namespace UnityFS
         public void Open(ResourceManagerArgs args)
         {
             _password = args.password;
-            Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, manifest =>
-            {
-                _streamingAssets = new StreamingAssetsLoader();
-                _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
+            Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, args.manifestRSize,
+                _password, manifest =>
                 {
-                    SetManifest(manifest);
-                    ResourceManager.GetListener().OnSetManifest();
+                    _streamingAssets = new StreamingAssetsLoader();
+                    _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
+                    {
+                        SetManifest(manifest);
+                        ResourceManager.GetListener().OnSetManifest();
+                    });
                 });
-            });
         }
 
         protected void _LoadBundle(IEnumerator e)

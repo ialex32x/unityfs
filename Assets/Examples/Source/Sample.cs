@@ -14,6 +14,7 @@ namespace Examples
         public int concurrentTasks = 3;
         public int slow = 0;
         public int bufferSize = 0;
+        public string password = "test"; // 危险, 真实环境中从远端获取密码
         public string listDataPath;
 
         private UnityFS.Utils.PrefabPools _pools;
@@ -81,7 +82,7 @@ namespace Examples
                 urls = urls,
                 asyncSimMin = 0.5f,
                 asyncSimMax = 1f,
-                password = "test",
+                password = password,
                 oninitialize = () =>
                 {
                     UnityFS.ResourceManager.SetListener(this); // [可选] 监听事件

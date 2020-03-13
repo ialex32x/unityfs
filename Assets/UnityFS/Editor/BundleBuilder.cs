@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Permissions;
 using System.Text;
@@ -381,7 +382,8 @@ namespace UnityFS.Editor
                 $"{buildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
-        private static void PrepareStreamingAssets(BundleBuilderData data, PackageBuildInfo buildInfo, EmbeddedManifest embeddedManifest)
+        private static void PrepareStreamingAssets(BundleBuilderData data, PackageBuildInfo buildInfo,
+            EmbeddedManifest embeddedManifest)
         {
             if (embeddedManifest.bundles.Count > 0)
             {
@@ -483,7 +485,7 @@ namespace UnityFS.Editor
             }
         }
 
-        private static void Cleanup(BundleBuilderData data, PackageBuildInfo buildInfo, 
+        private static void Cleanup(BundleBuilderData data, PackageBuildInfo buildInfo,
             AssetBundleManifest assetBundleManifest,
             ZipArchiveManifest zipArchiveManifest,
             FileListManifest fileListManifest,
@@ -909,12 +911,19 @@ namespace UnityFS.Editor
             return fileName;
         }
 
-        private static FileEntry EncryptFile(BundleBuilderData data, PackageBuildInfo buildInfo, string assetBundlePath,
+        private static FileEntry EncryptFile(BundleBuilderData data, PackageBuildInfo buildInfo, string sourcePath,
             string name)
         {
-            var rawFilePath = Path.Combine(assetBundlePath, name);
-            var encFilePath = Path.Combine(buildInfo.packagePath, name);
+            var rawFilePath = Path.Combine(sourcePath, name);
             var bytes = File.ReadAllBytes(rawFilePath);
+            return EncryptData(data, buildInfo, name, bytes);
+        }
+
+
+        private static FileEntry EncryptData(BundleBuilderData data, PackageBuildInfo buildInfo, string name,
+            byte[] bytes)
+        {
+            var encFilePath = Path.Combine(buildInfo.packagePath, name);
             var password = data.encryptionKey + name;
             var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password));
             var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(password + Manifest.EncryptionSalt));
@@ -1089,22 +1098,30 @@ namespace UnityFS.Editor
         {
             var json = JsonUtility.ToJson(manifest);
             var bytes = Encoding.UTF8.GetBytes(json);
-            var manifestPath = Path.Combine(buildInfo.packagePath, Manifest.ManifestFileName);
+            var manifestRawPath = Path.Combine(buildInfo.packagePath, Manifest.ManifestFileName + ".json");
             var manifestChecksumPath = Path.Combine(buildInfo.packagePath, Manifest.ChecksumFileName);
-            if (File.Exists(manifestPath))
+            byte[] zData;
+            using (var zStream = new MemoryStream())
             {
-                File.Delete(manifestPath);
-            }
-
-            using (var outputStream = new GZipOutputStream(File.Open(manifestPath, FileMode.OpenOrCreate,
-                FileAccess.Write, FileShare.Write)))
-            {
-                outputStream.Write(bytes, 0, bytes.Length);
+                using (var outputStream = new GZipOutputStream(zStream))
+                {
+                    outputStream.Write(bytes, 0, bytes.Length);
+                    outputStream.Flush();
+                }
+                zStream.Flush();
+                zData = zStream.ToArray();
             }
 
             buildInfo.filelist.Add(Manifest.ManifestFileName);
-            var fileEntry = GenFileEntry(Manifest.ManifestFileName, manifestPath);
-            File.WriteAllText(manifestChecksumPath, JsonUtility.ToJson(fileEntry));
+            buildInfo.filelist.Add(Manifest.ManifestFileName + ".json");
+            var fileEntry = EncryptData(data, buildInfo, Manifest.ManifestFileName, zData);
+            // var manifestPath = Path.Combine(buildInfo.packagePath, Manifest.ManifestFileName);
+            // File.WriteAllBytes(manifestPath, zData);
+            // var fileEntry = GenFileEntry(Manifest.ManifestFileName, manifestPath);
+            var fileEntryJson = JsonUtility.ToJson(fileEntry);
+            Debug.LogFormat("write manifest: {0}", fileEntryJson);
+            File.WriteAllBytes(manifestRawPath, bytes);
+            File.WriteAllText(manifestChecksumPath, fileEntryJson);
         }
 
         // write embedded manifest to streamingassets 
