@@ -986,6 +986,7 @@ namespace UnityFS.Editor
                             bundleSlice.name, buildInfo.assetBundlePath);
                         var bundle = new Manifest.BundleInfo();
 
+                        bundle.comment = bundleInfo.note;
                         bundle.encrypted = bundleSplit.encrypted;
                         bundle.rsize = fileEntry.rsize;
                         bundle.type = Manifest.BundleType.AssetBundle;
@@ -1023,6 +1024,7 @@ namespace UnityFS.Editor
                             zipArchive.name, buildInfo.zipArchivePath);
                         var bundle = new Manifest.BundleInfo();
 
+                        bundle.comment = bundleInfo.note;
                         bundle.encrypted = false;
                         bundle.rsize = fileEntry.rsize;
                         bundle.type = Manifest.BundleType.ZipArchive;
@@ -1054,7 +1056,7 @@ namespace UnityFS.Editor
                     var fileEntry = GenFileEntry(fileList.name, fileListPath);
                     var bundle = new Manifest.BundleInfo();
 
-                    buildInfo.filelist.Add(fileList.name);
+                    bundle.comment = bundleInfo.note;
                     bundle.type = Manifest.BundleType.FileList;
                     bundle.name = fileList.name;
                     bundle.checksum = fileEntry.checksum;
@@ -1062,6 +1064,7 @@ namespace UnityFS.Editor
                     bundle.load = bundleInfo.load;
                     bundle.priority = bundleInfo.priority;
 
+                    buildInfo.filelist.Add(fileList.name);
                     foreach (var bundleTargets in bundleInfo.targets)
                     {
                         var target = bundleTargets.target;
