@@ -320,4 +320,18 @@ namespace UnityFS.Editor
         public string name;
         public string scenePath;
     }
+
+    // 打包过程数据
+    public class PackageBuildInfo
+    {
+        public BuildTarget buildTarget;
+        
+        // 分平台
+        public string assetBundlePath; // 原始 assetbundle 输出目录
+        public string zipArchivePath;  // zip 压缩包输出目录 
+        public string packagePath;     // 最终包输出目录
+
+        // 输出文件收集
+        public List<string> filelist = new List<string>();
+    }
 }
