@@ -15,7 +15,7 @@ namespace UnityFS
 
         private EmbeddedManifest _manifest;
 
-        public StreamingAssetsLoader(Manifest manifest)
+        public StreamingAssetsLoader()
         {
             _manifest = new EmbeddedManifest();
             _streamingAssetsPathRoot = Application.streamingAssetsPath + "/bundles/";
@@ -25,12 +25,13 @@ namespace UnityFS
             }
         }
 
-        public void OpenManifest(Action<StreamingAssetsLoader> callback)
+        // 载入 StreamingAssets 中的内嵌清单, 完成后回调 callback
+        public void LoadEmbeddedManifest(Action<StreamingAssetsLoader> callback)
         {
-            JobScheduler.DispatchCoroutine(OpenManifestCo(callback));
+            JobScheduler.DispatchCoroutine(LoadEmbeddedManifestCo(callback));
         }
 
-        public IEnumerator OpenManifestCo(Action<StreamingAssetsLoader> callback)
+        private IEnumerator LoadEmbeddedManifestCo(Action<StreamingAssetsLoader> callback)
         {
             var uri = _streamingAssetsPathRoot + Manifest.EmbeddedManifestFileName;
             var uwr = UnityWebRequest.Get(uri);
@@ -41,10 +42,6 @@ namespace UnityFS
                 {
                     var json = uwr.downloadHandler.text;
                     JsonUtility.FromJsonOverwrite(json, _manifest);
-                    // foreach (var bundleInfo in _manifest.bundles)
-                    // {
-                    //     Debug.Log($"embedded {bundleInfo.name}");
-                    // }
                 }
                 else
                 {
@@ -61,72 +58,53 @@ namespace UnityFS
             }
         }
 
-        public bool Contains(string bundleName, string checksum, int size)
+        public bool Contains(Manifest.BundleInfo bundleInfo)
         {
             for (int i = 0, count = _manifest.bundles.Count; i < count; i++)
             {
-                var bundleInfo = _manifest.bundles[i];
-                if (bundleInfo.name == bundleName)
+                var embeddedBundleInfo = _manifest.bundles[i];
+                if (embeddedBundleInfo.name == bundleInfo.name)
                 {
-                    if (bundleInfo.size == size && bundleInfo.checksum == checksum)
+                    if (embeddedBundleInfo.size == bundleInfo.size &&
+                        embeddedBundleInfo.checksum == bundleInfo.checksum)
                     {
                         return true;
                     }
+
                     return false;
                 }
             }
+
             return false;
         }
 
-        public IEnumerator LoadBundle(string bundleName, Action<Stream> callback)
+        public IEnumerator LoadStream(Manifest.BundleInfo bundleInfo, Action<Stream> callback)
         {
-            var uri = _streamingAssetsPathRoot + bundleName;
-            var uwr = UnityWebRequest.Get(uri);
-            // uwr.downloadHandler = new DownloadHandlerBuffer();
-            yield return uwr.SendWebRequest();
             MemoryStream stream = null;
-            if (uwr.error == null && uwr.responseCode == 200)
+            if (Contains(bundleInfo))
             {
-                try
+                var uri = _streamingAssetsPathRoot + bundleInfo.name;
+                var uwr = UnityWebRequest.Get(uri);
+                yield return uwr.SendWebRequest();
+                if (uwr.error == null && uwr.responseCode == 200)
                 {
-                    var bytes = uwr.downloadHandler.data;
-                    // Debug.LogWarning($"load bundle (stream) from streamingassets: {bundleName} ({bytes.Length}) ({uwr.downloadHandler.GetType()})");
-                    stream = new MemoryStream(bytes);
+                    try
+                    {
+                        var bytes = uwr.downloadHandler.data;
+                        stream = new MemoryStream(bytes);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
+                    }
                 }
-                catch (Exception exception)
+                else
                 {
-                    Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
+                    Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
                 }
             }
-            else
-            {
-                Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
-            }
-            callback(stream);
-        }
 
-        public IEnumerator LoadBundle(string bundleName, string checksum, int size, Action<AssetBundle> callback)
-        {
-            var uri = _streamingAssetsPathRoot + bundleName;
-            var uwr = UnityWebRequestAssetBundle.GetAssetBundle(uri);
-            yield return uwr.SendWebRequest();
-            if (uwr.error == null && uwr.responseCode == 200)
-            {
-                AssetBundle assetBundle = null;
-                try
-                {
-                    assetBundle = DownloadHandlerAssetBundle.GetContent(uwr);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
-                }
-                callback(assetBundle);
-            }
-            else
-            {
-                Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
-            }
+            callback(stream);
         }
     }
 }

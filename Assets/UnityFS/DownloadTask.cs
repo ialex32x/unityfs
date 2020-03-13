@@ -119,14 +119,14 @@ namespace UnityFS
 
         public static DownloadTask Create(
             Manifest.BundleInfo bundleInfo,
-            string filePathRoot, // 文件本地存储目标路径
+            string finalPath, // 文件本地存储目标路径
             int retry,
             int timeout,
             Action<DownloadTask> callback)
         {
             return Create(bundleInfo.name, bundleInfo.checksum, bundleInfo.size,
                 bundleInfo.priority,
-                filePathRoot,
+                finalPath,
                 retry,
                 timeout,
                 callback);
@@ -135,7 +135,7 @@ namespace UnityFS
         public static DownloadTask Create(
             string name, string checksum, int size,
             int priority,
-            string filePathRoot,
+            string finalPath,
             int retry,
             int timeout,
             Action<DownloadTask> callback)
@@ -150,7 +150,7 @@ namespace UnityFS
             task._retry = retry;
             task._timeout = timeout;
             task._urlIndex = 0;
-            task._finalPath = filePathRoot;
+            task._finalPath = finalPath;
             task.SetUrl();
             return task;
         }

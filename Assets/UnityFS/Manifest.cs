@@ -17,22 +17,24 @@ namespace UnityFS
         public const string EncryptionSalt = "SALT";
 
         [Serializable]
+        [Flags]
         public enum BundleLoad
         {
-            Startup,
-            Important,
-            Normal,
-            Optional,
+            Startup = 1 << 0,
+            Important = 1 << 1,
+            Normal = 1 << 2,
+            Optional = 1 << 3,
         }
 
         [Serializable]
         public enum BundleType
         {
-            AssetBundle = 0,    // 打资源 ab 包
-            ZipArchive = 1,     // 打 zip 包
+            AssetBundle = 0, // 打资源 ab 包
+            ZipArchive = 1, // 打 zip 包
+
             // SceneBundle,     // 打场景 ab 包
-            FileList = 2,       // 仅生成文件清单
-            FileSystem = 3,     // 零散资源直接文件存储
+            FileList = 2, // 仅生成文件清单
+            FileSystem = 3, // 零散资源直接文件存储
         }
 
         // 资源包清单
@@ -41,12 +43,14 @@ namespace UnityFS
         {
             public BundleType type; // 资源包类型
             public BundleLoad load; // 加载级别
-            public bool startup { get { return load == BundleLoad.Startup; } }    // 是否需要在启动前完成下载更新
+
+            public bool startup => load == BundleLoad.Startup; // 是否需要在启动前完成下载更新
+
             public bool encrypted;
-            public int rsize;
-            public int priority;    // 下载排队优先级
-            public string name;     // 文件名
-            public int size;        // 文件大小
+            public int rsize; // 加密文件的原始大小
+            public int priority; // 下载排队优先级
+            public string name; // 文件名
+            public int size; // 文件大小
             public string checksum; // 文件校验值
             public string[] dependencies; // 依赖的 bundle
             public List<string> assets = new List<string>(); // asset path (virtual path)

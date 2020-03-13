@@ -20,7 +20,7 @@ MonoBehaviour:
     name: test1.pkg
     note: "prefab\u6D4B\u8BD5\u5305"
     type: 0
-    load: 0
+    load: 2
     enabled: 1
     streamingAssets: 0
     priority: 7910
@@ -112,7 +112,7 @@ MonoBehaviour:
     name: test2.pkg
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
     type: 1
-    load: 0
+    load: 1
     enabled: 1
     streamingAssets: 0
     priority: 3223
@@ -154,7 +154,7 @@ MonoBehaviour:
     name: bundle_17.pkg
     note: "\u5176\u4ED6\u5176\u4ED6"
     type: 0
-    load: 0
+    load: 4
     enabled: 1
     streamingAssets: 0
     priority: 0
@@ -178,7 +178,7 @@ MonoBehaviour:
     name: bundle_19.pkg
     note: "\u573A\u666F\u6D4B\u8BD5"
     type: 0
-    load: 0
+    load: 4
     enabled: 1
     streamingAssets: 0
     priority: 0
@@ -208,7 +208,7 @@ MonoBehaviour:
     name: bundle_25.pkg
     note: "\u6587\u4EF6\u5217\u8868\u6D4B\u8BD5"
     type: 2
-    load: 0
+    load: 1
     enabled: 1
     streamingAssets: 0
     priority: 0
@@ -232,7 +232,7 @@ MonoBehaviour:
     name: bundle_27.pkg
     note: 
     type: 0
-    load: 0
+    load: 1
     enabled: 1
     streamingAssets: 0
     priority: 0

@@ -72,7 +72,7 @@ namespace UnityFS
         {
             _urls.AddRange(args.urls);
             _listener = new EmptyAssetProviderListener();
-            UnityFS.JobScheduler.Initialize();
+            JobScheduler.Initialize();
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(args.listDataPath))
             {
@@ -89,12 +89,10 @@ namespace UnityFS
             else
 #endif
             {
-                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.concurrentTasks, args.slow, args.bufferSize, args.assetPathTransformer);
+                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.slow, args.bufferSize, args.assetPathTransformer);
             }
-            if (args.oninitialize != null)
-            {
-                args.oninitialize();
-            }
+
+            args.oninitialize?.Invoke();
             _assetProvider.Open(args);
             if (args.oncomplete != null)
             {
@@ -223,6 +221,11 @@ namespace UnityFS
             var fs = GetAssetProvider().GetFileSystem(bundleName);
             fs.completed += callback;
             return fs;
+        }
+
+        public static void EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        {
+            GetAssetProvider().EnsureBundles(load, onComplete);
         }
     }
 }

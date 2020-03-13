@@ -28,9 +28,9 @@ namespace UnityFS.Utils
                 case RuntimePlatform.WindowsPlayer: return "windows";
                 case RuntimePlatform.LinuxEditor:
                 case RuntimePlatform.LinuxPlayer: return "linux";
-                case RuntimePlatform.OSXEditor: 
+                case RuntimePlatform.OSXEditor:
                 case RuntimePlatform.OSXPlayer: return "osx";
-                case RuntimePlatform.WSAPlayerX64: 
+                case RuntimePlatform.WSAPlayerX64:
                 case RuntimePlatform.WSAPlayerX86:
                 case RuntimePlatform.WSAPlayerARM: return "wsa";
                 case RuntimePlatform.PS4: return "ps4";
@@ -39,7 +39,7 @@ namespace UnityFS.Utils
                 default: return "unknown";
             }
         }
-        
+
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
         public static void GetManifest(string localPathRoot, string checksum, int size, Action<Manifest> callback)
@@ -152,12 +152,12 @@ namespace UnityFS.Utils
             return ParseManifestPlain(stream);
         }
 
-        public static Manifest.BundleInfo[] CollectStartupBundles(Manifest manifest, string localPathRoot)
+        public static List<Manifest.BundleInfo> CollectStartupBundles(Manifest manifest, string localPathRoot)
         {
             return CollectBundles(manifest, localPathRoot, info => info.startup);
         }
 
-        public static Manifest.BundleInfo[] CollectBundles(Manifest manifest, string localPathRoot,
+        public static List<Manifest.BundleInfo> CollectBundles(Manifest manifest, string localPathRoot,
             Func<Manifest.BundleInfo, bool> filter)
         {
             var pending = new List<Manifest.BundleInfo>();
@@ -174,7 +174,7 @@ namespace UnityFS.Utils
                 }
             }
 
-            return pending.ToArray();
+            return pending;
         }
 
         // public static void DownloadBundles(
@@ -281,7 +281,22 @@ namespace UnityFS.Utils
 
         public static IList<string> URLs(params string[] urls)
         {
-            return new List<string>(urls);
+            var list = new List<string>();
+            var platform = GetPlatformName();
+            for (int i = 0, size = urls.Length; i < size; i++)
+            {
+                var item = urls[i];
+                if (item.EndsWith("/"))
+                {
+                    list.Add(item + platform);
+                }
+                else
+                {
+                    list.Add(item + "/" + platform);
+                }
+            }
+
+            return list;
         }
 
         public static IEnumerator DestroyAfter(GameObject gameObject, float seconds)
@@ -314,6 +329,7 @@ namespace UnityFS.Utils
                         cstream.Read(buffer, 0, buffer.Length);
                     }
                 }
+
                 fin.Close();
                 var seekableStream = new MemoryStream(buffer, 0, bundleInfo.rsize, false);
                 return seekableStream;

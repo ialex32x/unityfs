@@ -26,12 +26,12 @@ namespace UnityFS
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private Func<string, string> _assetPathTransformer;
         private Manifest _manifest;
-        private int _slow = 0;
-        private int _bufferSize = 0;
-//        private bool _backgroundSchedule = false;
-        private int _activeTasks = 0; // 运行中的前台任务
-        private int _concurrentTasks = 0; // 可并发数量
-        private LinkedList<DownloadTask> _tasks = new LinkedList<DownloadTask>();
+        private int _activeJobs = 0;
+        private DownloadWorker _downloadWorker;
+
+        // 正在进行的下载任务
+        private LinkedList<DownloadWorker.JobInfo> _tasks = new LinkedList<DownloadWorker.JobInfo>();
+
         private LinkedList<Manifest.BundleInfo> _backgroundQueue = new LinkedList<Manifest.BundleInfo>();
         private LinkedList<IEnumerator> _bundleLoaders = new LinkedList<IEnumerator>();
         private LinkedList<IEnumerator> _assetLoaders = new LinkedList<IEnumerator>();
@@ -50,6 +50,7 @@ namespace UnityFS
                 {
                     Debug.LogError($"BundleAssetProvider already disposed");
                 }
+
                 if (_manifest != null)
                 {
                     value();
@@ -60,19 +61,16 @@ namespace UnityFS
                 }
             }
 
-            remove
-            {
-                _callbacks.Remove(value);
-            }
+            remove => _callbacks.Remove(value);
         }
 
-        public BundleAssetProvider(string localPathRoot, int concurrentTasks, int slow, int bufferSize, Func<string, string> assetPathTransformer)
+        public BundleAssetProvider(string localPathRoot, int loopLatency, int bufferSize,
+            Func<string, string> assetPathTransformer)
         {
-            _slow = slow;
-            _bufferSize = bufferSize;
+            _downloadWorker = new DownloadWorker(onDownloadJobDone, bufferSize, loopLatency,
+                System.Threading.ThreadPriority.BelowNormal);
             _localPathRoot = localPathRoot;
             _assetPathTransformer = assetPathTransformer;
-            _concurrentTasks = Math.Max(2, Math.Min(concurrentTasks, 4)); // 并发下载任务数量 
         }
 
         public void Open(ResourceManagerArgs args)
@@ -80,78 +78,11 @@ namespace UnityFS
             _password = args.password;
             Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, manifest =>
             {
-                new StreamingAssetsLoader(manifest).OpenManifest(streamingAssets =>
+                _streamingAssets = new StreamingAssetsLoader();
+                _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
                 {
-                    _streamingAssets = streamingAssets;
-                    var startups = new List<Manifest.BundleInfo>();
-                    var startupTasks = new List<DownloadTask>();
-                    for (int i = 0, size = manifest.bundles.Count; i < size; i++)
-                    {
-                        var bundleInfo = manifest.bundles[i];
-
-                        if (streamingAssets == null || !streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
-                        {
-                            // streamingAssets 未命中
-                            if (streamingAssets == null || !streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
-                            {
-                                var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
-                                // 本地存储 未命中
-                                if (!Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo))
-                                {
-                                    if (bundleInfo.startup)
-                                    {
-                                        startups.Add(bundleInfo);
-                                        var task = DownloadTask.Create(bundleInfo, fullPath, -1, 10, self =>
-                                        {
-                                            RemoveDownloadTask(self, true);
-                                            if (startupTasks.Remove(self))
-                                            {
-                                                if (startupTasks.Count == 0)
-                                                {
-                                                    SetManifest(manifest);
-                                                    ResourceManager.GetListener().OnSetManifest();
-                                                }
-                                            }
-                                        });
-                                        startupTasks.Add(task);
-                                        AddDownloadTask(task, false);
-                                    }
-                                    else
-                                    {
-                                        if (bundleInfo.load != Manifest.BundleLoad.Optional)
-                                        {
-                                            var added = false;
-                                            var node = _backgroundQueue.First;
-                                            while (node != null)
-                                            {
-                                                if (bundleInfo.priority > node.Value.priority)
-                                                {
-                                                    added = true;
-                                                    _backgroundQueue.AddBefore(node, bundleInfo);
-                                                    break;
-                                                }
-                                                node = node.Next;
-                                            }
-                                            if (!added)
-                                            {
-                                                _backgroundQueue.AddLast(bundleInfo);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (startups.Count > 0)
-                    {
-                        ResourceManager.GetListener().OnStartupTask(startups.ToArray());
-                        Schedule();
-                    }
-                    else
-                    {
-                        SetManifest(manifest);
-                        ResourceManager.GetListener().OnSetManifest();
-                    }
+                    SetManifest(manifest);
+                    ResourceManager.GetListener().OnSetManifest();
                 });
             });
         }
@@ -183,11 +114,13 @@ namespace UnityFS
                 {
                     break;
                 }
+
                 var value = first.Value;
                 while (value.MoveNext())
                 {
                     yield return value.Current;
                 }
+
                 _bundleLoaders.Remove(first);
             }
         }
@@ -201,11 +134,13 @@ namespace UnityFS
                 {
                     break;
                 }
+
                 var value = first.Value;
                 while (value.MoveNext())
                 {
                     yield return value.Current;
                 }
+
                 _assetLoaders.Remove(first);
             }
         }
@@ -228,60 +163,13 @@ namespace UnityFS
                     _assetPath2Bundle[TransformAssetPath(assetPath)] = bundle.name;
                 }
             }
+
             while (_callbacks.Count > 0)
             {
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
                 callback();
             }
-            IdleSchedule(120f);
-        }
-
-        // open file stream (file must be listed in manifest)
-        private void OpenBundle(UBundle bundle)
-        {
-            var filename = bundle.name;
-            if (LoadBundleFile(bundle))
-            {
-                return;
-            }
-            if (_streamingAssets != null && _streamingAssets.Contains(bundle.name, bundle.checksum, bundle.size))
-            {
-                bundle.AddRef();
-                JobScheduler.DispatchCoroutine(
-                    _streamingAssets.LoadBundle(bundle.name, stream =>
-                    {
-                        if (stream != null)
-                        {
-                            bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
-                        }
-                        else
-                        {
-                            Debug.LogWarningFormat("read from streamingassets failed: {0}", bundle.name);
-                            DownloadBundleFile(bundle, true);
-                        }
-                        bundle.RemoveRef();
-                    })
-                );
-                return;
-            }
-            DownloadBundleFile(bundle, true);
-        }
-
-        private void DownloadBundleFile(UBundle bundle, bool bForeground)
-        {
-            // 无法打开现有文件, 下载新文件
-            bundle.AddRef();
-            var bundlePath = Path.Combine(_localPathRoot, bundle.name);
-            AddDownloadTask(DownloadTask.Create(bundle.bundleInfo, bundlePath, -1, 10, self =>
-            {
-                RemoveDownloadTask(self, bForeground);
-                if (!LoadBundleFile(bundle))
-                {
-                    bundle.Load(null);
-                }
-                bundle.RemoveRef();
-            }).SetDebugMode(true), true);
         }
 
         // 检查是否存在有效的本地包
@@ -300,12 +188,7 @@ namespace UnityFS
         // 检查是否存在有效的本地包
         public bool IsBundleAvailable(string bundleName)
         {
-            Manifest.BundleInfo bundleInfo;
-            if (_bundlesMap.TryGetValue(bundleName, out bundleInfo))
-            {
-                return IsBundleAvailable(bundleInfo);
-            }
-            return false;
+            return _bundlesMap.TryGetValue(bundleName, out var bundleInfo) && IsBundleAvailable(bundleInfo);
         }
 
         private bool LoadBundleFile(UBundle bundle)
@@ -314,15 +197,12 @@ namespace UnityFS
             var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
             if (fileStream != null)
             {
-                bundle.Load(Utils.Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password)); // 生命周期转由 UAssetBundleBundle 管理
+                // Stream 生命周期转由 UAssetBundleBundle 管理
+                bundle.Load(Utils.Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password));
                 return true;
             }
-            return false;
-        }
 
-        private void PrintException(Exception exception)
-        {
-            Debug.LogError(exception);
+            return false;
         }
 
         protected void Unload(UBundle bundle)
@@ -345,127 +225,6 @@ namespace UnityFS
                     }
                 }
             }
-        }
-
-        public void ForEachTask(Action<ITask> callback)
-        {
-            for (var node = _tasks.First; node != null; node = node.Next)
-            {
-                var task = node.Value;
-                callback(task);
-            }
-        }
-
-        private DownloadTask AddDownloadTask(DownloadTask newTask, bool bSchedule)
-        {
-            for (var node = _tasks.First; node != null; node = node.Next)
-            {
-                var task = node.Value;
-                if (!task.isRunning && !task.isDone)
-                {
-                    if (newTask.priority > task.priority)
-                    {
-                        _tasks.AddBefore(node, newTask);
-                        Schedule();
-                        return newTask;
-                    }
-                }
-            }
-            _tasks.AddLast(newTask);
-            if (bSchedule)
-            {
-                Schedule();
-            }
-            return newTask;
-        }
-
-        // bForeground: 标记为前台
-        private void RemoveDownloadTask(DownloadTask task, bool bForeground)
-        {
-            _tasks.Remove(task);
-            _activeTasks--;
-            ResourceManager.GetListener().OnTaskComplete(task);
-            Schedule();
-        }
-
-        //TODO: 待优化, 已经存在相同目标文件的任务时, 不再创建
-        private bool IsSameTaskRunning(DownloadTask expectedTask)
-        {
-            for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
-            {
-                var task = taskNode.Value;
-                if (task != expectedTask && task.path == expectedTask.path && task.isRunning)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private void Schedule()
-        {
-            if (_activeTasks >= _concurrentTasks)
-            {
-                return;
-            }
-            for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
-            {
-                var task = taskNode.Value;
-                if (!task.isRunning && !task.isDone && !IsSameTaskRunning(task))
-                {
-                    _activeTasks++;
-                    task.slow = _slow;
-                    task.bufferSize = _bufferSize;
-                    task.Run();
-                    ResourceManager.GetListener().OnTaskStart(task);
-                    return;
-                }
-            }
-            // no more task
-            IdleSchedule(15f);
-        }
-
-        private void IdleSchedule(float delay)
-        {
-            // Debug.LogWarningFormat("no more task {0}, {1}", _backgroundQueue.Count, _backgroundSchedule);
-            // if (_backgroundQueue.Count > 0 && !_backgroundSchedule)
-            // {
-            //     _backgroundSchedule = true;
-            //     JobScheduler.DispatchAfter(DoIdleSchedule, delay);
-            // }
-        }
-
-        private void DoIdleSchedule()
-        {
-            // Debug.LogWarningFormat("IdleSchedule.enter");
-//            _backgroundSchedule = false;
-//            if (_activeTasks != 0)
-//            {
-//                // Debug.LogWarningFormat("IdleSchedule.activeTask {0} ({1})", _activeTasks, _backgroundQueue.Count);
-//                return;
-//            }
-//            var node = _backgroundQueue.First;
-//            if (node != null)
-//            {
-//                var bundleInfo = node.Value;
-//                _backgroundQueue.Remove(node);
-//                if (!IsBundleAvailable(bundleInfo))
-//                {
-//                    var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
-//                    var idleTask = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, self =>
-//                    {
-//                        // Debug.LogWarningFormat("idle task complete {0}", self.path);
-//                        RemoveDownloadTask(self, true);
-//                    }).SetDebugMode(true);
-//                    _tasks.AddLast(idleTask);
-//                    _activeTasks++;
-//                    idleTask.slow = _slow;
-//                    idleTask.bufferSize = _bufferSize;
-//                    // Debug.LogWarningFormat("idle task start {0}", idleTask.path);
-//                    idleTask.Run();
-//                    ResourceManager.GetListener().OnTaskStart(idleTask);
-//                }
-//            }
         }
 
         public void Close()
@@ -498,12 +257,8 @@ namespace UnityFS
         // 终止所有任务
         public void Abort()
         {
-            for (var taskNode = _tasks.First; taskNode != null; taskNode = taskNode.Next)
-            {
-                var task = taskNode.Value;
-                task.Abort();
-            }
             _tasks.Clear();
+            _downloadWorker.Abort();
         }
 
         // 获取包信息
@@ -514,6 +269,7 @@ namespace UnityFS
             {
                 return bundleInfo;
             }
+
             return null;
         }
 
@@ -522,6 +278,12 @@ namespace UnityFS
         {
             var bundleInfo = GetBundleInfo(bundleName);
             return GetBundle(bundleInfo);
+        }
+
+        // 尝试获取包对象 (不会自动创建并加载)
+        public UBundle TryGetBundle(Manifest.BundleInfo bundleInfo)
+        {
+            return bundleInfo != null && _bundles.TryGetValue(bundleInfo.name, out var bundle) ? bundle : null;
         }
 
         public UBundle GetBundle(Manifest.BundleInfo bundleInfo)
@@ -545,14 +307,19 @@ namespace UnityFS
                             bundle = new UFileListBundle(this, bundleInfo);
                             break;
                     }
+
                     if (bundle != null)
                     {
                         _bundles.Add(bundleName, bundle);
                         _AddDependencies(bundle, bundle.bundleInfo.dependencies);
-                        OpenBundle(bundle);
+                        if (!LoadBundleFile(bundle))
+                        {
+                            DownloadBundleFile(bundle.bundleInfo, null);
+                        }
                     }
                 }
             }
+
             return bundle;
         }
 
@@ -578,6 +345,7 @@ namespace UnityFS
                     return fileSystem;
                 }
             }
+
             var bundle = this.GetBundle(bundleName);
             if (bundle != null)
             {
@@ -592,12 +360,14 @@ namespace UnityFS
                 {
                     Debug.LogError($"bundle {bundleName} ({bundle.GetType()}) type error.");
                 }
+
                 bundle.RemoveRef();
                 if (fileSystem != null)
                 {
                     return fileSystem;
                 }
             }
+
             var invalid = new FailureFileSystem(bundleName);
             _fileSystems[bundleName] = new WeakReference(invalid);
             return invalid;
@@ -621,6 +391,7 @@ namespace UnityFS
                     return true;
                 }
             }
+
             string bundleName;
             if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
             {
@@ -634,9 +405,11 @@ namespace UnityFS
                         // return IsFileAvailable(fileEntry);
                         throw new NotImplementedException();
                     }
+
                     return IsBundleAvailable(bundleInfo);
                 }
             }
+
             return false;
         }
 
@@ -653,6 +426,7 @@ namespace UnityFS
             {
                 return bundleName;
             }
+
             return null;
         }
 
@@ -670,6 +444,7 @@ namespace UnityFS
                     return asset;
                 }
             }
+
             string bundleName;
             if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
             {
@@ -692,8 +467,10 @@ namespace UnityFS
                         bundle.RemoveRef();
                     }
                 }
+
                 // 不是 Unity 资源包, 不能实例化 AssetBundleUAsset
             }
+
             var invalid = new UFailureAsset(assetPath);
             _assets[TransformAssetPath(assetPath)] = new WeakReference(invalid);
             return invalid;

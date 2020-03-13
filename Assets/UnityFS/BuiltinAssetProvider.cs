@@ -154,5 +154,10 @@ namespace UnityFS
         public void Close()
         {
         }
+
+        public void EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        {
+            onComplete?.Invoke();
+        }
     }
 }

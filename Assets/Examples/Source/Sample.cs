@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using UnityFS;
 
 namespace Examples
 {
@@ -93,6 +94,11 @@ namespace Examples
         }
 
         private void OnUnityFSLoaded()
+        {
+            UnityFS.ResourceManager.EnsureBundles(Manifest.BundleLoad.Startup, OnAllStartupsLoaded);
+        }
+    
+        private void OnAllStartupsLoaded()
         {
             // 在 zip 包中的文件可以异步加载
             var testFile = UnityFS.ResourceManager.LoadAsset("Assets/Examples/Config/test.txt");

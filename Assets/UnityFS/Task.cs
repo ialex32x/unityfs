@@ -19,9 +19,5 @@ namespace UnityFS
         int priority { get; }
         string name { get; }
         string path { get; }
-        string url { get; }
-
-        void Run();
-        void Abort();
     }
 }
