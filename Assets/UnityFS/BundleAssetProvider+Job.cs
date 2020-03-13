@@ -48,12 +48,18 @@ namespace UnityFS
                 JobScheduler.DispatchCoroutine(
                     _streamingAssets.LoadStream(bundleInfo, stream =>
                     {
-                        var bundle = TryGetBundle(bundleInfo);
-                        if (bundle != null)
-                        {
                             if (stream != null)
                             {
-                                bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
+                                var bundle = TryGetBundle(bundleInfo);
+                                if (bundle != null)
+                                {
+                                    bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
+                                }
+                                else
+                                {
+                                    stream.Close();
+                                }
+
                                 callback?.Invoke();
                             }
                             else
@@ -61,7 +67,6 @@ namespace UnityFS
                                 Debug.LogWarningFormat("read from streamingassets failed: {0}", bundleInfo.name);
                                 _DownloadBundleFile(bundleInfo, callback);
                             }
-                        }
                     })
                 );
             }
