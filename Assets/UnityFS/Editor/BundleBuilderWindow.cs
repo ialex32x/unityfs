@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace UnityFS.Editor
 {
@@ -9,7 +10,7 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
-    public class BundleBuilderWindow : EditorWindow
+    public class BundleBuilderWindow : BaseEditorWindow
     {
         [SerializeField] MultiColumnHeaderState _headerState;
         [SerializeField] TreeViewState _treeViewState = new TreeViewState();
@@ -41,7 +42,7 @@ namespace UnityFS.Editor
             } while (true);
         }
 
-        void OnEnable()
+        protected override void OnEnable()
         {
             data = BundleBuilder.GetData();
             titleContent = new GUIContent("Bundle Builder");
@@ -56,10 +57,33 @@ namespace UnityFS.Editor
             _treeView.SetData(data);
         }
 
-        void OnGUI()
+        protected override void OnGUIDraw()
         {
-            var topRect = new Rect(5, 5, position.width - 10, 21);
-            GUILayout.BeginArea(topRect);
+            var margin = 5f;
+            Block("Settings",
+                () =>
+                {
+                    EditorGUI.BeginChangeCheck();
+                    data.encryptionKey = EditorGUILayout.TextField("Password", data.encryptionKey);
+                    // 中间输出目录
+                    data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", data.assetBundlePath);
+                    data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", data.zipArchivePath);
+                    // 最终包输出目录
+                    data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        data.MarkAsDirty();
+                    }
+                });
+            var autoRect = EditorGUILayout.GetControlRect(GUILayout.Height(1f));
+            var treeViewTop = autoRect.yMax;
+            var bottomHeight = 21f;
+            var treeViewRect = new Rect(5, treeViewTop + margin, position.width - 10,
+                position.height - treeViewTop - bottomHeight - margin * 3f);
+            var bottomRect = new Rect(5, treeViewRect.yMax + margin, treeViewRect.width, bottomHeight);
+            _treeView.OnContextMenu(treeViewRect);
+            _treeView.OnGUI(treeViewRect);
+            GUILayout.BeginArea(bottomRect);
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Add Bundle"))
@@ -77,45 +101,36 @@ namespace UnityFS.Editor
                     CreateAssetListData();
                 }
 
-                GUILayout.FlexibleSpace();
-                EditorGUILayout.LabelField("Password", GUILayout.Width(70f));
-                data.encryptionKey = EditorGUILayout.TextField(data.encryptionKey, GUILayout.ExpandWidth(false));
-            }
-
-            GUILayout.EndArea();
-            var treeViewRect = new Rect(5, 28, position.width - 10, position.height - 56);
-            _treeView.OnContextMenu(treeViewRect);
-            _treeView.OnGUI(treeViewRect);
-            var bottomRect = new Rect(5, treeViewRect.yMax + 5, treeViewRect.width, 21);
-            GUILayout.BeginArea(bottomRect);
-            using (new EditorGUILayout.HorizontalScope())
-            {
+                GUI.color = Color.red;
                 if (GUILayout.Button("Delete"))
                 {
                     _treeView.DeleteSelectedItems();
                 }
+
+                GUI.color = _GUIColor;
+
                 GUILayout.FlexibleSpace();
-                // if (GUILayout.Button("Expand All"))
-                // {
-                //     _treeView.ExpandAll();
-                // }
                 if (GUILayout.Button("Collapse All"))
                 {
                     _treeView.CollapseAll();
                 }
+
                 if (GUILayout.Button("Expand All"))
                 {
                     _treeView._ExpandAll();
                 }
+
                 GUILayout.Space(20f);
                 if (GUILayout.Button("Refresh"))
                 {
                     _treeView.Reload();
                 }
+
                 if (GUILayout.Button("Show Bundle Assets"))
                 {
                     _treeView.ShowBundleReport();
                 }
+
                 if (GUILayout.Button("Build"))
                 {
                     EditorApplication.delayCall += () =>
@@ -124,6 +139,7 @@ namespace UnityFS.Editor
                     };
                 }
             }
+
             GUILayout.EndArea();
 
             if (dirty)

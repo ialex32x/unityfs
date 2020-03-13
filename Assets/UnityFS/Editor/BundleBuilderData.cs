@@ -28,8 +28,10 @@ namespace UnityFS.Editor
         public enum BundleSplitType
         {
             None,
-            Prefix,
-            Suffix,
+            Prefix,        // 资源名前缀
+            Suffix,        // 资源名后缀 (不含扩展名)
+            FileSuffix,    // 文件完整名后缀
+            PathPrefix,    // 路径前缀 
         }
 
         [Serializable]
@@ -94,6 +96,7 @@ namespace UnityFS.Editor
         [Serializable]
         public class BundleSplit
         {
+            public bool encrypted;
             public string name = string.Empty; // 分包名
             public int sliceObjects;
             public List<BundleSplitRule> rules = new List<BundleSplitRule>();
@@ -201,7 +204,7 @@ namespace UnityFS.Editor
         public class BundleInfo
         {
             public int id;
-            public bool encrypted;
+//            public bool encrypted;
             public int buildOrder = 1000;
             public string name; // bundle filename
             public string note;
@@ -248,6 +251,7 @@ namespace UnityFS.Editor
         public string encryptionKey;
         public List<BundleInfo> bundles = new List<BundleInfo>();
         public string assetBundlePath = "out/bundles";
+        public string zipArchivePath = "out/zipArchives";
         public string packagePath = "out/packages";
 
         public static BundleBuilderData Load()
@@ -283,26 +287,32 @@ namespace UnityFS.Editor
         }
     }
 
-    public class ZipArchiveBuildEntry
+    public class ZipArchiveManifestEntry
     {
         public string name;
         public List<string> assets = new List<string>();
     }
 
-    public class ZipArchiveBuild
+    public class ZipArchiveManifest
     {
-        public List<ZipArchiveBuildEntry> archives = new List<ZipArchiveBuildEntry>();
+        public List<ZipArchiveManifestEntry> archives = new List<ZipArchiveManifestEntry>();
     }
 
-    public class FileListBuildEntry
+    public class ZipArchiveBuild
+    {
+        public string name;
+        public List<string> assetPaths = new List<string>();
+    }
+
+    public class FileListManifestEntry
     {
         public string name;
     }
 
-    public class FileListBuild
+    public class FileListManifest
     {
         public List<string> fileEntrys = new List<string>(); // 记录了打包过程中需要复制的文件路径 (AssetPath)
-        public List<FileListBuildEntry> fileLists = new List<FileListBuildEntry>();
+        public List<FileListManifestEntry> fileLists = new List<FileListManifestEntry>();
     }
 
     public class SceneBundleBuild

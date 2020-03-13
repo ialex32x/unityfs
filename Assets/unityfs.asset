@@ -16,7 +16,6 @@ MonoBehaviour:
   encryptionKey: test
   bundles:
   - id: 1
-    encrypted: 1
     buildOrder: 1000
     name: test1.pkg
     note: "prefab\u6D4B\u8BD5\u5305"
@@ -38,7 +37,8 @@ MonoBehaviour:
       enabled: 1
       target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
     splits:
-    - name: 
+    - encrypted: 0
+      name: 
       sliceObjects: 0
       rules:
       - type: 1
@@ -55,7 +55,8 @@ MonoBehaviour:
         histroy:
         - 111422be4e25c0b44a81e01b3fb08fbc
         - a9acb3cd117fed445a2a6c70671571c9
-    - name: cube
+    - encrypted: 0
+      name: cube
       sliceObjects: 1
       rules:
       - type: 1
@@ -108,7 +109,6 @@ MonoBehaviour:
         histroy:
         - e6ed50713350f7f4495cb1c101ea3a83
   - id: 3
-    encrypted: 0
     buildOrder: 1000
     name: test2.pkg
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
@@ -126,7 +126,21 @@ MonoBehaviour:
       enabled: 1
       target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
     splits:
-    - name: 
+    - encrypted: 1
+      name: sc
+      sliceObjects: 0
+      rules:
+      - type: 3
+        assetTypes: -1
+        keyword: .js
+        exclude: 0
+      slices:
+      - name: test2sc.pkg
+        capacity: 0
+        histroy:
+        - b35ac340fd756464da622a10bd306629
+    - encrypted: 0
+      name: 
       sliceObjects: 0
       rules: []
       slices:
@@ -138,7 +152,6 @@ MonoBehaviour:
         - e6471453252543c48af648e48b08262a
         - 2bd99bdd627371a4ab6980f7fa960b3e
   - id: 17
-    encrypted: 0
     buildOrder: 1000
     name: bundle_17.pkg
     note: "\u5176\u4ED6\u5176\u4ED6"
@@ -153,7 +166,8 @@ MonoBehaviour:
       enabled: 1
       target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
     splits:
-    - name: 
+    - encrypted: 1
+      name: 
       sliceObjects: 0
       rules: []
       slices:
@@ -163,7 +177,6 @@ MonoBehaviour:
         - e46dad9ccca72ad4587045373fba4ffa
         - ad80bd1399b82cc4ba0c7f4d055ac1ce
   - id: 19
-    encrypted: 0
     buildOrder: 1000
     name: bundle_19.pkg
     note: "\u573A\u666F\u6D4B\u8BD5"
@@ -184,7 +197,8 @@ MonoBehaviour:
       enabled: 1
       target: {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
     splits:
-    - name: 
+    - encrypted: 0
+      name: 
       sliceObjects: 0
       rules: []
       slices:
@@ -194,7 +208,6 @@ MonoBehaviour:
         - 3753d2e5af63eac439ba9b0f36641e6d
         - b35be9c075bfa7d4990280e18b1ac7fb
   - id: 25
-    encrypted: 0
     buildOrder: 1000
     name: bundle_25.pkg
     note: "\u6587\u4EF6\u5217\u8868\u6D4B\u8BD5"
@@ -209,7 +222,8 @@ MonoBehaviour:
       enabled: 1
       target: {fileID: 102900000, guid: 2a5ab583c0072634e95457d9c3788741, type: 3}
     splits:
-    - name: 
+    - encrypted: 0
+      name: 
       sliceObjects: 0
       rules: []
       slices:
@@ -219,7 +233,6 @@ MonoBehaviour:
         - db7d162e08a882244a4eddc108898b11
         - 471ba1dad829d6b45a75be93afc2cef9
   - id: 27
-    encrypted: 0
     buildOrder: 1000
     name: bundle_27.pkg
     note: 
@@ -234,7 +247,8 @@ MonoBehaviour:
       enabled: 1
       target: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
     splits:
-    - name: 
+    - encrypted: 0
+      name: 
       sliceObjects: 0
       rules: []
       slices:
@@ -248,4 +262,5 @@ MonoBehaviour:
         - b35be9c075bfa7d4990280e18b1ac7fb
         - 2a5ab583c0072634e95457d9c3788741
   assetBundlePath: out/bundles
+  zipArchivePath: out/zipArchives
   packagePath: out/packages
