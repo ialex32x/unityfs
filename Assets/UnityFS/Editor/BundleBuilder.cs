@@ -329,35 +329,12 @@ namespace UnityFS.Editor
             return IsAssetTypeMatched(rule, asset);
         }
 
-        public static string GetPlatformPath(string basePath, BuildTarget buildTarget)
-        {
-            return Path.Combine(basePath, buildTarget.ToString());
-        }
-
-        public static void EnsureDirectory(string path)
-        {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-        }
-
         // 生成打包 
         public static void Build(BundleBuilderData data, BuildTarget buildTarget)
         {
             Debug.Log($"building bundles...");
-            var buildInfo = new PackageBuildInfo();
-            var filelist = new List<string>();
+            var buildInfo = new PackageBuildInfo(data, buildTarget);
             Scan(data, buildTarget);
-
-            buildInfo.buildTarget = buildTarget;
-            buildInfo.assetBundlePath = GetPlatformPath(data.assetBundlePath, buildTarget);
-            buildInfo.zipArchivePath = GetPlatformPath(data.zipArchivePath, buildTarget);
-            buildInfo.packagePath = GetPlatformPath(data.packagePath, buildTarget);
-
-            EnsureDirectory(buildInfo.assetBundlePath);
-            EnsureDirectory(buildInfo.zipArchivePath);
-            EnsureDirectory(buildInfo.packagePath);
 
             var assetBundleBuilds = GenerateAssetBundleBuilds(data);
             var zipArchiveBuilds = GenerateZipArchiveBuilds(data);

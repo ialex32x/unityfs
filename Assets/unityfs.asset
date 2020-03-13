@@ -21,7 +21,6 @@ MonoBehaviour:
     note: "prefab\u6D4B\u8BD5\u5305"
     type: 0
     load: 0
-    platforms: -1
     enabled: 1
     streamingAssets: 0
     priority: 7910
@@ -114,7 +113,6 @@ MonoBehaviour:
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
     type: 1
     load: 0
-    platforms: -1
     enabled: 1
     streamingAssets: 0
     priority: 3223
@@ -157,7 +155,6 @@ MonoBehaviour:
     note: "\u5176\u4ED6\u5176\u4ED6"
     type: 0
     load: 0
-    platforms: -1
     enabled: 1
     streamingAssets: 0
     priority: 0
@@ -182,7 +179,6 @@ MonoBehaviour:
     note: "\u573A\u666F\u6D4B\u8BD5"
     type: 0
     load: 0
-    platforms: -1
     enabled: 1
     streamingAssets: 0
     priority: 0
@@ -213,7 +209,6 @@ MonoBehaviour:
     note: "\u6587\u4EF6\u5217\u8868\u6D4B\u8BD5"
     type: 2
     load: 0
-    platforms: -1
     enabled: 1
     streamingAssets: 0
     priority: 0
@@ -238,7 +233,6 @@ MonoBehaviour:
     note: 
     type: 0
     load: 0
-    platforms: -1
     enabled: 1
     streamingAssets: 0
     priority: 0

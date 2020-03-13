@@ -11,14 +11,13 @@ namespace UnityFS.Editor
     {
         public const string BundleBuilderDataPath = "Assets/unityfs.asset";
         public const string FileExt = ".pkg";
-//        public const string EncryptedFileExt = ".pxx";
-//        public const string PathForRawAssetBundles = "raw";
 
         [Serializable]
         public class BundleAssetTarget
         {
             public int id;
             public bool enabled = true;
+
             public Object target;
             // public BundleAssetTypes types = (BundleAssetTypes)~0; // (仅搜索目录时) 仅包含指定资源类型
             // public List<string> extensions = new List<string>();  // (仅搜索目录时) 额外包含指定后缀的文件
@@ -28,10 +27,10 @@ namespace UnityFS.Editor
         public enum BundleSplitType
         {
             None,
-            Prefix,        // 资源名前缀
-            Suffix,        // 资源名后缀 (不含扩展名)
-            FileSuffix,    // 文件完整名后缀
-            PathPrefix,    // 路径前缀 
+            Prefix, // 资源名前缀
+            Suffix, // 资源名后缀 (不含扩展名)
+            FileSuffix, // 文件完整名后缀
+            PathPrefix, // 路径前缀 
         }
 
         [Serializable]
@@ -51,6 +50,7 @@ namespace UnityFS.Editor
                     {
                         _assetGuids = new List<string>();
                     }
+
                     return _assetGuids;
                 }
             }
@@ -76,6 +76,7 @@ namespace UnityFS.Editor
                     assetGuids.Add(guid);
                     return true;
                 }
+
                 return false;
             }
 
@@ -89,6 +90,7 @@ namespace UnityFS.Editor
                     histroy.Add(guid);
                     return true;
                 }
+
                 return false;
             }
         }
@@ -137,6 +139,7 @@ namespace UnityFS.Editor
                         dirty = true;
                     }
                 }
+
                 return dirty;
             }
 
@@ -148,10 +151,12 @@ namespace UnityFS.Editor
                 {
                     baseName = "_" + baseName + "_" + this.slices.Count;
                 }
+
                 if (string.IsNullOrEmpty(baseName))
                 {
                     return bundleName;
                 }
+
                 var dot = bundleName.LastIndexOf('.');
                 string prefix;
                 string suffix;
@@ -165,6 +170,7 @@ namespace UnityFS.Editor
                     prefix = bundleName;
                     suffix = string.Empty;
                 }
+
                 return prefix + baseName + suffix;
             }
 
@@ -178,6 +184,7 @@ namespace UnityFS.Editor
                         return false;
                     }
                 }
+
                 var count = this.slices.Count;
                 var lastSlice = count > 0 ? this.slices[count - 1] : null;
                 if (lastSlice == null || !lastSlice.AddNew(guid))
@@ -187,6 +194,7 @@ namespace UnityFS.Editor
                     this.slices.Add(newSlice);
                     newSlice.AddNew(guid);
                 }
+
                 return true;
             }
         }
@@ -204,18 +212,15 @@ namespace UnityFS.Editor
         public class BundleInfo
         {
             public int id;
-//            public bool encrypted;
             public int buildOrder = 1000;
             public string name; // bundle filename
             public string note;
             public Manifest.BundleType type;
             public Manifest.BundleLoad load;
-            public BundleAssetPlatforms platforms = (BundleAssetPlatforms)~0;  // filter for platforms
             public bool enabled = true;
             public bool streamingAssets = false; // 是否复制到 StreamingAssets 目录
             public int priority;
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
-
             public List<BundleSplit> splits = new List<BundleSplit>();
 
             public static string GetAssetGUID(Object asset)
@@ -235,6 +240,7 @@ namespace UnityFS.Editor
                         dirty = true;
                     }
                 }
+
                 return dirty;
             }
 
@@ -324,14 +330,74 @@ namespace UnityFS.Editor
     // 打包过程数据
     public class PackageBuildInfo
     {
-        public BuildTarget buildTarget;
-        
+        private BundleBuilderData _data;
+        private BuildTarget _buildTarget;
+
         // 分平台
-        public string assetBundlePath; // 原始 assetbundle 输出目录
-        public string zipArchivePath;  // zip 压缩包输出目录 
-        public string packagePath;     // 最终包输出目录
+        private string _assetBundlePath; // 原始 assetbundle 输出目录
+        private string _zipArchivePath; // zip 压缩包输出目录 
+        private string _packagePath; // 最终包输出目录
+
+        public BundleBuilderData data => _data;
+
+        public BuildTarget buildTarget => _buildTarget;
+
+        public string assetBundlePath => _assetBundlePath;
+
+        public string zipArchivePath => _zipArchivePath;
+
+        public string packagePath => _packagePath;
 
         // 输出文件收集
         public List<string> filelist = new List<string>();
+
+        public PackageBuildInfo(BundleBuilderData data, BuildTarget buildTarget)
+        {
+            _data = data;
+            _buildTarget = buildTarget;
+            _assetBundlePath = GetPlatformPath(data.assetBundlePath, buildTarget);
+            _zipArchivePath = GetPlatformPath(data.zipArchivePath, buildTarget);
+            _packagePath = GetPlatformPath(data.packagePath, buildTarget);
+       
+            EnsureDirectory(_assetBundlePath);
+            EnsureDirectory(_zipArchivePath);
+            EnsureDirectory(_packagePath);
+        }
+
+        public static void EnsureDirectory(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
+        // 为目标平台命名
+        public static string GetBuildTargetName(BuildTarget buildTarget)
+        {
+            switch (buildTarget)
+            {
+                case BuildTarget.Android: return "android";
+                case BuildTarget.iOS: return "ios";
+                case BuildTarget.tvOS: return "tvos";
+                case BuildTarget.WebGL: return "webgl";
+                case BuildTarget.StandaloneWindows:
+                case BuildTarget.StandaloneWindows64: return "windows";
+                case BuildTarget.StandaloneLinux:
+                case BuildTarget.StandaloneLinux64:
+                case BuildTarget.StandaloneLinuxUniversal: return "linux";
+                case BuildTarget.StandaloneOSX: return "osx";
+                case BuildTarget.WSAPlayer: return "wsa";
+                case BuildTarget.PS4: return "ps4";
+                case BuildTarget.XboxOne: return "xboxone";
+                case BuildTarget.Switch: return "switch";
+                default: return "unknown";
+            }
+        }
+
+        public static string GetPlatformPath(string basePath, BuildTarget buildTarget)
+        {
+            return Path.Combine(basePath, GetBuildTargetName(buildTarget));
+        }
     }
 }

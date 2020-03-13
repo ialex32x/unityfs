@@ -7,16 +7,6 @@ namespace UnityFS.Editor
     using UnityEngine;
 
     [Flags]
-    public enum BundleAssetPlatforms
-    {
-        Android = 1 << 0,
-        iOS = 1 << 1,
-        Windows = 1 << 2,
-        OSX = 1 << 3,
-        Linux = 1 << 4,
-    }
-
-    [Flags]
     public enum BundleAssetTypes
     {
         Prefab = 1 << 0,     // prefab object

@@ -11,6 +11,35 @@ namespace UnityFS.Utils
 
     public static class Helpers
     {
+        public static string GetPlatformName()
+        {
+            return GetPlatformName(Application.platform);
+        }
+
+        public static string GetPlatformName(RuntimePlatform runtimePlatform)
+        {
+            switch (runtimePlatform)
+            {
+                case RuntimePlatform.Android: return "android";
+                case RuntimePlatform.IPhonePlayer: return "ios";
+                case RuntimePlatform.tvOS: return "tvos";
+                case RuntimePlatform.WebGLPlayer: return "webgl";
+                case RuntimePlatform.WindowsEditor:
+                case RuntimePlatform.WindowsPlayer: return "windows";
+                case RuntimePlatform.LinuxEditor:
+                case RuntimePlatform.LinuxPlayer: return "linux";
+                case RuntimePlatform.OSXEditor: 
+                case RuntimePlatform.OSXPlayer: return "osx";
+                case RuntimePlatform.WSAPlayerX64: 
+                case RuntimePlatform.WSAPlayerX86:
+                case RuntimePlatform.WSAPlayerARM: return "wsa";
+                case RuntimePlatform.PS4: return "ps4";
+                case RuntimePlatform.XboxOne: return "xboxone";
+                case RuntimePlatform.Switch: return "switch";
+                default: return "unknown";
+            }
+        }
+        
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
         public static void GetManifest(string localPathRoot, string checksum, int size, Action<Manifest> callback)
