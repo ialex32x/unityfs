@@ -11,6 +11,7 @@ namespace UnityFS
 
     public partial class BundleAssetProvider
     {
+        // 保证所有指定级别的包文件均为本地最新状态
         public void EnsureBundles(Manifest.BundleLoad load, Action onComplete)
         {
             var countdown = new Utils.CountdownObject(onComplete);

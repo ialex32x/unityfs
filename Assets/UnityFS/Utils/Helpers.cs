@@ -247,6 +247,7 @@ namespace UnityFS.Utils
         //     onComplete();
         // }
 
+        // 检查本地文件是否有效 (此接口仅通过本地meta文件验证对应文件是否有效)
         public static bool IsFileValid(string fullPath, string checksum, int size)
         {
             try
