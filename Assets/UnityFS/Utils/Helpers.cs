@@ -13,7 +13,11 @@ namespace UnityFS.Utils
     {
         public static string GetPlatformName()
         {
+#if UNITY_EDITOR
+            return GetBuildTargetName(UnityEditor.EditorUserBuildSettings.activeBuildTarget);
+#else
             return GetPlatformName(Application.platform);
+#endif
         }
 
         public static string GetPlatformName(RuntimePlatform runtimePlatform)
@@ -39,6 +43,31 @@ namespace UnityFS.Utils
                 default: return "unknown";
             }
         }
+
+#if UNITY_EDITOR
+        // 为目标平台命名
+        public static string GetBuildTargetName(UnityEditor.BuildTarget buildTarget)
+        {
+            switch (buildTarget)
+            {
+                case UnityEditor.BuildTarget.Android: return "android";
+                case UnityEditor.BuildTarget.iOS: return "ios";
+                case UnityEditor.BuildTarget.tvOS: return "tvos";
+                case UnityEditor.BuildTarget.WebGL: return "webgl";
+                case UnityEditor.BuildTarget.StandaloneWindows:
+                case UnityEditor.BuildTarget.StandaloneWindows64: return "windows";
+                case UnityEditor.BuildTarget.StandaloneLinux:
+                case UnityEditor.BuildTarget.StandaloneLinux64:
+                case UnityEditor.BuildTarget.StandaloneLinuxUniversal: return "linux";
+                case UnityEditor.BuildTarget.StandaloneOSX: return "osx";
+                case UnityEditor.BuildTarget.WSAPlayer: return "wsa";
+                case UnityEditor.BuildTarget.PS4: return "ps4";
+                case UnityEditor.BuildTarget.XboxOne: return "xboxone";
+                case UnityEditor.BuildTarget.Switch: return "switch";
+                default: return "unknown";
+            }
+        }
+#endif
 
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息

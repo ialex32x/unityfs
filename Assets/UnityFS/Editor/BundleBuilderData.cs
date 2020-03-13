@@ -378,32 +378,9 @@ namespace UnityFS.Editor
             }
         }
 
-        // 为目标平台命名
-        public static string GetBuildTargetName(BuildTarget buildTarget)
-        {
-            switch (buildTarget)
-            {
-                case BuildTarget.Android: return "android";
-                case BuildTarget.iOS: return "ios";
-                case BuildTarget.tvOS: return "tvos";
-                case BuildTarget.WebGL: return "webgl";
-                case BuildTarget.StandaloneWindows:
-                case BuildTarget.StandaloneWindows64: return "windows";
-                case BuildTarget.StandaloneLinux:
-                case BuildTarget.StandaloneLinux64:
-                case BuildTarget.StandaloneLinuxUniversal: return "linux";
-                case BuildTarget.StandaloneOSX: return "osx";
-                case BuildTarget.WSAPlayer: return "wsa";
-                case BuildTarget.PS4: return "ps4";
-                case BuildTarget.XboxOne: return "xboxone";
-                case BuildTarget.Switch: return "switch";
-                default: return "unknown";
-            }
-        }
-
         public static string GetPlatformPath(string basePath, BuildTarget buildTarget)
         {
-            return Path.Combine(basePath, GetBuildTargetName(buildTarget));
+            return Path.Combine(basePath, Utils.Helpers.GetBuildTargetName(buildTarget));
         }
     }
 }
