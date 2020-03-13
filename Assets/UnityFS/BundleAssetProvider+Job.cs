@@ -122,6 +122,7 @@ namespace UnityFS
                     bundle.Load(null);
                 }
             }
+            Schedule();
         }
 
         private DownloadWorker.JobInfo AddDownloadTask(DownloadWorker.JobInfo newTask)
