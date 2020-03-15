@@ -243,9 +243,10 @@ namespace UnityFS
         {
         }
 
-        public void EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        public IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
         {
             onComplete?.Invoke();
+            return null;
         }
     }
 }

@@ -224,9 +224,9 @@ namespace UnityFS
             return fs;
         }
 
-        public static void EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        public static IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
         {
-            GetAssetProvider().EnsureBundles(load, onComplete);
+            return GetAssetProvider().EnsureBundles(load, onComplete);
         }
     }
 }

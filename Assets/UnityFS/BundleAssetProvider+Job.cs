@@ -12,8 +12,9 @@ namespace UnityFS
     public partial class BundleAssetProvider
     {
         // 保证所有指定级别的包文件均为本地最新状态
-        public void EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        public IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
         {
+            var jobs = new List<DownloadWorker.JobInfo>();
             var countdown = new Utils.CountdownObject(onComplete);
             for (int i = 0, size = _manifest.bundles.Count; i < size; i++)
             {
@@ -23,13 +24,22 @@ namespace UnityFS
                     var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
                     if (!Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo))
                     {
-                        countdown.Add();
-                        DownloadBundleFile(bundleInfo, () => countdown.Remove());
+                        // 仅验证 StreamingAssets 清单内存在此资源包 (因为没办法直接安全有效地访问 StreamingAssets 内文件)
+                        if (!_streamingAssets.Contains(bundleInfo))
+                        {
+                            countdown.Add();
+                            var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove());
+                            if (job != null)
+                            {
+                                jobs.Add(job);
+                            }
+                        }
                     }
                 }
             }
 
             countdown.Start();
+            return jobs;
         }
 
         public void ForEachTask(Action<ITask> callback)
@@ -78,7 +88,7 @@ namespace UnityFS
         }
 
         //NOTE: 调用此接口时已经确认 StreamingAssets 以及本地包文件均无效
-        private bool _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback)
+        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback)
         {
             for (var it = _tasks.First; it != null; it = it.Next)
             {
@@ -90,7 +100,7 @@ namespace UnityFS
                         oldJob.callback += callback;
                     }
 
-                    return false;
+                    return oldJob;
                 }
             }
 
@@ -104,7 +114,7 @@ namespace UnityFS
             };
             AddDownloadTask(newJob);
             Schedule();
-            return true;
+            return newJob;
         }
 
         private void onDownloadJobDone(DownloadWorker.JobInfo jobInfo)

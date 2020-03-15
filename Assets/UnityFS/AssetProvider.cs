@@ -10,7 +10,7 @@ namespace UnityFS
     {
         event Action completed;
 
-        void EnsureBundles(Manifest.BundleLoad load, Action onComplete);
+        IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete);
 
         // 查找资源, 返回其所在的包
         string Find(string assetPath);
