@@ -187,8 +187,18 @@ namespace UnityFS
 
                     _activeJobs++;
                     task.isRunning = true;
-                    _downloadWorker.AddJob(task);
+                    _worker.AddJob(task);
                     ResourceManager.GetListener().OnTaskStart(task);
+                }
+                else
+                {
+                    /*
+                     * TODO: 空闲下载
+                     * if (idle download is on) {
+                     *     check if any idle job available
+                     *     generate a job and add it to idle worker
+                     * }
+                     */
                 }
             }
         }

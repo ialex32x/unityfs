@@ -27,12 +27,12 @@ namespace UnityFS
         private Func<string, string> _assetPathTransformer;
         private Manifest _manifest;
         private int _activeJobs = 0;
-        private DownloadWorker _downloadWorker;
+        private DownloadWorker _worker; // 必要资源下载工作线程 (请求使用的资源)
+        private DownloadWorker _idleWorker; // 空闲下载工作线程 
 
         // 正在进行的下载任务
         private LinkedList<DownloadWorker.JobInfo> _tasks = new LinkedList<DownloadWorker.JobInfo>();
 
-        private LinkedList<Manifest.BundleInfo> _backgroundQueue = new LinkedList<Manifest.BundleInfo>();
         private LinkedList<IEnumerator> _bundleLoaders = new LinkedList<IEnumerator>();
         private LinkedList<IEnumerator> _assetLoaders = new LinkedList<IEnumerator>();
         private string _localPathRoot;
@@ -67,8 +67,10 @@ namespace UnityFS
         public BundleAssetProvider(string localPathRoot, int loopLatency, int bufferSize,
             Func<string, string> assetPathTransformer)
         {
-            _downloadWorker = new DownloadWorker(onDownloadJobDone, bufferSize, loopLatency,
+            _worker = new DownloadWorker(onDownloadJobDone, bufferSize, loopLatency,
                 System.Threading.ThreadPriority.BelowNormal);
+            _idleWorker = new DownloadWorker(onDownloadJobDone, bufferSize, loopLatency,
+                System.Threading.ThreadPriority.Lowest);
             _localPathRoot = localPathRoot;
             _assetPathTransformer = assetPathTransformer;
         }
@@ -259,7 +261,8 @@ namespace UnityFS
         public void Abort()
         {
             _tasks.Clear();
-            _downloadWorker.Abort();
+            _worker.Abort();
+            _idleWorker.Abort();
         }
 
         // 获取包信息
@@ -292,7 +295,6 @@ namespace UnityFS
             UBundle bundle = null;
             if (bundleInfo != null)
             {
-                _backgroundQueue.Remove(bundleInfo);
                 var bundleName = bundleInfo.name;
                 if (!_bundles.TryGetValue(bundleName, out bundle))
                 {
