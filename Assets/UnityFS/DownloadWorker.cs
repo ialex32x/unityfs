@@ -171,7 +171,6 @@ namespace UnityFS
         {
             Debug.LogFormat("processing job: {0}", jobInfo.name);
             var tempPath = jobInfo.finalPath + PartExt;
-            var metaPath = jobInfo.finalPath + Metadata.Ext;
             if (_fileStream != null)
             {
                 _fileStream.Close();
@@ -340,6 +339,7 @@ namespace UnityFS
                             size = jobInfo.bundleInfo.size,
                         };
                         var json = JsonUtility.ToJson(meta);
+                        var metaPath = jobInfo.finalPath + Metadata.Ext;
                         File.WriteAllText(metaPath, json);
                         Complete(jobInfo);
                         break;

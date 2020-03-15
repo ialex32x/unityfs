@@ -313,9 +313,15 @@ namespace UnityFS
                     {
                         _bundles.Add(bundleName, bundle);
                         _AddDependencies(bundle, bundle.bundleInfo.dependencies);
-                        if (!LoadBundleFile(bundle))
+                        // 第一次访问 UBundle 时进入此处逻辑, 但这之前可能已经使用 EnsureBundles 等方式发起文件下载
+                        // 优先检查是否已经存在下载中的任务, 如果已经存在下载任务, 任务完成时将自动调用 UBundle.Load(stream)
+                        var bundleJob = _FindDownloadJob(bundle.name);
+                        if (bundleJob == null)
                         {
-                            DownloadBundleFile(bundle.bundleInfo, null);
+                            if (!LoadBundleFile(bundle))
+                            {
+                                DownloadBundleFile(bundle.bundleInfo, null);
+                            }
                         }
                     }
                 }

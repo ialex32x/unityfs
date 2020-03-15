@@ -54,30 +54,41 @@ namespace UnityFS
         //NOTE: 调用此接口时已经确认本地包文件无效 (本地临时存储)
         private void DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback)
         {
+            var oldJob = _FindDownloadJob(bundleInfo.name);
+            if (oldJob != null)
+            {
+                if (callback != null)
+                {
+                    oldJob.callback += callback;
+                }
+
+                return;
+            }
+
             if (_streamingAssets.Contains(bundleInfo))
             {
                 JobScheduler.DispatchCoroutine(
                     _streamingAssets.LoadStream(bundleInfo, stream =>
                     {
-                            if (stream != null)
+                        if (stream != null)
+                        {
+                            var bundle = TryGetBundle(bundleInfo);
+                            if (bundle != null)
                             {
-                                var bundle = TryGetBundle(bundleInfo);
-                                if (bundle != null)
-                                {
-                                    bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
-                                }
-                                else
-                                {
-                                    stream.Close();
-                                }
-
-                                callback?.Invoke();
+                                bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
                             }
                             else
                             {
-                                Debug.LogWarningFormat("read from streamingassets failed: {0}", bundleInfo.name);
-                                _DownloadBundleFile(bundleInfo, callback);
+                                stream.Close();
                             }
+
+                            callback?.Invoke();
+                        }
+                        else
+                        {
+                            Debug.LogWarningFormat("read from streamingassets failed: {0}", bundleInfo.name);
+                            _DownloadBundleFile(bundleInfo, callback);
+                        }
                     })
                 );
             }
@@ -87,21 +98,32 @@ namespace UnityFS
             }
         }
 
-        //NOTE: 调用此接口时已经确认 StreamingAssets 以及本地包文件均无效
-        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback)
+        private DownloadWorker.JobInfo _FindDownloadJob(string bundleName)
         {
             for (var it = _tasks.First; it != null; it = it.Next)
             {
                 var oldJob = it.Value;
-                if (oldJob.bundleInfo.name == bundleInfo.name)
+                if (oldJob.bundleInfo.name == bundleName)
                 {
-                    if (callback != null)
-                    {
-                        oldJob.callback += callback;
-                    }
-
                     return oldJob;
                 }
+            }
+
+            return null;
+        }
+
+        //NOTE: 调用此接口时已经确认 StreamingAssets 以及本地包文件均无效
+        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback)
+        {
+            var oldJob = _FindDownloadJob(bundleInfo.name);
+            if (oldJob != null)
+            {
+                if (callback != null)
+                {
+                    oldJob.callback += callback;
+                }
+
+                return oldJob;
             }
 
             // 无法打开现有文件, 下载新文件
@@ -133,6 +155,7 @@ namespace UnityFS
                     bundle.Load(null);
                 }
             }
+
             Schedule();
         }
 

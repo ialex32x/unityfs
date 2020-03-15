@@ -38,6 +38,7 @@ namespace UnityFS
                 {
                     return;
                 }
+
                 Complete();
             }
 
@@ -62,10 +63,13 @@ namespace UnityFS
             private FileListManifest _fileListManifest;
             private BundleAssetProvider _provider;
 
-            public FileListManifest manifest { get { return _fileListManifest; } }
+            public FileListManifest manifest
+            {
+                get { return _fileListManifest; }
+            }
 
             public UFileListBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
-            : base(bundleInfo)
+                : base(bundleInfo)
             {
                 _provider = provider;
             }
@@ -79,23 +83,27 @@ namespace UnityFS
 
             public override void Load(Stream stream)
             {
-                using (var reader = new StreamReader(stream))
+                if (!_loaded)
                 {
-                    var json = reader.ReadToEnd();
-                    try
+                    using (var reader = new StreamReader(stream))
                     {
-                        _fileListManifest = JsonUtility.FromJson<FileListManifest>(json);
+                        var json = reader.ReadToEnd();
+                        try
+                        {
+                            _fileListManifest = JsonUtility.FromJson<FileListManifest>(json);
+                        }
+                        catch (Exception exception)
+                        {
+                            Debug.LogErrorFormat("FileListManifest parse failed: {0}\n{1}", json, exception);
+                        }
                     }
-                    catch (Exception exception)
+
+                    _loaded = true;
+                    // Debug.Log($"filelist loaded {name}");
+                    if (_IsDependenciesLoaded())
                     {
-                        Debug.LogErrorFormat("FileListManifest parse failed: {0}\n{1}", json, exception);
+                        OnLoaded();
                     }
-                }
-                _loaded = true;
-                // Debug.Log($"filelist loaded {name}");
-                if (_IsDependenciesLoaded())
-                {
-                    OnLoaded();
                 }
             }
 
@@ -109,10 +117,13 @@ namespace UnityFS
         {
             protected UFileListBundle _bundle;
 
-            public FileListManifest manifest { get { return _bundle.manifest; } }
+            public FileListManifest manifest
+            {
+                get { return _bundle.manifest; }
+            }
 
             public UFileListBundleAsset(UFileListBundle bundle, string assetPath)
-            : base(assetPath)
+                : base(assetPath)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -155,6 +166,7 @@ namespace UnityFS
                 {
                     return;
                 }
+
                 // _bundle.ReadAllBytes(_assetPath);
                 Complete();
             }
@@ -166,7 +178,7 @@ namespace UnityFS
             private BundleAssetProvider _provider;
 
             public UZipArchiveBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
-            : base(bundleInfo)
+                : base(bundleInfo)
             {
                 _provider = provider;
             }
@@ -179,6 +191,7 @@ namespace UnityFS
                     _zipFile.Close();
                     _zipFile = null;
                 }
+
                 _provider.Unload(this);
             }
 
@@ -192,6 +205,7 @@ namespace UnityFS
                         return true;
                     }
                 }
+
                 return false;
             }
 
@@ -206,6 +220,7 @@ namespace UnityFS
                         return _zipFile.GetInputStream(entry);
                     }
                 }
+
                 return null;
             }
 
@@ -224,19 +239,23 @@ namespace UnityFS
                         }
                     }
                 }
+
                 return null;
             }
 
             // (生命周期转由 UAssetBundleBundle 管理)
             public override void Load(Stream stream)
             {
-                _zipFile = new ZipFile(stream);
-                _zipFile.IsStreamOwner = true;
-                _loaded = true;
-                // Debug.Log($"ziparchive loaded {name}");
-                if (_IsDependenciesLoaded())
+                if (_zipFile == null && !_loaded)
                 {
-                    OnLoaded();
+                    _zipFile = new ZipFile(stream);
+                    _zipFile.IsStreamOwner = true;
+                    _loaded = true;
+                    // Debug.Log($"ziparchive loaded {name}");
+                    if (_IsDependenciesLoaded())
+                    {
+                        OnLoaded();
+                    }
                 }
             }
 
@@ -252,7 +271,7 @@ namespace UnityFS
             protected UZipArchiveBundle _bundle;
 
             public UZipArchiveBundleAsset(UZipArchiveBundle bundle, string assetPath)
-            : base(assetPath)
+                : base(assetPath)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -295,6 +314,7 @@ namespace UnityFS
                 {
                     return;
                 }
+
                 // _bundle.ReadAllBytes(_assetPath);
                 Complete();
             }
@@ -308,7 +328,7 @@ namespace UnityFS
             private BundleAssetProvider _provider;
 
             public UAssetBundleBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
-            : base(bundleInfo)
+                : base(bundleInfo)
             {
                 _provider = provider;
             }
@@ -326,12 +346,14 @@ namespace UnityFS
                     _assetBundle.Unload(true);
                     _assetBundle = null;
                 }
+
                 if (_stream != null)
                 {
                     _stream.Close();
                     _stream.Dispose();
                     _stream = null;
                 }
+
                 if (_provider != null)
                 {
                     _provider.Unload(this);
@@ -342,8 +364,11 @@ namespace UnityFS
             // stream 生命周期将被 UAssetBundleBundle 托管
             public override void Load(Stream stream)
             {
-                _stream = stream;
-                _provider._LoadBundle(_Load());
+                if (_stream == null && _provider != null)
+                {
+                    _stream = stream;
+                    _provider._LoadBundle(_Load());
+                }
             }
 
             public void _LoadAsset(IEnumerator e)
@@ -383,6 +408,7 @@ namespace UnityFS
                 {
                     return new UAssetBundleConcreteAsset(this, assetPath, type);
                 }
+
                 return new UAssetBundleAsset(this, assetPath);
             }
         }
@@ -393,7 +419,7 @@ namespace UnityFS
             protected UAssetBundleBundle _bundle;
 
             public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath)
-            : base(assetPath)
+                : base(assetPath)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -415,12 +441,14 @@ namespace UnityFS
                     {
                         path += ".bytes";
                     }
+
                     var textAsset = assetBundle.LoadAsset<TextAsset>(path);
                     if (textAsset != null)
                     {
                         return textAsset.bytes;
                     }
                 }
+
                 return null;
                 // throw new NotSupportedException();
             }
@@ -446,6 +474,7 @@ namespace UnityFS
                 {
                     return;
                 }
+
                 Complete();
             }
         }
@@ -456,7 +485,7 @@ namespace UnityFS
             private Type _type;
 
             public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type)
-            : base(bundle, assetPath)
+                : base(bundle, assetPath)
             {
                 _type = type;
             }
@@ -468,6 +497,7 @@ namespace UnityFS
                     Complete();
                     return;
                 }
+
                 // assert (bundle == _bundle)
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
@@ -482,7 +512,9 @@ namespace UnityFS
 
             private IEnumerator _Load(AssetBundle assetBundle)
             {
-                var request = _type != null ? assetBundle.LoadAssetAsync(_assetPath, _type) : assetBundle.LoadAssetAsync(_assetPath);
+                var request = _type != null
+                    ? assetBundle.LoadAssetAsync(_assetPath, _type)
+                    : assetBundle.LoadAssetAsync(_assetPath);
                 yield return request;
                 OnAssetLoaded(request.asset);
             }
@@ -493,6 +525,7 @@ namespace UnityFS
                 {
                     return;
                 }
+
                 _object = asset;
                 Complete();
             }
