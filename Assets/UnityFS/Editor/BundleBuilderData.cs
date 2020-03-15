@@ -7,6 +7,16 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
+    [Flags]
+    public enum PackagePlatforms
+    {
+        Active = 1, 
+        Android = 2, 
+        IOS = 4,
+        Windows64 = 8, 
+        MacOS = 16, 
+    }
+
     public class BundleBuilderData : ScriptableObject
     {
         public const string BundleBuilderDataPath = "Assets/unityfs.asset";

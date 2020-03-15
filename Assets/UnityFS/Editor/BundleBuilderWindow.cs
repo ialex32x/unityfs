@@ -12,6 +12,7 @@ namespace UnityFS.Editor
 
     public class BundleBuilderWindow : BaseEditorWindow
     {
+        public const string KeyForPackagePlatforms = ".BundleBuilderWindow.Platforms";
         [SerializeField] MultiColumnHeaderState _headerState;
         [SerializeField] TreeViewState _treeViewState = new TreeViewState();
         BundleBuilderTreeView _treeView;
@@ -19,6 +20,7 @@ namespace UnityFS.Editor
         private bool dirty;
         private BundleBuilderData.BundleInfo selected;
         private BundleBuilderData data;
+        private PackagePlatforms _platforms;
 
         [MenuItem("UnityFS/Builder")]
         public static void OpenBuilderWindow()
@@ -46,10 +48,15 @@ namespace UnityFS.Editor
         {
             data = BundleBuilder.GetData();
             titleContent = new GUIContent("Bundle Builder");
-            bool firstInit = _headerState == null;
+            _platforms =
+                (PackagePlatforms) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatforms.Active);
+            // bool firstInit = _headerState == null;
             var headerState = BundleBuilderTreeView.CreateDefaultMultiColumnHeaderState(this.position.width);
             if (MultiColumnHeaderState.CanOverwriteSerializedFields(_headerState, headerState))
+            {
                 MultiColumnHeaderState.OverwriteSerializedFields(_headerState, headerState);
+            }
+
             var header = new BundleBuilderTreeViewHeader(headerState);
             _headerState = headerState;
 
@@ -131,12 +138,18 @@ namespace UnityFS.Editor
                     _treeView.ShowBundleReport();
                 }
 
-                if (GUILayout.Button("Build"))
+                GUILayout.Space(20f);
+                EditorGUILayout.LabelField("Targets", GUILayout.Width(46f));
+                var platforms = (PackagePlatforms) EditorGUILayout.EnumFlagsField(_platforms, GUILayout.Width(90f));
+                if (platforms != _platforms)
                 {
-                    EditorApplication.delayCall += () =>
-                    {
-                        BundleBuilder.Build(data, "", EditorUserBuildSettings.activeBuildTarget);
-                    };
+                    _platforms = platforms;
+                    EditorPrefs.SetInt(KeyForPackagePlatforms, (int) _platforms);
+                }
+
+                if (GUILayout.Button("Build Packages"))
+                {
+                    EditorApplication.delayCall += () => BundleBuilder.BuildPackages(data, "", _platforms);
                 }
             }
 
