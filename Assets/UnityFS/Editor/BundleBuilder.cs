@@ -368,6 +368,13 @@ namespace UnityFS.Editor
             }
         }
 
+        public static void BuildPackages(BundleBuilderData data, string outputPath, BuildTarget target)
+        {
+            var buildInfo = new PackageBuildInfo(data, outputPath, target);
+            BuildPackages(buildInfo);
+        }
+        
+
         // 生成打包 
         private static void BuildPackages(PackageBuildInfo buildInfo)
         {
