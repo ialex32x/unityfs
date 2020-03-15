@@ -11,6 +11,18 @@ namespace UnityFS.Utils
 
     public static class Helpers
     {
+        private static List<UAsset> _roots = new List<UAsset>();
+
+        public static void AddToRoot(UAsset asset)
+        {
+            _roots.Add(asset);
+        }
+
+        public static void RemoveFromRoot(UAsset asset)
+        {
+            _roots.Remove(asset);
+        }
+        
         public static string GetPlatformName()
         {
 #if UNITY_EDITOR
