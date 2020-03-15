@@ -160,5 +160,15 @@ namespace UnityFS
             onComplete?.Invoke();
             return new List<DownloadWorker.JobInfo>();
         }
+
+        public DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
+        {
+            return null;
+        }
+
+        public IList<Manifest.BundleInfo> GetInvalidatedBundles()
+        {
+            return new List<Manifest.BundleInfo>();
+        }
     }
 }

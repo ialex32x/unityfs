@@ -11,6 +11,12 @@ namespace UnityFS
         event Action completed;
 
         IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete);
+        
+        // 下载指定的资源包 (返回 null 表示不需要下载)
+        DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo);
+        
+        // 检查本地资源包状态, 返回所有需要下载的包信息的列表
+        IList<Manifest.BundleInfo> GetInvalidatedBundles();
 
         // 查找资源, 返回其所在的包
         string Find(string assetPath);

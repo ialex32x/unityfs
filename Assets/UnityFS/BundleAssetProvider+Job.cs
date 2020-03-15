@@ -21,18 +21,13 @@ namespace UnityFS
                 var bundleInfo = _manifest.bundles[i];
                 if ((bundleInfo.load & load) != 0)
                 {
-                    var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
-                    if (!Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo))
+                    if (!_IsBundleValid(bundleInfo))
                     {
-                        // 仅验证 StreamingAssets 清单内存在此资源包 (因为没办法直接安全有效地访问 StreamingAssets 内文件)
-                        if (!_streamingAssets.Contains(bundleInfo))
+                        countdown.Add();
+                        var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove());
+                        if (job != null)
                         {
-                            countdown.Add();
-                            var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove());
-                            if (job != null)
-                            {
-                                jobs.Add(job);
-                            }
+                            jobs.Add(job);
                         }
                     }
                 }
@@ -40,6 +35,49 @@ namespace UnityFS
 
             countdown.Start();
             return jobs;
+        }
+
+        public DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
+        {
+            if (!_IsBundleValid(bundleInfo))
+            {
+                return _DownloadBundleFile(bundleInfo, null);
+            }
+
+            return null;
+        }
+
+        public IList<Manifest.BundleInfo> GetInvalidatedBundles()
+        {
+            var size = _manifest.bundles.Count;
+            var list = new List<Manifest.BundleInfo>(size);
+            for (var i = 0; i < size; i++)
+            {
+                var bundleInfo = _manifest.bundles[i];
+                if (!_IsBundleValid(bundleInfo))
+                {
+                    list.Add(bundleInfo);
+                }
+            }
+
+            return list;
+        }
+
+        private bool _IsBundleValid(Manifest.BundleInfo bundleInfo)
+        {
+            // 仅验证 StreamingAssets 清单内存在此资源包 (因为没办法直接安全有效地访问 StreamingAssets 内文件)
+            if (_streamingAssets.Contains(bundleInfo))
+            {
+                return true;
+            }
+
+            var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
+            if (Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void ForEachTask(Action<ITask> callback)

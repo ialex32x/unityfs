@@ -228,5 +228,17 @@ namespace UnityFS
         {
             return GetAssetProvider().EnsureBundles(load, onComplete);
         }
+        
+        // 下载指定的资源包 (返回 null 表示不需要下载)
+        public static DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
+        {
+            return GetAssetProvider().EnsureBundle(bundleInfo);
+        }
+        
+        // 检查本地资源包状态, 返回所有需要下载的包信息的列表
+        public static IList<Manifest.BundleInfo> GetInvalidatedBundles()
+        {
+            return GetAssetProvider().GetInvalidatedBundles();
+        }
     }
 }
