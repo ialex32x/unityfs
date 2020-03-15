@@ -169,7 +169,7 @@ namespace UnityFS
 
         private void ProcessJob(JobInfo jobInfo)
         {
-            Debug.LogFormat("processing job: {0}", jobInfo.name);
+            Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.bundleInfo.comment);
             var tempPath = jobInfo.finalPath + PartExt;
             if (_fileStream != null)
             {
