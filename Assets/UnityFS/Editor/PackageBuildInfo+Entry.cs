@@ -25,14 +25,19 @@ namespace UnityFS.Editor
                 _bundle = bundle;
             }
 
+            private bool IsValid(string assetPath)
+            {
+                return !assetPath.EndsWith(".cs") && assetPath.Contains("/Editor/");
+            }
+
             public void Add(string assetPath)
             {
-                if (_assets.Add(assetPath))
+                if (IsValid(assetPath) && _assets.Add(assetPath))
                 {
                     var dependencies = AssetDatabase.GetDependencies(assetPath);
                     foreach (var dep in dependencies)
                     {
-                        if (_assets.Add(dep))
+                        if (IsValid(dep) && _assets.Add(dep))
                         {
                         }
                     }
