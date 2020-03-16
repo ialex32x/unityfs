@@ -381,9 +381,9 @@ namespace UnityFS.Editor
             Debug.Log($"building bundles...");
             Scan(buildInfo.data, buildInfo.buildTarget);
 
-            var assetBundleBuilds = GenerateAssetBundleBuilds(buildInfo.data);
-            var zipArchiveBuilds = GenerateZipArchiveBuilds(buildInfo.data);
-            var fileListBuilds = GenerateFileListBuilds(buildInfo.data);
+            var assetBundleBuilds = GenerateAssetBundleBuilds(buildInfo);
+            var zipArchiveBuilds = GenerateZipArchiveBuilds(buildInfo);
+            var fileListBuilds = GenerateFileListBuilds(buildInfo);
 
             AssetBundleManifest assetBundleManifest = null;
             ZipArchiveManifest zipArchiveManifest = null;
@@ -407,6 +407,7 @@ namespace UnityFS.Editor
             BuildFinalPackages(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest,
                 out embeddedManifest);
             Cleanup(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, embeddedManifest);
+            buildInfo.Analyze();
             Debug.Log(
                 $"{buildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
@@ -689,8 +690,9 @@ namespace UnityFS.Editor
             archiveEntry.assets.Add(assetPath);
         }
 
-        public static BundleBuilderData.BundleInfo[] GenerateFileListBuilds(BundleBuilderData data)
+        public static BundleBuilderData.BundleInfo[] GenerateFileListBuilds(PackageBuildInfo buildInfo)
         {
+            var data = buildInfo.data;
             var list = new List<BundleBuilderData.BundleInfo>();
             foreach (var bundle in data.bundles)
             {
@@ -705,8 +707,9 @@ namespace UnityFS.Editor
             return list.ToArray();
         }
 
-        public static List<ZipArchiveBuild> GenerateZipArchiveBuilds(BundleBuilderData data)
+        public static List<ZipArchiveBuild> GenerateZipArchiveBuilds(PackageBuildInfo buildInfo)
         {
+            var data = buildInfo.data;
             var builds = new List<ZipArchiveBuild>();
             foreach (var bundle in data.bundles)
             {
@@ -748,8 +751,9 @@ namespace UnityFS.Editor
             return builds;
         }
 
-        public static AssetBundleBuild[] GenerateAssetBundleBuilds(BundleBuilderData data)
+        public static AssetBundleBuild[] GenerateAssetBundleBuilds(PackageBuildInfo buildInfo)
         {
+            var data = buildInfo.data;
             var builds = new List<AssetBundleBuild>();
             foreach (var bundle in data.bundles)
             {
@@ -765,11 +769,13 @@ namespace UnityFS.Editor
                     {
                         var bundleSlice = bundleSplit.slices[sliceIndex];
                         var assetNames = new List<string>();
+                        var packageBuildEntry = buildInfo.GetPackageBuildEntry(bundleSlice.name);
                         for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
                         {
                             var assetGuid = bundleSlice.assetGuids[assetIndex];
                             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             assetNames.Add(assetPath);
+                            packageBuildEntry.assetPaths.Add(assetPath);
                         }
 
                         if (assetNames.Count != 0)
@@ -953,6 +959,12 @@ namespace UnityFS.Editor
                         }
 
                         bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
+                        var buildEntry = buildInfo.GetPackageBuildEntry(bundle.name);
+                        for (var i = 0; i < bundle.dependencies.Length; i++)
+                        {
+                            var dep = buildInfo.GetPackageBuildEntry(bundle.dependencies[i]);
+                            buildEntry.AddDependency(dep);
+                        }
                         manifest.bundles.Add(bundle);
                         if (bundleInfo.streamingAssets)
                         {
