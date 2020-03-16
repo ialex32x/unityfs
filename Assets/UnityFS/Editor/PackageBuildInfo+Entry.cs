@@ -12,6 +12,8 @@ namespace UnityFS.Editor
     // 打包过程数据
     public partial class PackageBuildInfo
     {
+        public static HashSet<string> IgnoredAssetPaths = new HashSet<string>();
+        
         private Dictionary<string, Entry> _entries = new Dictionary<string, Entry>();
 
         public class Entry
@@ -27,7 +29,7 @@ namespace UnityFS.Editor
 
             private bool IsValid(string assetPath)
             {
-                return !assetPath.EndsWith(".cs") && !assetPath.EndsWith(".dll");
+                return !IgnoredAssetPaths.Contains(assetPath) && !assetPath.EndsWith(".cs") && !assetPath.EndsWith(".dll");
             }
 
             public void Add(string assetPath)
