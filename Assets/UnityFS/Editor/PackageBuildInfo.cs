@@ -8,7 +8,7 @@ namespace UnityFS.Editor
     using UnityEditor;
 
     // 打包过程数据
-    public class PackageBuildInfo
+    public partial class PackageBuildInfo
     {
         private BundleBuilderData _data;
         private BuildTarget _buildTarget;

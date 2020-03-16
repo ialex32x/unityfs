@@ -407,6 +407,7 @@ namespace UnityFS.Editor
             BuildFinalPackages(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest,
                 out embeddedManifest);
             Cleanup(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, embeddedManifest);
+            buildInfo.DoAnalyze();
             Debug.Log(
                 $"{buildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
@@ -787,7 +788,7 @@ namespace UnityFS.Editor
                         }
                         else
                         {
-                            Debug.Log($"skip empty bundle slice {bundleSlice.name}");
+                            // Debug.Log($"skip empty bundle slice {bundleSlice.name}");
                         }
                     }
                 }
@@ -956,6 +957,7 @@ namespace UnityFS.Editor
                         }
 
                         bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
+                        buildInfo.CreateEntry(bundle);
                         manifest.bundles.Add(bundle);
                         if (bundleInfo.streamingAssets)
                         {

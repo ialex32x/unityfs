@@ -290,20 +290,6 @@ namespace UnityFS.Editor
                 }
             }
         }
-
-        public void Analyze()
-        {
-            // foreach (var bundle in bundles)
-            // {
-            //     foreach (var split in bundle.splits)
-            //     {
-            //         foreach (var slice in split.slices)
-            //         {
-            //             slice.ExtractDepends();
-            //         }
-            //     }
-            // }
-        }
     }
 
     public class ZipArchiveManifestEntry

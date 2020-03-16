@@ -135,13 +135,9 @@ namespace UnityFS.Editor
                     _treeView.Reload();
                 }
 
-                if (GUILayout.Button("Analyze"))
-                {
-                    data.Analyze();
-                }
-
                 if (GUILayout.Button("Show Bundle Assets"))
                 {
+                    BundleBuilder.Scan(data);
                     _treeView.ShowBundleReport();
                 }
 
