@@ -175,7 +175,7 @@ namespace UnityFS.Editor
             {
                 var list = overlapedAsset.Value.ToArray();
                 sb.AppendFormat("<tr>\n");
-                sb.AppendFormat("<th rowspan='{0}'>{1}</th>\n", list.Length, overlapedAsset.Key);
+                sb.AppendFormat("<th rowspan='{0}'>{1} ({0})</th>\n", list.Length, overlapedAsset.Key);
                 sb.AppendFormat("<td>{0}</td> <td>{1}</td>\n", list[0]._bundle.name, list[0]._bundle.comment);
                 sb.AppendFormat("</tr>\n");
                 for (var i = 1; i < list.Length; i++)
