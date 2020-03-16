@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace UnityFS.Editor
@@ -142,6 +143,7 @@ namespace UnityFS.Editor
             }
 
             var sb = new StringBuilder();
+            var overlapedAssets = new Dictionary<string, HashSet<Entry>>();
             foreach (var kv in _entries)
             {
                 var entry = kv.Value;
@@ -151,6 +153,14 @@ namespace UnityFS.Editor
                     sb.AppendFormat("可能存在资源冗余 Bundle: {0} {1} ...\n", kv.Key, entry._bundle.comment);
                     foreach (var pair in overlaps)
                     {
+                        HashSet<Entry> set;
+                        if (!overlapedAssets.TryGetValue(pair.Value, out set))
+                        {
+                            overlapedAssets[pair.Value] = set = new HashSet<Entry>();
+                        }
+
+                        set.Add(pair.Key);
+                        set.Add(entry);
                         sb.AppendFormat("    in Bundle: {0} {1} => {2}\n", pair.Key._bundle.name, pair.Key._bundle.comment, pair.Value);
                     }
 
@@ -158,6 +168,27 @@ namespace UnityFS.Editor
                     sb.Clear();
                 }
             }
+
+            sb.AppendFormat("<html><body>\n");
+            sb.AppendFormat("<table border='1'>\n");
+            foreach (var overlapedAsset in overlapedAssets)
+            {
+                var list = overlapedAsset.Value.ToArray();
+                sb.AppendFormat("<tr>\n");
+                sb.AppendFormat("<th rowspan='{0}'>{1}</th>\n", list.Length, overlapedAsset.Key);
+                sb.AppendFormat("<td>{0}</td> <td>{1}</td>\n", list[0]._bundle.name, list[0]._bundle.comment);
+                sb.AppendFormat("</tr>\n");
+                for (var i = 1; i < list.Length; i++)
+                {
+                    sb.AppendFormat("<tr>\n");
+                    sb.AppendFormat("<td>{0}</td> <td>{1}</td>\n", list[i]._bundle.name, list[i]._bundle.comment);
+                    sb.AppendFormat("</tr>\n");
+                }
+            }
+            sb.AppendFormat("</table>\n");
+            sb.AppendFormat("</body></html>\n");
+            File.WriteAllText(Path.Combine(_packagePath, "report.html"), sb.ToString());
+            sb.Clear();
         }
     }
 }
