@@ -85,6 +85,12 @@ namespace UnityFS.Editor
         // 分析资源冗余 (assetbundle)
         public void Analyze()
         {
+            var dict = new Dictionary<string, int>();
+            var list = new List<PackageBuildEntry>();
+            foreach (var entry in _packageBuildEntries)
+            {
+                entry.Value.Extract(list, dict);
+            }
         }
     }
 }

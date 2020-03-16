@@ -6,7 +6,7 @@ namespace UnityFS.Editor
 {
     using UnityEngine;
     using UnityEditor;
-   
+
     public class PackageBuildEntry
     {
         public PackageBuildInfo buildInfo;
@@ -14,37 +14,58 @@ namespace UnityFS.Editor
         private List<PackageBuildEntry> _dependencies = new List<PackageBuildEntry>();
         public List<string> assetPaths = new List<string>(); // 直接资源
         public bool extracted; // 是否已经展开所有依赖
-        public List<string> extractedAssetPaths = new List<string>(); // 展开所有依赖
+        public HashSet<string> extractedAssetPaths = new HashSet<string>(); // 展开所有依赖
         private List<PackageBuildEntry> _extractedDependencies = new List<PackageBuildEntry>();
 
         public void AddDependency(PackageBuildEntry entry)
         {
-            if (entry != this)
+            if (entry != this && !_dependencies.Contains(entry))
             {
-                if (!_dependencies.Contains(entry))
-                {
-                    _dependencies.Add(entry);
-                }
+                _dependencies.Add(entry);
             }
         }
 
-        private void _AddDependencies(List<PackageBuildEntry> dependencies)
+        private bool IsDependencies(string assetPath)
         {
-            for (int i = 0, size = dependencies.Count; i < size; i++)
+            for (var i = 0; i < _dependencies.Count; i++)
             {
-                var depBundle = dependencies[i];
-                if (!_extractedDependencies.Contains(depBundle))
+                if (_dependencies[i].extractedAssetPaths.Contains(assetPath))
                 {
-                    _extractedDependencies.Add(depBundle);
-                    _AddDependencies(depBundle._dependencies);
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        public void Extract()
+        public void Extract(List<PackageBuildEntry> pendingList, Dictionary<string, int> dict)
         {
-            _AddDependencies(_dependencies);
-            //TODO: TBD...
+            if (!pendingList.Contains(this))
+            {
+                pendingList.Add(this);
+                for (var i = 0; i < _dependencies.Count; i++)
+                {
+                    _dependencies[i].Extract(pendingList, dict);
+                }
+
+                for (var i = 0; i < assetPaths.Count; i++)
+                {
+                    var assetPath = assetPaths[i];
+                    if (extractedAssetPaths.Add(assetPath))
+                    {
+                        //TODO: add to dict count
+                        var deps = AssetDatabase.GetDependencies(assetPath);
+                        foreach (var dep in deps)
+                        {
+                            if (!IsDependencies(dep))
+                            {
+                                //TODO: add to dict count
+                                extractedAssetPaths.Add(dep);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
