@@ -27,7 +27,7 @@ namespace UnityFS.Editor
 
             private bool IsValid(string assetPath)
             {
-                return !assetPath.EndsWith(".cs") && assetPath.Contains("/Editor/");
+                return !assetPath.EndsWith(".cs") && !assetPath.EndsWith(".dll");
             }
 
             public void Add(string assetPath)
