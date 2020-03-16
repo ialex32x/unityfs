@@ -63,7 +63,7 @@ namespace UnityFS.Editor
         }
 
         // 根据 targets 遍历产生所有实际资源列表 assets
-        public static bool Scan(BundleBuilderData data, BuildTarget targetPlatform)
+        public static bool Scan(BundleBuilderData data)
         {
             data.Cleanup();
             var bundles = data.bundles.ToArray();
@@ -379,7 +379,7 @@ namespace UnityFS.Editor
         private static void BuildPackages(PackageBuildInfo buildInfo)
         {
             Debug.Log($"building bundles...");
-            Scan(buildInfo.data, buildInfo.buildTarget);
+            Scan(buildInfo.data);
 
             var assetBundleBuilds = GenerateAssetBundleBuilds(buildInfo);
             var zipArchiveBuilds = GenerateZipArchiveBuilds(buildInfo);
@@ -407,7 +407,6 @@ namespace UnityFS.Editor
             BuildFinalPackages(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest,
                 out embeddedManifest);
             Cleanup(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, embeddedManifest);
-            buildInfo.Analyze();
             Debug.Log(
                 $"{buildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
@@ -769,13 +768,11 @@ namespace UnityFS.Editor
                     {
                         var bundleSlice = bundleSplit.slices[sliceIndex];
                         var assetNames = new List<string>();
-                        var packageBuildEntry = buildInfo.GetPackageBuildEntry(bundleSlice.name);
                         for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
                         {
                             var assetGuid = bundleSlice.assetGuids[assetIndex];
                             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             assetNames.Add(assetPath);
-                            packageBuildEntry.assetPaths.Add(assetPath);
                         }
 
                         if (assetNames.Count != 0)
@@ -959,12 +956,6 @@ namespace UnityFS.Editor
                         }
 
                         bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
-                        var buildEntry = buildInfo.GetPackageBuildEntry(bundle.name);
-                        for (var i = 0; i < bundle.dependencies.Length; i++)
-                        {
-                            var dep = buildInfo.GetPackageBuildEntry(bundle.dependencies[i]);
-                            buildEntry.AddDependency(dep);
-                        }
                         manifest.bundles.Add(bundle);
                         if (bundleInfo.streamingAssets)
                         {

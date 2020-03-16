@@ -14,7 +14,6 @@ namespace UnityFS.Editor
         private BundleBuilderData _data;
         private IList<BundleBuilderData.BundleInfo> _bundles;
         private Vector2 _sv;
-        private BuildTarget _targetPlatform;
 
         protected override void OnEnable()
         {
@@ -32,8 +31,6 @@ namespace UnityFS.Editor
         {
             _data = data;
             _bundles = bundles;
-            _targetPlatform = EditorUserBuildSettings.activeBuildTarget;
-            BundleBuilder.Scan(_data, _targetPlatform);
         }
 
         protected override void OnGUIDraw()
@@ -46,31 +43,7 @@ namespace UnityFS.Editor
                 return;
             }
 
-            var rescan = false;
             GUILayout.Space(4f);
-            GUILayout.BeginHorizontal();
-            var targetPlatform = (BuildTarget) EditorGUILayout.EnumPopup("Preview Platform", _targetPlatform);
-            if (GUILayout.Button("Reset", GUILayout.Width(120f)))
-            {
-                _targetPlatform = targetPlatform = EditorUserBuildSettings.activeBuildTarget;
-            }
-
-            if (GUILayout.Button("Refresh", GUILayout.Width(120f)))
-            {
-                rescan = true;
-            }
-
-            GUILayout.EndHorizontal();
-            if (_targetPlatform != targetPlatform)
-            {
-                _targetPlatform = targetPlatform;
-                rescan = true;
-            }
-
-            if (rescan)
-            {
-                BundleBuilder.Scan(_data, _targetPlatform);
-            }
 
             _sv = GUILayout.BeginScrollView(_sv);
             foreach (var bundle in _bundles)

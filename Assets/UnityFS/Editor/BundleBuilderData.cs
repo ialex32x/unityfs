@@ -50,20 +50,9 @@ namespace UnityFS.Editor
             public int capacity;
 
             // 最终进入打包的所有资源对象
-            private List<string> _assetGuids;
+            private List<string> _assetGuids = new List<string>();
 
-            public List<string> assetGuids
-            {
-                get
-                {
-                    if (_assetGuids == null)
-                    {
-                        _assetGuids = new List<string>();
-                    }
-
-                    return _assetGuids;
-                }
-            }
+            public List<string> assetGuids => _assetGuids;
 
             public List<string> histroy = new List<string>();
 
@@ -75,7 +64,7 @@ namespace UnityFS.Editor
 
             public void Cleanup()
             {
-                assetGuids.Clear();
+                _assetGuids.Clear();
             }
 
             // 如果是历史资源, 将加入; 否则返回 false
@@ -83,7 +72,7 @@ namespace UnityFS.Editor
             {
                 if (histroy.Contains(guid))
                 {
-                    assetGuids.Add(guid);
+                    _assetGuids.Add(guid);
                     return true;
                 }
 
@@ -96,7 +85,7 @@ namespace UnityFS.Editor
             {
                 if (capacity <= 0 || histroy.Count < capacity)
                 {
-                    assetGuids.Add(guid);
+                    _assetGuids.Add(guid);
                     histroy.Add(guid);
                     return true;
                 }
@@ -300,6 +289,20 @@ namespace UnityFS.Editor
                     MarkAsDirty();
                 }
             }
+        }
+
+        public void Analyze()
+        {
+            // foreach (var bundle in bundles)
+            // {
+            //     foreach (var split in bundle.splits)
+            //     {
+            //         foreach (var slice in split.slices)
+            //         {
+            //             slice.ExtractDepends();
+            //         }
+            //     }
+            // }
         }
     }
 

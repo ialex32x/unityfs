@@ -18,9 +18,6 @@ namespace UnityFS.Editor
         private string _zipArchivePath; // zip 压缩包输出目录 
         private string _packagePath; // 最终包输出目录
 
-        private Dictionary<string, PackageBuildEntry>
-            _packageBuildEntries = new Dictionary<string, PackageBuildEntry>();
-
         public BundleBuilderData data => _data;
 
         public BuildTarget buildTarget => _buildTarget;
@@ -64,33 +61,6 @@ namespace UnityFS.Editor
         public static string GetPlatformPath(string basePath, BuildTarget buildTarget)
         {
             return Path.Combine(basePath, Utils.Helpers.GetBuildTargetName(buildTarget));
-        }
-
-        public PackageBuildEntry GetPackageBuildEntry(string name)
-        {
-            if (_packageBuildEntries.TryGetValue(name, out var entry))
-            {
-                return entry;
-            }
-
-            var newEntry = new PackageBuildEntry()
-            {
-                name = name,
-                buildInfo = this
-            };
-            _packageBuildEntries.Add(name, newEntry);
-            return newEntry;
-        }
-
-        // 分析资源冗余 (assetbundle)
-        public void Analyze()
-        {
-            var dict = new Dictionary<string, int>();
-            var list = new List<PackageBuildEntry>();
-            foreach (var entry in _packageBuildEntries)
-            {
-                entry.Value.Extract(list, dict);
-            }
         }
     }
 }

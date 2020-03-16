@@ -47,6 +47,7 @@ namespace UnityFS.Editor
         protected override void OnEnable()
         {
             data = BundleBuilder.GetData();
+            BundleBuilder.Scan(data);
             titleContent = new GUIContent("Bundle Builder");
             _platforms =
                 (PackagePlatforms) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatforms.Active);
@@ -130,7 +131,13 @@ namespace UnityFS.Editor
                 GUILayout.Space(20f);
                 if (GUILayout.Button("Refresh"))
                 {
+                    BundleBuilder.Scan(data);
                     _treeView.Reload();
+                }
+
+                if (GUILayout.Button("Analyze"))
+                {
+                    data.Analyze();
                 }
 
                 if (GUILayout.Button("Show Bundle Assets"))
