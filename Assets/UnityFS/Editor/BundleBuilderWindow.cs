@@ -13,10 +13,13 @@ namespace UnityFS.Editor
     public class BundleBuilderWindow : BaseEditorWindow
     {
         public const string KeyForPackagePlatforms = ".BundleBuilderWindow.Platforms";
+        public const string KeyForTabIndex = ".BundleBuilderWindow.TabIndex";
         [SerializeField] MultiColumnHeaderState _headerState;
         [SerializeField] TreeViewState _treeViewState = new TreeViewState();
         BundleBuilderTreeView _treeView;
 
+        private int _tabIndex;
+        private string[] _tabs = new[] {"Packages", "Settings"};
         private bool dirty;
         private BundleBuilderData.BundleInfo selected;
         private BundleBuilderData data;
@@ -49,6 +52,7 @@ namespace UnityFS.Editor
             data = BundleBuilder.GetData();
             BundleBuilder.Scan(data);
             titleContent = new GUIContent("Bundle Builder");
+            _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
             _platforms =
                 (PackagePlatforms) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatforms.Active);
             // bool firstInit = _headerState == null;
@@ -67,22 +71,51 @@ namespace UnityFS.Editor
 
         protected override void OnGUIDraw()
         {
-            var margin = 5f;
-            Block("Settings",
-                () =>
+            var tabIndex = GUILayout.Toolbar(_tabIndex, _tabs);
+            if (tabIndex != _tabIndex)
+            {
+                _tabIndex = tabIndex;
+                EditorPrefs.SetInt(KeyForTabIndex, _tabIndex);
+            }
+
+            switch (tabIndex)
+            {
+                case 0: OnDrawPackages();
+                    break;
+                case 1: OnDrawSettings();
+                    break;
+            }
+        }
+
+        private void OnDrawSettings()
+        {
+            Block("Encryption", () =>
+            {
+                EditorGUI.BeginChangeCheck();
+                data.encryptionKey = EditorGUILayout.TextField("Password", data.encryptionKey);
+                if (EditorGUI.EndChangeCheck())
                 {
-                    EditorGUI.BeginChangeCheck();
-                    data.encryptionKey = EditorGUILayout.TextField("Password", data.encryptionKey);
-                    // 中间输出目录
-                    data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", data.assetBundlePath);
-                    data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", data.zipArchivePath);
-                    // 最终包输出目录
-                    data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        data.MarkAsDirty();
-                    }
-                });
+                    data.MarkAsDirty();
+                }
+            });
+            Block("Path", () =>
+            {
+                EditorGUI.BeginChangeCheck();
+                // 中间输出目录
+                data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", data.assetBundlePath);
+                data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", data.zipArchivePath);
+                // 最终包输出目录
+                data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    data.MarkAsDirty();
+                }
+            });
+        }
+
+        private void OnDrawPackages()
+        {
+            var margin = 5f;
             var autoRect = EditorGUILayout.GetControlRect(GUILayout.Height(1f));
             var treeViewTop = autoRect.yMax;
             var bottomHeight = 21f;
