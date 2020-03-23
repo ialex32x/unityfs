@@ -57,6 +57,7 @@ namespace UnityFS
             public List<string> assets = new List<string>(); // asset path (virtual path)
         }
 
+        public string tag;
         public List<BundleInfo> bundles = new List<BundleInfo>(); // bundle 清单
     }
 

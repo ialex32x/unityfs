@@ -325,8 +325,13 @@ namespace UnityFS.Editor
             return IsAssetTypeMatched(rule, asset);
         }
 
-        // (批量) 生成指定平台的资源包
         public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatforms platforms)
+        {
+            BuildPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platforms);
+        }
+
+        // (批量) 生成指定平台的资源包
+        public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platforms)
         {
             var targets = new HashSet<BuildTarget>();
             if ((platforms & PackagePlatforms.Active) != 0)
@@ -358,7 +363,7 @@ namespace UnityFS.Editor
             {
                 foreach (var target in targets)
                 {
-                    var buildInfo = new PackageBuildInfo(data, outputPath, target);
+                    var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
                     BuildPackages(buildInfo);
                 }
             }
@@ -368,12 +373,12 @@ namespace UnityFS.Editor
             }
         }
 
-        public static void BuildPackages(BundleBuilderData data, string outputPath, BuildTarget target)
+        public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, BuildTarget target)
         {
-            var buildInfo = new PackageBuildInfo(data, outputPath, target);
+            var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
             BuildPackages(buildInfo);
         }
-        
+
 
         // 生成打包 
         private static void BuildPackages(PackageBuildInfo buildInfo)
@@ -415,7 +420,12 @@ namespace UnityFS.Editor
         // 将首包资源包复制到StreamingAssets目录中 (假设已经生成资源包) 
         public static void BuildStreamingAssets(BundleBuilderData data, string outputPath, BuildTarget target)
         {
-            var buildInfo = new PackageBuildInfo(data, outputPath, target);
+            BuildStreamingAssets(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, target);
+        }
+
+        public static void BuildStreamingAssets(PackageSharedBuildInfo sharedBuildInfo, BuildTarget target)
+        {
+            var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
             BuildStreamingAssets(buildInfo.packagePath);
         }
 
@@ -925,6 +935,7 @@ namespace UnityFS.Editor
         {
             var data = buildInfo.data;
             var manifest = new Manifest();
+            manifest.tag = buildInfo.sharedBuildInfo.tag;
             embeddedManifest = new EmbeddedManifest();
             if (assetBundleManifest != null)
             {

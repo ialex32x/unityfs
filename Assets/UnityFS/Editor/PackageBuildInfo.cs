@@ -10,6 +10,7 @@ namespace UnityFS.Editor
     // 打包过程数据
     public partial class PackageBuildInfo
     {
+        private PackageSharedBuildInfo _sharedBuildInfo;
         private BundleBuilderData _data;
         private BuildTarget _buildTarget;
 
@@ -19,6 +20,8 @@ namespace UnityFS.Editor
         private string _packagePath; // 最终包输出目录
 
         public BundleBuilderData data => _data;
+
+        public PackageSharedBuildInfo sharedBuildInfo => _sharedBuildInfo;
 
         public BuildTarget buildTarget => _buildTarget;
 
@@ -32,13 +35,14 @@ namespace UnityFS.Editor
         public List<string> filelist = new List<string>();
 
         // outputPath: 输出的总目录 [可选]
-        public PackageBuildInfo(BundleBuilderData data, string outputPath, BuildTarget buildTarget)
+        public PackageBuildInfo(PackageSharedBuildInfo sharedBuildInfo, BuildTarget buildTarget)
         {
-            _data = data;
+            _sharedBuildInfo = sharedBuildInfo;
+            _data = sharedBuildInfo.data;
             _buildTarget = buildTarget;
-            _assetBundlePath = GetPlatformPath(Combine(outputPath, data.assetBundlePath), buildTarget);
-            _zipArchivePath = GetPlatformPath(Combine(outputPath, data.zipArchivePath), buildTarget);
-            _packagePath = GetPlatformPath(Combine(outputPath, data.packagePath), buildTarget);
+            _assetBundlePath = GetPlatformPath(Combine(sharedBuildInfo.outputPath, data.assetBundlePath), buildTarget);
+            _zipArchivePath = GetPlatformPath(Combine(sharedBuildInfo.outputPath, data.zipArchivePath), buildTarget);
+            _packagePath = GetPlatformPath(Combine(sharedBuildInfo.outputPath, data.packagePath), buildTarget);
 
             EnsureDirectory(_assetBundlePath);
             EnsureDirectory(_zipArchivePath);
