@@ -18,11 +18,36 @@ namespace UnityFS
         public StreamingAssetsLoader()
         {
             _manifest = new EmbeddedManifest();
-            _streamingAssetsPathRoot = Application.streamingAssetsPath + "/bundles/";
+            _streamingAssetsPathRoot =
+                Application.streamingAssetsPath + EnsureSperator(Manifest.EmbeddedBundlesBasePath);
             if (Application.platform != RuntimePlatform.Android)
             {
                 _streamingAssetsPathRoot = "file://" + _streamingAssetsPathRoot;
             }
+        }
+
+        private string EnsureSperator(string name)
+        {
+            var len = name.Length;
+            if (len > 0)
+            {
+                if (name[0] != '/')
+                {
+                    if (name[len - 1] != '/')
+                    {
+                        return '/' + name + '/';
+                    }
+
+                    return '/' + name;
+                }
+
+                if (name[len - 1] != '/')
+                {
+                    return name + '/';
+                }
+            }
+
+            return name;
         }
 
         // 载入 StreamingAssets 中的内嵌清单, 完成后回调 callback

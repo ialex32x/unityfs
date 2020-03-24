@@ -19,6 +19,7 @@ namespace UnityFS.Editor
 
     public class BundleBuilderData : ScriptableObject
     {
+        public const string StreamingAssetsPath = "Assets/StreamingAssets";
         public const string BundleBuilderDataPath = "Assets/unityfs.asset";
         public const string FileExt = ".pkg";
 

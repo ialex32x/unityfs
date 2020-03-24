@@ -426,36 +426,27 @@ namespace UnityFS.Editor
         public static void BuildStreamingAssets(PackageSharedBuildInfo sharedBuildInfo, BuildTarget target)
         {
             var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
-            BuildStreamingAssets(buildInfo.packagePath);
-        }
-
-        public static void BuildStreamingAssets(PackageBuildInfo buildInfo)
-        {
-            BuildStreamingAssets(buildInfo.packagePath);
+            BuildStreamingAssets(buildInfo);
         }
 
         // 将首包资源复制到 StreamingAssets 目录 (在 BuildPlayer 之前调用)
-        private static void BuildStreamingAssets(string packagePath)
+        public static void BuildStreamingAssets(PackageBuildInfo buildInfo)
         {
+            var packagePath = buildInfo.packagePath;
             var embeddedManifest = ReadEmbeddedManifest(packagePath);
             if (embeddedManifest != null && embeddedManifest.bundles.Count > 0)
             {
-                if (!Directory.Exists(Manifest.EmbeddedBundlesPath))
-                {
-                    Directory.CreateDirectory(Manifest.EmbeddedBundlesPath);
-                }
-
                 File.Copy(Path.Combine(packagePath, Manifest.EmbeddedManifestFileName),
-                    Path.Combine(Manifest.EmbeddedBundlesPath, Manifest.EmbeddedManifestFileName), true);
+                    Path.Combine(buildInfo.streamingAssetsPath, Manifest.EmbeddedManifestFileName), true);
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
                     File.Copy(Path.Combine(packagePath, bundleInfo.name),
-                        Path.Combine(Manifest.EmbeddedBundlesPath, bundleInfo.name), true);
+                        Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
                 }
 
                 AssetDatabase.Refresh();
                 // cleanup
-                foreach (var file in Directory.GetFiles(Manifest.EmbeddedBundlesPath))
+                foreach (var file in Directory.GetFiles(buildInfo.streamingAssetsPath))
                 {
                     var fi = new FileInfo(file);
                     var match = false;
@@ -484,7 +475,7 @@ namespace UnityFS.Editor
             }
             else
             {
-                PathUtils.CleanupDirectoryRecursively(Manifest.EmbeddedBundlesPath);
+                PathUtils.CleanupDirectoryRecursively(buildInfo.streamingAssetsPath);
             }
         }
 
