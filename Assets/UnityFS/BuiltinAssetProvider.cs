@@ -9,6 +9,8 @@ namespace UnityFS
     // read from Resources (无法验证版本)
     public class BuiltinAssetProvider : IAssetProvider
     {
+        public string tag => null;
+        
         protected class UBuiltinAsset : UAsset
         {
             public UBuiltinAsset(string assetPath, Type type)

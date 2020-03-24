@@ -13,6 +13,8 @@ namespace UnityFS
         private float _asyncSimMin;
         private float _asyncSimMax;
 
+        public string tag => null;
+
         // 仅调试用, 模拟文件列表 (不带过滤)
         protected class UAssetDatabaseFileListAsset : UAsset
         {

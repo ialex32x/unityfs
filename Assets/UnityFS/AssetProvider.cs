@@ -9,6 +9,8 @@ namespace UnityFS
     public interface IAssetProvider
     {
         event Action completed;
+        
+        string tag { get; }
 
         IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete);
         

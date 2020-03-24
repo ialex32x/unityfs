@@ -42,6 +42,8 @@ namespace UnityFS
 
         private List<Action> _callbacks = new List<Action>();
 
+        public string tag => _manifest?.tag;
+        
         public event Action completed
         {
             add

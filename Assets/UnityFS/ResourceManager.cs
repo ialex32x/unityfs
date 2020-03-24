@@ -34,6 +34,11 @@ namespace UnityFS
         private static IAssetProvider _assetProvider;
         private static Analyzer.IAssetsAnalyzer _analyzer;
         private static IAssetProviderListener _listener;
+        
+        public static string tag
+        {
+            get { return _assetProvider?.tag; }
+        }
 
         public static IList<string> urls
         {
