@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace UnityFS
@@ -37,7 +38,7 @@ namespace UnityFS
         private byte[] _buffer;
         private int _timeout = 10 * 1000; // http 请求超时时间 (毫秒)
         private Utils.Crc16 _crc = new Utils.Crc16();
-        private int _loopLatency;
+        private int _bpms = 1024 * 712 / 10; // 712KB/S
         private LinkedList<JobInfo> _jobInfos = new LinkedList<JobInfo>();
         private Thread _thread;
         private AutoResetEvent _event = new AutoResetEvent(false);
@@ -49,7 +50,6 @@ namespace UnityFS
         public DownloadWorker(Action<JobInfo> callback, int bufferSize, int loopLatency,
             System.Threading.ThreadPriority threadPriority)
         {
-            _loopLatency = loopLatency;
             _callback = callback;
             _buffer = new byte[bufferSize];
             _thread = new Thread(_Run)
@@ -252,20 +252,31 @@ namespace UnityFS
                             using (var webStream = rsp.GetResponseStream())
                             {
                                 var recvAll = 0L;
+                                var recvCalc = 0L;
+                                var stopwatch = new Stopwatch();
+                                stopwatch.Start();
                                 while (recvAll < rsp.ContentLength)
                                 {
-                                    var recv = webStream.Read(_buffer, 0, _buffer.Length);
+                                    var recv = webStream.Read(_buffer, 0, Math.Min(_bpms, _buffer.Length));
                                     if (recv > 0 && !_destroy)
                                     {
+                                        recvCalc += recv;
+                                        if (recvCalc >= _bpms)
+                                        {
+                                            var millisecs = stopwatch.ElapsedMilliseconds;
+                                            var delay = (int)(100.0 * recvCalc / _bpms - millisecs);
+                                            // Debug.LogFormat("net ++ {0} {1} sbps {2} recv {3}", delay, millisecs, _bpms, recvCalc);
+                                            if (delay > 0)
+                                            {
+                                                Thread.Sleep(delay);
+                                            }
+                                            stopwatch.Restart();
+                                            recvCalc -= _bpms;
+                                        }
                                         recvAll += recv;
                                         _fileStream.Write(_buffer, 0, recv);
                                         _crc.Update(_buffer, 0, recv);
                                         jobInfo.bytes = (int) (recvAll + partialSize);
-                                        if (_loopLatency > 0)
-                                        {
-                                            Thread.Sleep(_loopLatency); // 模拟低速下载
-                                        }
-
                                         // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                                     }
                                     else
