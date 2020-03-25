@@ -27,6 +27,8 @@ namespace UnityFS
         private Func<string, string> _assetPathTransformer;
         private Manifest _manifest;
         private int _activeJobs = 0;
+        private int _bytesPerSecond;
+        private int _bytesPerSecondIdle;
         private DownloadWorker _worker; // 必要资源下载工作线程 (请求使用的资源)
         private DownloadWorker _idleWorker; // 空闲下载工作线程 
 
@@ -43,7 +45,7 @@ namespace UnityFS
         private List<Action> _callbacks = new List<Action>();
 
         public string tag => _manifest?.tag;
-        
+
         public event Action completed
         {
             add
@@ -68,9 +70,11 @@ namespace UnityFS
 
         public BundleAssetProvider(ResourceManagerArgs args)
         {
-            _worker = new DownloadWorker(onDownloadJobDone, args.bufferSize, args.bytesPerSecond,
+            _bytesPerSecond = args.bytesPerSecond;
+            _bytesPerSecondIdle = args.bytesPerSecondIdle;
+            _worker = new DownloadWorker(onDownloadJobDone, args.bufferSize,
                 System.Threading.ThreadPriority.BelowNormal);
-            _idleWorker = new DownloadWorker(onDownloadJobDone, args.bufferSize, args.bytesPerSecondIdle,
+            _idleWorker = new DownloadWorker(onDownloadJobDone, args.bufferSize,
                 System.Threading.ThreadPriority.Lowest);
             _localPathRoot = args.localPathRoot;
             _assetPathTransformer = args.assetPathTransformer;

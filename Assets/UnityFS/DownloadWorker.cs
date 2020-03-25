@@ -17,6 +17,7 @@ namespace UnityFS
         public class JobInfo : ITask
         {
             public Manifest.BundleInfo bundleInfo;
+            public int bytesPerSecond;
             public int retry; // 重试次数 (<=0 时无限重试)
             public int tried; // 已重试次数
             public int bytes; // 当前字节数
@@ -38,7 +39,6 @@ namespace UnityFS
         private byte[] _buffer;
         private int _timeout = 10 * 1000; // http 请求超时时间 (毫秒)
         private Utils.Crc16 _crc = new Utils.Crc16();
-        private int _bpms = 1024 * 712 / 10; // 712KB/S
         private LinkedList<JobInfo> _jobInfos = new LinkedList<JobInfo>();
         private Thread _thread;
         private AutoResetEvent _event = new AutoResetEvent(false);
@@ -47,10 +47,9 @@ namespace UnityFS
         // invoke in main thread
         private Action<JobInfo> _callback;
 
-        public DownloadWorker(Action<JobInfo> callback, int bufferSize, int bps,
+        public DownloadWorker(Action<JobInfo> callback, int bufferSize,
             System.Threading.ThreadPriority threadPriority)
         {
-            _bpms = bps / 10;
             _callback = callback;
             _buffer = new byte[bufferSize];
             _thread = new Thread(_Run)
@@ -258,6 +257,7 @@ namespace UnityFS
                                 stopwatch.Start();
                                 while (recvAll < rsp.ContentLength)
                                 {
+                                    var _bpms = Math.Max(1, jobInfo.bytesPerSecond / 10);
                                     var recv = webStream.Read(_buffer, 0, Math.Min(_bpms, _buffer.Length));
                                     if (recv > 0 && !_destroy)
                                     {

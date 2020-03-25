@@ -24,7 +24,7 @@ namespace UnityFS
                     if (!_IsBundleValid(bundleInfo))
                     {
                         countdown.Add();
-                        var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove());
+                        var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove(), _bytesPerSecond);
                         if (job != null)
                         {
                             jobs.Add(job);
@@ -41,7 +41,7 @@ namespace UnityFS
         {
             if (!_IsBundleValid(bundleInfo))
             {
-                return _DownloadBundleFile(bundleInfo, null);
+                return _DownloadBundleFile(bundleInfo, null, _bytesPerSecondIdle);
             }
 
             return null;
@@ -125,14 +125,14 @@ namespace UnityFS
                         else
                         {
                             Debug.LogWarningFormat("read from streamingassets failed: {0}", bundleInfo.name);
-                            _DownloadBundleFile(bundleInfo, callback);
+                            _DownloadBundleFile(bundleInfo, callback, _bytesPerSecond);
                         }
                     })
                 );
             }
             else
             {
-                _DownloadBundleFile(bundleInfo, callback);
+                _DownloadBundleFile(bundleInfo, callback, _bytesPerSecond);
             }
         }
 
@@ -151,11 +151,12 @@ namespace UnityFS
         }
 
         //NOTE: 调用此接口时已经确认 StreamingAssets 以及本地包文件均无效
-        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback)
+        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback, int bytesPerSecond)
         {
             var oldJob = _FindDownloadJob(bundleInfo.name);
             if (oldJob != null)
             {
+                oldJob.bytesPerSecond = _bytesPerSecond;
                 if (callback != null)
                 {
                     oldJob.callback += callback;
@@ -168,6 +169,7 @@ namespace UnityFS
             var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
             var newJob = new DownloadWorker.JobInfo()
             {
+                bytesPerSecond = bytesPerSecond,
                 bundleInfo = bundleInfo,
                 finalPath = bundlePath,
                 callback = callback
