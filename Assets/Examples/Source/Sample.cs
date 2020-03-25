@@ -10,9 +10,6 @@ namespace Examples
     public class Sample : MonoBehaviour, UnityFS.IAssetProviderListener
     {
         public bool developMode;        // 编辑器模式 (直接从AssetDatabase加载, 无需打包)
-        public bool downloadStartups;   // 是否进行启动包预下载
-        public int concurrentTasks = 3;
-        public int slow = 0;
         public int bufferSize = 0;
         public string password = "test"; // 危险, 真实环境中从远端获取密码
         public string listDataPath;
@@ -75,8 +72,6 @@ namespace Examples
             {
                 listDataPath = listDataPath, 
                 devMode = developMode,
-                slow = slow,
-                concurrentTasks = concurrentTasks,
                 bufferSize = bufferSize,
                 localPathRoot = localPathRoot,
                 urls = urls,

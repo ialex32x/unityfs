@@ -47,9 +47,10 @@ namespace UnityFS
         // invoke in main thread
         private Action<JobInfo> _callback;
 
-        public DownloadWorker(Action<JobInfo> callback, int bufferSize, int loopLatency,
+        public DownloadWorker(Action<JobInfo> callback, int bufferSize, int bps,
             System.Threading.ThreadPriority threadPriority)
         {
+            _bpms = bps / 10;
             _callback = callback;
             _buffer = new byte[bufferSize];
             _thread = new Thread(_Run)

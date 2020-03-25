@@ -66,15 +66,14 @@ namespace UnityFS
             remove => _callbacks.Remove(value);
         }
 
-        public BundleAssetProvider(string localPathRoot, int loopLatency, int bufferSize,
-            Func<string, string> assetPathTransformer)
+        public BundleAssetProvider(ResourceManagerArgs args)
         {
-            _worker = new DownloadWorker(onDownloadJobDone, bufferSize, loopLatency,
+            _worker = new DownloadWorker(onDownloadJobDone, args.bufferSize, args.bytesPerSecond,
                 System.Threading.ThreadPriority.BelowNormal);
-            _idleWorker = new DownloadWorker(onDownloadJobDone, bufferSize, loopLatency,
+            _idleWorker = new DownloadWorker(onDownloadJobDone, args.bufferSize, args.bytesPerSecondIdle,
                 System.Threading.ThreadPriority.Lowest);
-            _localPathRoot = localPathRoot;
-            _assetPathTransformer = assetPathTransformer;
+            _localPathRoot = args.localPathRoot;
+            _assetPathTransformer = args.assetPathTransformer;
         }
 
         public void Open(ResourceManagerArgs args)

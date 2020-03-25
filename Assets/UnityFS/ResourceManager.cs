@@ -9,9 +9,9 @@ namespace UnityFS
     public class ResourceManagerArgs
     {
         public bool devMode;
-        public int slow;
+        public int bytesPerSecond = 1024 * 768; // 常规下载速度
+        public int bytesPerSecondIdle = 256 * 1024; // 空闲任务下载速度 
         public int bufferSize;
-        public int concurrentTasks;
         public string localPathRoot;
         public string manifestChecksum;
         public int manifestSize;
@@ -95,7 +95,7 @@ namespace UnityFS
             else
 #endif
             {
-                _assetProvider = new UnityFS.BundleAssetProvider(args.localPathRoot, args.slow, args.bufferSize, args.assetPathTransformer);
+                _assetProvider = new UnityFS.BundleAssetProvider(args);
             }
 
             args.oninitialize?.Invoke();
