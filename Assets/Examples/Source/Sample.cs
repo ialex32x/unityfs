@@ -68,7 +68,7 @@ namespace Examples
             );
 
             var dataPath = string.IsNullOrEmpty(Application.temporaryCachePath) ? Application.persistentDataPath : Application.temporaryCachePath;
-            var localPathRoot = Path.Combine(dataPath, "bundles");
+            var localPathRoot = Path.Combine(dataPath, "packages");
             Debug.Log($"open localPathRoot: {localPathRoot}");
 
             UnityFS.ResourceManager.Initialize(new UnityFS.ResourceManagerArgs()
