@@ -22,7 +22,7 @@ namespace UnityFS
         {
             add
             {
-                if (_loaded)
+                if (IsLoaded() && _IsDependenciesLoaded())
                 {
                     value(this);
                 }
@@ -105,11 +105,6 @@ namespace UnityFS
                 }
                 _denpendencies = null;
             }
-        }
-
-        public bool isLoaded
-        {
-            get { return IsLoaded() && _IsDependenciesLoaded(); }
         }
 
         protected bool _IsDependenciesLoaded()
