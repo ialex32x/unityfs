@@ -180,13 +180,6 @@ namespace UnityFS
             }
         }
 
-        // 检查是否存在有效的本地包
-        public bool IsBundleAvailable(Manifest.BundleInfo bundleInfo)
-        {
-            var fullPath = Path.Combine(_localPathRoot, bundleInfo.name);
-            return Utils.Helpers.IsBundleFileValid(fullPath, bundleInfo);
-        }
-
         public bool IsFileAvailable(FileEntry fileEntry)
         {
             var fullPath = Path.Combine(_localPathRoot, fileEntry.name);

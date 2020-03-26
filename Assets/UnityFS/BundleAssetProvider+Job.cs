@@ -21,7 +21,7 @@ namespace UnityFS
                 var bundleInfo = _manifest.bundles[i];
                 if ((bundleInfo.load & load) != 0)
                 {
-                    if (!_IsBundleValid(bundleInfo))
+                    if (!IsBundleAvailable(bundleInfo))
                     {
                         countdown.Add();
                         var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove(), _bytesPerSecond);
@@ -39,7 +39,7 @@ namespace UnityFS
 
         public DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
         {
-            if (!_IsBundleValid(bundleInfo))
+            if (!IsBundleAvailable(bundleInfo))
             {
                 return _DownloadBundleFile(bundleInfo, null, _bytesPerSecondIdle);
             }
@@ -54,7 +54,7 @@ namespace UnityFS
             for (var i = 0; i < size; i++)
             {
                 var bundleInfo = _manifest.bundles[i];
-                if (!_IsBundleValid(bundleInfo))
+                if (!IsBundleAvailable(bundleInfo))
                 {
                     list.Add(bundleInfo);
                 }
@@ -63,7 +63,8 @@ namespace UnityFS
             return list;
         }
 
-        private bool _IsBundleValid(Manifest.BundleInfo bundleInfo)
+        // 检查是否存在有效的本地包
+        public bool IsBundleAvailable(Manifest.BundleInfo bundleInfo)
         {
             // 仅验证 StreamingAssets 清单内存在此资源包 (因为没办法直接安全有效地访问 StreamingAssets 内文件)
             if (_streamingAssets.Contains(bundleInfo))
