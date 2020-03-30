@@ -163,5 +163,16 @@ namespace Examples
                 };
             };
         }
+
+        private void OnGUI()
+        {
+            if (GUILayout.Button("Validate"))
+            {
+                ResourceManager.ValidateManifest(result =>
+                {
+                    Debug.LogFormat("当前清单状态: {0}", result);
+                });
+            }
+        }
     }
 }

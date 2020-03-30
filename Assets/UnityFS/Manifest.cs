@@ -6,6 +6,13 @@ namespace UnityFS
 {
     using UnityEngine;
 
+    public enum EValidationResult
+    {
+        Latest, // 已经最新
+        Update, // 有更新
+        Failed, // 失败
+    }
+
     // 清单
     [Serializable]
     public class Manifest

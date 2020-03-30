@@ -16,9 +16,9 @@ namespace UnityFS
         {
             var jobs = new List<DownloadWorker.JobInfo>();
             var countdown = new Utils.CountdownObject(onComplete);
-            for (int i = 0, size = _manifest.bundles.Count; i < size; i++)
+            for (int i = 0, size = _manifestObject.bundles.Count; i < size; i++)
             {
-                var bundleInfo = _manifest.bundles[i];
+                var bundleInfo = _manifestObject.bundles[i];
                 if ((bundleInfo.load & load) != 0)
                 {
                     if (!IsBundleAvailable(bundleInfo))
@@ -49,11 +49,11 @@ namespace UnityFS
 
         public IList<Manifest.BundleInfo> GetInvalidatedBundles()
         {
-            var size = _manifest.bundles.Count;
+            var size = _manifestObject.bundles.Count;
             var list = new List<Manifest.BundleInfo>(size);
             for (var i = 0; i < size; i++)
             {
-                var bundleInfo = _manifest.bundles[i];
+                var bundleInfo = _manifestObject.bundles[i];
                 if (!IsBundleAvailable(bundleInfo))
                 {
                     list.Add(bundleInfo);

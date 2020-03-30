@@ -30,11 +30,12 @@ namespace UnityFS
     public static class ResourceManager
     {
         private static List<string> _urls = new List<string>();
+
         // 资源加载器
         private static IAssetProvider _assetProvider;
         private static Analyzer.IAssetsAnalyzer _analyzer;
         private static IAssetProviderListener _listener;
-        
+
         public static string tag
         {
             get { return _assetProvider?.tag; }
@@ -43,7 +44,11 @@ namespace UnityFS
         public static IList<string> urls
         {
             get { return _urls; }
-            set { _urls.Clear(); _urls.AddRange(value); }
+            set
+            {
+                _urls.Clear();
+                _urls.AddRange(value);
+            }
         }
 
         public static void SetListener(IAssetProviderListener listener)
@@ -67,10 +72,12 @@ namespace UnityFS
             {
                 fileName += ".asset";
             }
+
             if (!fileName.StartsWith("Assets/"))
             {
                 fileName = "Assets/" + fileName;
             }
+
             return fileName;
         }
 
@@ -82,12 +89,15 @@ namespace UnityFS
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(args.listDataPath))
             {
-                var listData = UnityEditor.AssetDatabase.LoadMainAssetAtPath(NormalizedListPath(args.listDataPath)) as AssetListData;
+                var listData =
+                    UnityEditor.AssetDatabase.LoadMainAssetAtPath(NormalizedListPath(args.listDataPath)) as
+                        AssetListData;
                 if (listData != null)
                 {
                     _analyzer = new Analyzer.DefaultAssetsAnalyzer(listData);
                 }
             }
+
             if (args.devMode)
             {
                 _assetProvider = new UnityFS.AssetDatabaseAssetProvider(args.asyncSimMin, args.asyncSimMax);
@@ -160,6 +170,19 @@ namespace UnityFS
             return GetAssetProvider().IsBundleAvailable(bundleName);
         }
 
+        public static void ValidateManifest(Action<EValidationResult> callback, int retry = 0)
+        {
+            var provider = GetAssetProvider() as BundleAssetProvider;
+            if (provider != null)
+            {
+                provider.ValidateManifest(retry, callback);
+            }
+            else
+            {
+                callback(EValidationResult.Latest);
+            }
+        }
+
         // 资源是否立即可用 (本地有效)
         public static bool IsAssetAvailable(string assetPath)
         {
@@ -214,6 +237,7 @@ namespace UnityFS
             {
                 return GetFileSystem(bundleName);
             }
+
             return null;
         }
 
@@ -233,13 +257,13 @@ namespace UnityFS
         {
             return GetAssetProvider().EnsureBundles(load, onComplete);
         }
-        
+
         // 下载指定的资源包 (返回 null 表示不需要下载)
         public static DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
         {
             return GetAssetProvider().EnsureBundle(bundleInfo);
         }
-        
+
         // 检查本地资源包状态, 返回所有需要下载的包信息的列表
         public static IList<Manifest.BundleInfo> GetInvalidatedBundles()
         {

@@ -81,10 +81,20 @@ namespace UnityFS.Utils
         }
 #endif
 
+        // 比对两个 FileEntry 记录是否相同
+        public static bool IsFileEntryEquals(FileEntry fileEntry1, FileEntry fileEntry2)
+        {
+            return fileEntry1 != null
+                   && fileEntry2 != null
+                   && fileEntry1.checksum == fileEntry2.checksum
+                   && fileEntry1.size == fileEntry2.size
+                   && fileEntry1.rsize == fileEntry2.rsize;
+        }
+
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
         public static void GetManifest(string localPathRoot, string checksum, int size, int rsize, string password,
-            Action<Manifest> callback)
+            Action<Manifest, FileEntry> callback)
         {
             if (checksum != null && size != 0 && rsize != 0)
             {
@@ -122,13 +132,13 @@ namespace UnityFS.Utils
 
         // 已知清单文件校验值和大小的情况下, 可以使用此接口, 略过 checksum 文件的获取 
         public static void GetManifestDirect(string localPathRoot, FileEntry fileEntry, string password,
-            Action<Manifest> callback)
+            Action<Manifest, FileEntry> callback)
         {
             var manifestPath = Path.Combine(localPathRoot, Manifest.ManifestFileName);
             var manifest_t = ParseManifestFile(manifestPath, fileEntry, password);
             if (manifest_t != null)
             {
-                callback(manifest_t);
+                callback(manifest_t, fileEntry);
             }
             else
             {
@@ -137,7 +147,7 @@ namespace UnityFS.Utils
                         manifestTask =>
                         {
                             var manifest = ParseManifestStream(File.OpenRead(manifestTask.path), fileEntry, password);
-                            callback(manifest);
+                            callback(manifest, fileEntry);
                         })
                     .SetDebugMode(true).Run();
             }

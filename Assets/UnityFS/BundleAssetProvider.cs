@@ -3,6 +3,8 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using ICSharpCode.SharpZipLib.Zip;
+using UnityEngine.Networking;
+using UnityFS.Utils;
 
 namespace UnityFS
 {
@@ -25,7 +27,8 @@ namespace UnityFS
         private Dictionary<string, WeakReference> _fileSystems = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private Func<string, string> _assetPathTransformer;
-        private Manifest _manifest;
+        private FileEntry _manifestFileEntry; // 清单自身信息
+        private Manifest _manifestObject; // 当前清单 
         private int _activeJobs = 0;
         private int _bytesPerSecond;
         private int _bytesPerSecondIdle;
@@ -44,7 +47,7 @@ namespace UnityFS
 
         private List<Action> _callbacks = new List<Action>();
 
-        public string tag => _manifest?.tag;
+        public string tag => _manifestObject?.tag;
 
         public event Action completed
         {
@@ -55,7 +58,7 @@ namespace UnityFS
                     Debug.LogError($"BundleAssetProvider already disposed");
                 }
 
-                if (_manifest != null)
+                if (_manifestObject != null)
                 {
                     value();
                 }
@@ -84,12 +87,12 @@ namespace UnityFS
         {
             _password = args.password;
             Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, args.manifestRSize,
-                _password, manifest =>
+                _password, (manifest, fileEntry) =>
                 {
                     _streamingAssets = new StreamingAssetsLoader();
                     _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
                     {
-                        SetManifest(manifest);
+                        SetManifest(manifest, fileEntry);
                         ResourceManager.GetListener().OnSetManifest();
                     });
                 });
@@ -158,12 +161,13 @@ namespace UnityFS
             return _assetPathTransformer != null ? _assetPathTransformer.Invoke(assetPath) : assetPath;
         }
 
-        private void SetManifest(Manifest manifest)
+        private void SetManifest(Manifest manifest, FileEntry fileEntry)
         {
-            _manifest = manifest;
+            _manifestFileEntry = fileEntry;
+            _manifestObject = manifest;
             _assetPath2Bundle.Clear();
             _bundlesMap.Clear();
-            foreach (var bundle in _manifest.bundles)
+            foreach (var bundle in _manifestObject.bundles)
             {
                 _bundlesMap[bundle.name] = bundle;
                 foreach (var assetPath in bundle.assets)
@@ -177,6 +181,69 @@ namespace UnityFS
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
                 callback();
+            }
+        }
+
+        // 验证当前清单是否最新
+        public void ValidateManifest(int retry, Action<EValidationResult> callback)
+        {
+            JobScheduler.DispatchCoroutine(_ValidateManifest(retry, callback));
+        }
+
+        // 临时, 检查当前清单是否最新
+        private IEnumerator _ValidateManifest(int retry, Action<EValidationResult> callback)
+        {
+            var urlIndex = 0;
+            var url = "";
+            var checksumFileName = Manifest.ChecksumFileName;
+            var urls = ResourceManager.urls;
+
+            while (true)
+            {
+                if (urlIndex < urls.Count)
+                {
+                    if (urls[urlIndex].EndsWith("/"))
+                    {
+                        url = urls[urlIndex] + checksumFileName;
+                    }
+                    else
+                    {
+                        url = urls[urlIndex] + "/" + checksumFileName;
+                    }
+
+                    ++urlIndex;
+                    url += "?checksum=" + DateTime.Now.Ticks;
+                }
+
+                var uwr = UnityWebRequest.Get(url);
+                yield return uwr.SendWebRequest();
+                if (uwr.error == null)
+                {
+                    try
+                    {
+                        var handler = uwr.downloadHandler;
+                        var fileEntry = JsonUtility.FromJson<FileEntry>(handler.text);
+                        if (fileEntry != null)
+                        {
+                            var eq = Helpers.IsFileEntryEquals(_manifestFileEntry, fileEntry);
+                            callback(eq ? EValidationResult.Latest : EValidationResult.Update);
+                            yield break;
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogErrorFormat(": {0}", exception);
+                    }
+                }
+
+                if (--retry == 0)
+                {
+                    callback(EValidationResult.Failed);
+                    yield break;
+                }
+
+                Debug.LogWarningFormat("retry after checksum validation failed {0}", url);
+                yield return new WaitForSeconds(1f);
             }
         }
 
