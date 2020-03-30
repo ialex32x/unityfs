@@ -23,6 +23,11 @@ namespace UnityFS.Utils
             _roots.Remove(asset);
         }
 
+        public static void ValidateManifest(IList<string> urls, Action<int> callback, int retry = 0)
+        {
+            ResourceManager.ValidateManifest(urls, result => callback((int) result), retry);
+        }
+
         public static string GetPlatformName()
         {
 #if UNITY_EDITOR
