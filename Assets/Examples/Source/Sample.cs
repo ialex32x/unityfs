@@ -168,7 +168,7 @@ namespace Examples
         {
             if (GUILayout.Button("Validate"))
             {
-                ResourceManager.ValidateManifest(result =>
+                ResourceManager.ValidateManifest(ResourceManager.urls, result =>
                 {
                     Debug.LogFormat("当前清单状态: {0}", result);
                 });

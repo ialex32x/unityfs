@@ -170,12 +170,12 @@ namespace UnityFS
             return GetAssetProvider().IsBundleAvailable(bundleName);
         }
 
-        public static void ValidateManifest(Action<EValidationResult> callback, int retry = 0)
+        public static void ValidateManifest(IList<string> urls, Action<EValidationResult> callback, int retry = 0)
         {
             var provider = GetAssetProvider() as BundleAssetProvider;
             if (provider != null)
             {
-                provider.ValidateManifest(retry, callback);
+                provider.ValidateManifest(urls, retry, callback);
             }
             else
             {

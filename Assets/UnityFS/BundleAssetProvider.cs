@@ -185,18 +185,17 @@ namespace UnityFS
         }
 
         // 验证当前清单是否最新
-        public void ValidateManifest(int retry, Action<EValidationResult> callback)
+        public void ValidateManifest(IList<string> urls, int retry, Action<EValidationResult> callback)
         {
-            JobScheduler.DispatchCoroutine(_ValidateManifest(retry, callback));
+            JobScheduler.DispatchCoroutine(_ValidateManifest(urls, retry, callback));
         }
 
         // 临时, 检查当前清单是否最新
-        private IEnumerator _ValidateManifest(int retry, Action<EValidationResult> callback)
+        private IEnumerator _ValidateManifest(IList<string> urls, int retry, Action<EValidationResult> callback)
         {
             var urlIndex = 0;
             var url = "";
             var checksumFileName = Manifest.ChecksumFileName;
-            var urls = ResourceManager.urls;
 
             while (true)
             {
