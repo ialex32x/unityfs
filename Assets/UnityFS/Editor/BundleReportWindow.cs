@@ -195,30 +195,37 @@ namespace UnityFS.Editor
                             InspectRules(split.rules);
                             Block("Slices", () =>
                             {
+                                var validIndex = 0;
                                 for (var sliceIndex = 0; sliceIndex < sliceCount; sliceIndex++)
                                 {
                                     var slice = split.slices[sliceIndex];
-                                    if (sliceCount > 1)
+                                    var assetCount = slice.assetGuids.Count;
+                                    if (assetCount > 0)
                                     {
-                                        var sliceName = string.Format("{0}/{1}: {2}", sliceIndex + 1, sliceCount,
-                                            slice.name);
-                                        EditorGUILayout.LabelField(sliceName);
-                                    }
-                                    else
-                                    {
-                                        EditorGUILayout.LabelField(slice.name);
-                                    }
+                                        validIndex++;
+                                        if (sliceCount > 1)
+                                        {
+                                            var sliceName = string.Format("[{0}] {1}/{2}: {3}", validIndex,
+                                                sliceIndex + 1, sliceCount,
+                                                slice.name);
+                                            EditorGUILayout.LabelField(sliceName);
+                                        }
+                                        else
+                                        {
+                                            EditorGUILayout.LabelField(slice.name);
+                                        }
 
-                                    for (var assetIndex = 0; assetIndex < slice.assetGuids.Count; assetIndex++)
-                                    {
-                                        var assetGuid = slice.assetGuids[assetIndex];
-                                        var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                                        var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                                        EditorGUILayout.BeginHorizontal();
-                                        GUILayout.Space(20f);
-                                        EditorGUILayout.TextField(assetPath);
-                                        EditorGUILayout.ObjectField(assetObject, typeof(Object), false);
-                                        EditorGUILayout.EndHorizontal();
+                                        for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
+                                        {
+                                            var assetGuid = slice.assetGuids[assetIndex];
+                                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                                            EditorGUILayout.BeginHorizontal();
+                                            GUILayout.Space(20f);
+                                            EditorGUILayout.TextField(assetPath);
+                                            EditorGUILayout.ObjectField(assetObject, typeof(Object), false);
+                                            EditorGUILayout.EndHorizontal();
+                                        }
                                     }
                                 }
                             });

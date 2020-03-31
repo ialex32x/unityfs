@@ -9,6 +9,7 @@ using System.Text;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.GZip;
 using NUnit.Framework;
+using UnityEditor.WindowsStandalone;
 
 namespace UnityFS.Editor
 {
@@ -1067,7 +1068,10 @@ namespace UnityFS.Editor
 
             WriteManifest(buildInfo, manifest);
             WriteEmbeddedManifest(buildInfo, embeddedManifest);
-            BuildStreamingAssets(buildInfo, fileListManifest);
+            if (buildInfo.buildTarget == EditorUserBuildSettings.activeBuildTarget)
+            {
+                BuildStreamingAssets(buildInfo, fileListManifest);
+            }
         }
 
         // write manifest & checksum of manifest 
