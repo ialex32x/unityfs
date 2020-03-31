@@ -4,6 +4,7 @@ using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using UnityEngine.Networking;
 
 namespace UnityFS.Utils
 {
@@ -231,49 +232,6 @@ namespace UnityFS.Utils
             return pending;
         }
 
-        // public static void DownloadBundles(
-        //     string localPathRoot,
-        //     Manifest.BundleInfo[] bundles,
-        //     StreamingAssetsLoader streamingAssets,
-        //     Action<int, int, ITask> onProgress,
-        //     Action onComplete)
-        // {
-        //     JobScheduler.DispatchCoroutine(DownloadBundlesCo(localPathRoot, bundles, streamingAssets, onProgress, onComplete));
-        // }
-
-        // // 当前任务数, 总任务数, 当前任务进度
-        // public static IEnumerator DownloadBundlesCo(
-        //     string localPathRoot,
-        //     Manifest.BundleInfo[] bundles,
-        //     StreamingAssetsLoader streamingAssets,
-        //     Action<int, int, ITask> onProgress,
-        //     Action onComplete)
-        // {
-        //     for (int i = 0, size = bundles.Length; i < size; i++)
-        //     {
-        //         var bundleInfo = bundles[i];
-        //         if (streamingAssets != null && streamingAssets.Contains(bundleInfo.name, bundleInfo.checksum, bundleInfo.size))
-        //         {
-        //             // Debug.LogWarning($"skipping embedded bundle {bundleInfo.name}");
-        //             continue;
-        //         }
-        //         var bundlePath = Path.Combine(localPathRoot, bundleInfo.name);
-        //         var task = DownloadTask.Create(bundleInfo, bundlePath, -1, 10, null).SetDebugMode(true);
-        //         var progress = -1.0f;
-        //         task.Run();
-        //         while (!task.isDone)
-        //         {
-        //             if (progress != task.progress)
-        //             {
-        //                 progress = task.progress;
-        //                 onProgress(i, size, task);
-        //             }
-        //             yield return null;
-        //         }
-        //     }
-        //     onComplete();
-        // }
-
         // 检查本地文件是否有效 (此接口仅通过本地meta文件验证对应文件是否有效)
         public static bool IsFileValid(string fullPath, string checksum, int size)
         {
@@ -413,6 +371,110 @@ namespace UnityFS.Utils
             }
 
             return fin;
+        }
+
+        public static string GetStreamingAssetsPath(string innerPath)
+        {
+            var streamingAssetsPathRoot = Application.streamingAssetsPath + EnsureSperator(innerPath);
+            if (Application.platform != RuntimePlatform.Android)
+            {
+                streamingAssetsPathRoot = "file://" + streamingAssetsPathRoot;
+            }
+
+            return streamingAssetsPathRoot;
+        }
+
+        public static string GetStreamingAssetsFilePath(string innerPath)
+        {
+            var streamingAssetsPathRoot = Application.streamingAssetsPath + EnsureFileSperator(innerPath);
+            if (Application.platform != RuntimePlatform.Android)
+            {
+                streamingAssetsPathRoot = "file://" + streamingAssetsPathRoot;
+            }
+
+            return streamingAssetsPathRoot;
+        }
+
+        public static string EnsureFileSperator(string name)
+        {
+            var len = name.Length;
+            if (len > 0)
+            {
+                if (name[0] != '/')
+                {
+                    return '/' + name;
+                }
+            }
+
+            return name;
+        }
+
+        public static string EnsureSperator(string name)
+        {
+            var len = name.Length;
+            if (len > 0)
+            {
+                if (name[0] != '/')
+                {
+                    if (name[len - 1] != '/')
+                    {
+                        return '/' + name + '/';
+                    }
+
+                    return '/' + name;
+                }
+
+                if (name[len - 1] != '/')
+                {
+                    return name + '/';
+                }
+            }
+
+            return name;
+        }
+
+        // 指定的文件清单复制到本地目录
+        public static IEnumerator CopyStreamingAssets(string outputPath, FileListManifest fileListManifest, Action oncomplete)
+        {
+            var count = fileListManifest.files.Count;
+            for (var i = 0; i < count; i++)
+            {
+                var file = fileListManifest.files[i];
+                var outputFile = Path.Combine(outputPath, file.name);
+                if (!File.Exists(outputFile))
+                {
+                    var streamingFile = GetStreamingAssetsFilePath(file.name);
+                    var uwr = UnityWebRequest.Get(streamingFile);
+                    yield return uwr.SendWebRequest();
+                    if (uwr.error == null && uwr.responseCode == 200)
+                    {
+                        try
+                        {
+                            var bytes = uwr.downloadHandler.data;
+                            var checksum = Crc16.ComputeChecksum(bytes);
+                            var size = bytes.Length;
+                            var metaFile = Path.Combine(outputPath, file.name + Metadata.Ext);
+                            var metadata = new Metadata()
+                            {
+                                checksum = Crc16.ToString(checksum),
+                                size = size,
+                            };
+                            var metaJson = JsonUtility.ToJson(metadata);
+                            File.WriteAllText(metaFile, metaJson);
+                            File.WriteAllBytes(outputFile, bytes);
+                        }
+                        catch (Exception exception)
+                        {
+                            Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
+                    }
+                }
+            }
+            oncomplete?.Invoke();
         }
     }
 }
