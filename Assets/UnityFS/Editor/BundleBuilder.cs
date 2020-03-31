@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Permissions;
@@ -330,8 +331,7 @@ namespace UnityFS.Editor
             BuildPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platforms);
         }
 
-        // (批量) 生成指定平台的资源包
-        public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platforms)
+        private static BuildTarget[] GetBuildTargets(PackagePlatforms platforms)
         {
             var targets = new HashSet<BuildTarget>();
             if ((platforms & PackagePlatforms.Active) != 0)
@@ -359,7 +359,15 @@ namespace UnityFS.Editor
                 targets.Add(BuildTarget.StandaloneOSX);
             }
 
-            if (targets.Count > 0)
+            return targets.ToArray();
+        }
+
+        // (批量) 生成指定平台的资源包
+        public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platforms)
+        {
+            var targets = GetBuildTargets(platforms);
+
+            if (targets.Length > 0)
             {
                 foreach (var target in targets)
                 {
@@ -417,20 +425,8 @@ namespace UnityFS.Editor
                 $"{buildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
-        // 将首包资源包复制到StreamingAssets目录中 (假设已经生成资源包) 
-        public static void BuildStreamingAssets(BundleBuilderData data, string outputPath, BuildTarget target)
-        {
-            BuildStreamingAssets(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, target);
-        }
-
-        public static void BuildStreamingAssets(PackageSharedBuildInfo sharedBuildInfo, BuildTarget target)
-        {
-            var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
-            BuildStreamingAssets(buildInfo);
-        }
-
         // 将首包资源复制到 StreamingAssets 目录 (在 BuildPlayer 之前调用)
-        public static void BuildStreamingAssets(PackageBuildInfo buildInfo)
+        public static void BuildStreamingAssets(PackageBuildInfo buildInfo, FileListManifest fileListManifest)
         {
             var packagePath = buildInfo.packagePath;
             var embeddedManifest = ReadEmbeddedManifest(packagePath);
@@ -440,12 +436,26 @@ namespace UnityFS.Editor
                     Path.Combine(buildInfo.streamingAssetsPath, Manifest.EmbeddedManifestFileName), true);
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
+                    // Debug.LogFormat("copy {0}", bundleInfo.name);
                     File.Copy(Path.Combine(packagePath, bundleInfo.name),
                         Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
+                    
+                    //TODO: streamingassets copy
+                    foreach (var entry in fileListManifest.fileEntrys)
+                    {
+                        if (entry.streamingAssets && CopyRawFile(buildInfo.streamingAssetsPath, entry.assetPath))
+                        {
+                            Debug.LogWarningFormat("copy xxx {0}", entry.assetPath);
+                        }
+                    }
                 }
 
                 AssetDatabase.Refresh();
                 // cleanup
+                foreach (var dir in Directory.GetDirectories(buildInfo.streamingAssetsPath))
+                {
+                    CleanupRecursively(dir, "Assets", fileListManifest, true);
+                }
                 foreach (var file in Directory.GetFiles(buildInfo.streamingAssetsPath))
                 {
                     var fi = new FileInfo(file);
@@ -492,12 +502,12 @@ namespace UnityFS.Editor
             return filename.Replace('\\', '/');
         }
 
-        private static void CleanupRecursively(string innerPath, string relativeDir, FileListManifest fileListManifest)
+        private static void CleanupRecursively(string innerPath, string relativeDir, FileListManifest fileListManifest, bool bStreamingAssets)
         {
             foreach (var dir in Directory.GetDirectories(innerPath))
             {
                 var info = new DirectoryInfo(dir);
-                CleanupRecursively(dir, relativeDir + '/' + info.Name, fileListManifest);
+                CleanupRecursively(dir, relativeDir + '/' + info.Name, fileListManifest, bStreamingAssets);
             }
 
             foreach (var file in Directory.GetFiles(innerPath))
@@ -511,10 +521,13 @@ namespace UnityFS.Editor
                     foreach (var entry in fileListManifest.fileEntrys)
                     {
                         // Debug.LogFormat("!! {0} {1}", file, filename);
-                        if (filename == entry)
+                        if (filename == entry.assetPath)
                         {
-                            match = true;
-                            break;
+                            if (!bStreamingAssets || entry.streamingAssets)
+                            {
+                                match = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -534,7 +547,7 @@ namespace UnityFS.Editor
         {
             foreach (var dir in Directory.GetDirectories(buildInfo.packagePath))
             {
-                CleanupRecursively(dir, "Assets", fileListManifest);
+                CleanupRecursively(dir, "Assets", fileListManifest, false);
             }
 
             foreach (var file in Directory.GetFiles(buildInfo.packagePath))
@@ -594,23 +607,15 @@ namespace UnityFS.Editor
                             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             var fileEntry = GenFileEntry(assetPath, assetPath);
                             manifest.files.Add(fileEntry);
-                            var outFilePath = Path.Combine(buildInfo.packagePath, assetPath).Replace('\\', '/');
-                            var dir = Path.GetDirectoryName(outFilePath);
-                            try
+                            if (CopyRawFile(buildInfo.packagePath, assetPath))
                             {
-                                if (!Directory.Exists(dir))
+                                var fileListManifestFileInfo = new FileListManifestFileInfo()
                                 {
-                                    Directory.CreateDirectory(dir);
-                                }
-
-                                File.Copy(assetPath, outFilePath, true);
-                                build.fileEntrys.Add(assetPath);
+                                    assetPath = assetPath,
+                                    streamingAssets = bundle.streamingAssets
+                                };
+                                build.fileEntrys.Add(fileListManifestFileInfo);
                             }
-                            catch (Exception exception)
-                            {
-                                Debug.LogErrorFormat("copy file list file failed: {0}\n{1}", outFilePath, exception);
-                            }
-
                             // FileUtil.CopyFileOrDirectory(assetPath, outPath);
                             // Debug.LogFormat("gen {0} from {1}", outFilePath, assetPath);
                         }
@@ -622,6 +627,28 @@ namespace UnityFS.Editor
             }
 
             return build;
+        }
+
+        private static bool CopyRawFile(string outputPath, string assetPath)
+        {
+            var outFilePath = Path.Combine(outputPath, assetPath).Replace('\\', '/');
+            var dir = Path.GetDirectoryName(outFilePath);
+            try
+            {
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                File.Copy(assetPath, outFilePath, true);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogErrorFormat("copy file list file failed: {0}\n{1}", outFilePath, exception);
+            }
+
+            return false;
         }
 
         public static AssetBundleManifest BuildAssetBundles(PackageBuildInfo buildInfo,
@@ -1040,6 +1067,7 @@ namespace UnityFS.Editor
 
             WriteManifest(buildInfo, manifest);
             WriteEmbeddedManifest(buildInfo, embeddedManifest);
+            BuildStreamingAssets(buildInfo, fileListManifest);
         }
 
         // write manifest & checksum of manifest 

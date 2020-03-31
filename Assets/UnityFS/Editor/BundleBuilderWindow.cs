@@ -185,7 +185,7 @@ namespace UnityFS.Editor
 
                 if (GUILayout.Button("Build Packages"))
                 {
-                    EditorApplication.delayCall += () => BundleBuilder.BuildPackages(data, "", _platforms);
+                    BundleBuilder.BuildPackages(data, "", _platforms);
                 }
             }
 

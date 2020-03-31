@@ -322,9 +322,15 @@ namespace UnityFS.Editor
         public string name;
     }
 
+    public class FileListManifestFileInfo
+    {
+        public string assetPath; // 记录了打包过程中需要复制的文件路径 (AssetPath)
+        public bool streamingAssets; // 是否复制到 StreamingAssets
+    }
+
     public class FileListManifest
     {
-        public List<string> fileEntrys = new List<string>(); // 记录了打包过程中需要复制的文件路径 (AssetPath)
+        public List<FileListManifestFileInfo> fileEntrys = new List<FileListManifestFileInfo>();
         public List<FileListManifestEntry> fileLists = new List<FileListManifestEntry>();
     }
 
