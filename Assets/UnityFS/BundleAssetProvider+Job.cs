@@ -142,7 +142,7 @@ namespace UnityFS
             for (var it = _tasks.First; it != null; it = it.Next)
             {
                 var oldJob = it.Value;
-                if (oldJob.bundleInfo.name == bundleName)
+                if (oldJob.name == bundleName)
                 {
                     return oldJob;
                 }
@@ -188,7 +188,7 @@ namespace UnityFS
             _tasks.Remove(jobInfo);
             jobInfo.callback?.Invoke();
             ResourceManager.GetListener().OnTaskComplete(jobInfo);
-            var bundle = TryGetBundle(jobInfo.bundleInfo);
+            var bundle = TryGetBundle(jobInfo.name);
             if (bundle != null)
             {
                 if (!LoadBundleFile(bundle))
@@ -206,7 +206,7 @@ namespace UnityFS
             {
                 var task = it.Value;
 
-                if (newTask.bundleInfo.priority > task.bundleInfo.priority)
+                if (newTask.priority > task.priority)
                 {
                     _tasks.AddBefore(it, newTask);
                     return newTask;

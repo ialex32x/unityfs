@@ -408,6 +408,18 @@ namespace UnityFS
             UBundle bundle;
             return bundleInfo != null && _bundles.TryGetValue(bundleInfo.name, out bundle) ? bundle : null;
         }
+        
+        // 尝试获取包对象 (不会自动创建并加载)
+        public UBundle TryGetBundle(string bundleName)
+        {
+            if (_closed)
+            {
+                return null;
+            }
+
+            UBundle bundle;
+            return bundleName != null && _bundles.TryGetValue(bundleName, out bundle) ? bundle : null;
+        }
 
         public UBundle GetBundle(Manifest.BundleInfo bundleInfo)
         {
