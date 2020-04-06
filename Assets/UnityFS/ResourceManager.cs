@@ -83,29 +83,42 @@ namespace UnityFS
 
         public static void Initialize(ResourceManagerArgs args)
         {
+            _urls.Clear();
             _urls.AddRange(args.urls);
-            _listener = new EmptyAssetProviderListener();
+            if (_listener == null)
+            {
+                _listener = new EmptyAssetProviderListener();
+            }
+
             JobScheduler.Initialize();
 #if UNITY_EDITOR
-            if (!string.IsNullOrEmpty(args.listDataPath))
+            if (_analyzer == null)
             {
-                var listData =
-                    UnityEditor.AssetDatabase.LoadMainAssetAtPath(NormalizedListPath(args.listDataPath)) as
-                        AssetListData;
-                if (listData != null)
+                if (!string.IsNullOrEmpty(args.listDataPath))
                 {
-                    _analyzer = new Analyzer.DefaultAssetsAnalyzer(listData);
+                    var listData =
+                        UnityEditor.AssetDatabase.LoadMainAssetAtPath(NormalizedListPath(args.listDataPath)) as
+                            AssetListData;
+                    if (listData != null)
+                    {
+                        _analyzer = new Analyzer.DefaultAssetsAnalyzer(listData);
+                    }
                 }
             }
 
             if (args.devMode)
             {
-                _assetProvider = new UnityFS.AssetDatabaseAssetProvider(args.asyncSimMin, args.asyncSimMax);
+                _assetProvider = new AssetDatabaseAssetProvider(args.asyncSimMin, args.asyncSimMax);
             }
             else
 #endif
             {
-                _assetProvider = new UnityFS.BundleAssetProvider(args);
+                if (_assetProvider != null)
+                {
+                    _assetProvider.Close();
+                }
+
+                _assetProvider = new BundleAssetProvider(args);
             }
 
             args.oninitialize?.Invoke();

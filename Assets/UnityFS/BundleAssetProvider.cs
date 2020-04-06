@@ -42,7 +42,7 @@ namespace UnityFS
         private LinkedList<IEnumerator> _assetLoaders = new LinkedList<IEnumerator>();
         private string _localPathRoot;
         private StreamingAssetsLoader _streamingAssets;
-        private bool _disposed;
+        private bool _closed;
         private string _password;
 
         private List<Action> _callbacks = new List<Action>();
@@ -53,7 +53,7 @@ namespace UnityFS
         {
             add
             {
-                if (_disposed)
+                if (_closed)
                 {
                     Debug.LogError($"BundleAssetProvider already disposed");
                 }
@@ -100,6 +100,11 @@ namespace UnityFS
 
         protected void _LoadBundle(IEnumerator e)
         {
+            if (_closed)
+            {
+                return;
+            }
+
             _bundleLoaders.AddLast(e);
             if (_bundleLoaders.Count == 1)
             {
@@ -109,6 +114,11 @@ namespace UnityFS
 
         protected void _LoadAsset(IEnumerator e)
         {
+            if (_closed)
+            {
+                return;
+            }
+
             _assetLoaders.AddLast(e);
             if (_assetLoaders.Count == 1)
             {
@@ -296,37 +306,56 @@ namespace UnityFS
 
         public void Close()
         {
-            Abort();
-            OnRelease();
-        }
-
-        private void OnRelease()
-        {
-            if (!_disposed)
+            if (!_closed)
             {
-                _disposed = true;
-                GC.Collect();
-                var count = _bundles.Count;
-                if (count > 0)
-                {
-                    var bundles = new UBundle[count];
-                    _bundles.Values.CopyTo(bundles, 0);
-                    for (var i = 0; i < count; i++)
-                    {
-                        var bundle = bundles[i];
-                        // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
-                        bundle.Release();
-                    }
-                }
+                _closed = true;
+                JobScheduler.DispatchCoroutine(_OnClosing());
             }
         }
 
-        // 终止所有任务
-        public void Abort()
+        private IEnumerator _OnClosing()
         {
+            // 终止所有任务
             _tasks.Clear();
             _worker.Abort();
             _idleWorker.Abort();
+
+            // while (_assetLoaders.Count > 1)
+            // {
+            //     _assetLoaders.RemoveLast();
+            // }
+            //
+            // while (_bundleLoaders.Count > 1)
+            // {
+            //     _bundleLoaders.RemoveLast();
+            // }
+            //
+            // // 等待加载中的资源完成
+            // while (_assetLoaders.Count == 1)
+            // {
+            //     yield return null;
+            // }
+            //
+            // while (_bundleLoaders.Count == 1)
+            // {
+            //     yield return null;
+            // }
+            _assetLoaders.Clear();
+            _bundleLoaders.Clear();
+            var count = _bundles.Count;
+            if (count > 0)
+            {
+                var bundles = new UBundle[count];
+                _bundles.Values.CopyTo(bundles, 0);
+                for (var i = 0; i < count; i++)
+                {
+                    var bundle = bundles[i];
+                    // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
+                    bundle.Release();
+                }
+            }
+            _assets.Clear();
+            yield return null;
         }
 
         // 获取包信息
@@ -351,11 +380,19 @@ namespace UnityFS
         // 尝试获取包对象 (不会自动创建并加载)
         public UBundle TryGetBundle(Manifest.BundleInfo bundleInfo)
         {
+            if (_closed)
+            {
+                return null;
+            }
             return bundleInfo != null && _bundles.TryGetValue(bundleInfo.name, out var bundle) ? bundle : null;
         }
 
         public UBundle GetBundle(Manifest.BundleInfo bundleInfo)
         {
+            if (_closed)
+            {
+                return null;
+            }
             UBundle bundle = null;
             if (bundleInfo != null)
             {
@@ -408,6 +445,10 @@ namespace UnityFS
 
         public IFileSystem GetFileSystem(string bundleName)
         {
+            if (_closed)
+            {
+                return null;
+            }
             IFileSystem fileSystem = null;
             WeakReference fileSystemRef;
             if (_fileSystems.TryGetValue(bundleName, out fileSystemRef))
@@ -494,6 +535,10 @@ namespace UnityFS
         // 查找资源 assetPath 对应的 bundle.name
         public string Find(string assetPath)
         {
+            if (_closed)
+            {
+                return null;
+            }
             string bundleName;
             if (_assetPath2Bundle.TryGetValue(TransformAssetPath(assetPath), out bundleName))
             {
@@ -505,6 +550,10 @@ namespace UnityFS
 
         private UAsset GetAsset(string assetPath, bool concrete, Type type)
         {
+            if (_closed)
+            {
+                return null;
+            }
             UAsset asset = null;
             WeakReference assetRef;
             var transformedAssetPath = TransformAssetPath(assetPath);
