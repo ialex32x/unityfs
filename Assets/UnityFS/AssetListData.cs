@@ -5,7 +5,9 @@ using System.Collections.Generic;
 namespace UnityFS
 {
     using UnityEngine;
+#if UNITY_EDITOR
     using UnityEditor;
+#endif
 
     [Serializable]
     public class AssetTimestamp
