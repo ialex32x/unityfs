@@ -32,6 +32,8 @@ namespace UnityFS
 
             public int priority => bundleInfo.priority;
             public string name => bundleInfo.name;
+            public string checksum => bundleInfo.checksum;
+            public string comment => bundleInfo.comment;
             public string path => finalPath;
         }
 
@@ -119,14 +121,14 @@ namespace UnityFS
 
             if (url.EndsWith("/"))
             {
-                url += jobInfo.bundleInfo.name;
+                url += jobInfo.name;
             }
             else
             {
-                url += "/" + jobInfo.bundleInfo.name;
+                url += "/" + jobInfo.name;
             }
 
-            url += "?checksum=" + (jobInfo.bundleInfo.checksum ?? DateTime.Now.Ticks.ToString());
+            url += "?checksum=" + (jobInfo.checksum ?? DateTime.Now.Ticks.ToString());
             return url;
         }
 
@@ -169,7 +171,7 @@ namespace UnityFS
 
         private void ProcessJob(JobInfo jobInfo)
         {
-            Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.bundleInfo.comment);
+            Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.comment);
             var tempPath = jobInfo.finalPath + PartExt;
             if (_fileStream != null)
             {
@@ -182,6 +184,8 @@ namespace UnityFS
                 string error = null;
                 var partialSize = 0;
                 var success = true;
+                var wsize = jobInfo.size;
+                var wchecksum = jobInfo.checksum;
                 _crc.Clear();
                 if (_fileStream == null)
                 {
@@ -192,15 +196,15 @@ namespace UnityFS
                         {
                             _fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
                             partialSize = (int) fileInfo.Length;
-                            if (partialSize > jobInfo.bundleInfo.size) // 目标文件超过期望大小, 直接废弃
+                            if (partialSize > jobInfo.size) // 目标文件超过期望大小, 直接废弃
                             {
                                 _fileStream.SetLength(0);
                                 partialSize = 0;
                             }
-                            else if (partialSize <= jobInfo.bundleInfo.size) // 续传
+                            else if (partialSize <= jobInfo.size) // 续传
                             {
                                 _crc.Update(_fileStream);
-                                Debug.LogFormat("partial check {0} && {1} ({2})", partialSize, jobInfo.bundleInfo.size,
+                                Debug.LogFormat("partial check {0} && {1} ({2})", partialSize, jobInfo.size,
                                     _crc.hex);
                             }
                         }
@@ -227,7 +231,7 @@ namespace UnityFS
                     _fileStream.SetLength(0L);
                 }
 
-                if (success && (jobInfo.bundleInfo.size <= 0 || partialSize < jobInfo.bundleInfo.size))
+                if (success && (jobInfo.size <= 0 || partialSize < jobInfo.size))
                 {
                     var url = GetUrl(jobInfo);
                     try
@@ -296,33 +300,33 @@ namespace UnityFS
                     }
                 }
 
-                if (success && _fileStream.Length != jobInfo.bundleInfo.size)
+                if (success && _fileStream.Length != jobInfo.size)
                 {
-                    if (jobInfo.bundleInfo.size > 0)
+                    if (jobInfo.size > 0)
                     {
-                        error = string.Format("filesize exception: {0} {1} != {2}", jobInfo.bundleInfo.name,
-                            _fileStream.Length, jobInfo.bundleInfo.size);
+                        error = string.Format("filesize exception: {0} {1} != {2}", jobInfo.name,
+                            _fileStream.Length, jobInfo.size);
                         Debug.LogError(error);
                         success = false;
                     }
                     else
                     {
-                        jobInfo.bundleInfo.size = (int) _fileStream.Length;
+                        wsize = (int) _fileStream.Length;
                     }
                 }
 
-                if (success && _crc.hex != jobInfo.bundleInfo.checksum)
+                if (success && _crc.hex != jobInfo.checksum)
                 {
-                    if (jobInfo.bundleInfo.checksum != null)
+                    if (jobInfo.checksum != null)
                     {
-                        error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.bundleInfo.name, _crc.hex,
-                            jobInfo.bundleInfo.checksum);
+                        error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, _crc.hex,
+                            jobInfo.checksum);
                         Debug.LogError(error);
                         success = false;
                     }
                     else
                     {
-                        jobInfo.bundleInfo.checksum = _crc.hex;
+                        wchecksum = _crc.hex;
                     }
                 }
 
@@ -347,8 +351,8 @@ namespace UnityFS
                         // 写入额外的 meta
                         var meta = new Metadata()
                         {
-                            checksum = jobInfo.bundleInfo.checksum,
-                            size = jobInfo.bundleInfo.size,
+                            checksum = wchecksum,
+                            size = wsize,
                         };
                         var json = JsonUtility.ToJson(meta);
                         var metaPath = jobInfo.finalPath + Metadata.Ext;
@@ -358,7 +362,7 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        error = string.Format("write exception: {0}\n{1}", jobInfo.bundleInfo.name, exception);
+                        error = string.Format("write exception: {0}\n{1}", jobInfo.name, exception);
                         Debug.LogError(error);
                         success = false;
                     }
@@ -379,7 +383,7 @@ namespace UnityFS
                 }
 
                 Thread.Sleep(2000);
-                Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", jobInfo.bundleInfo.name, error);
+                Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", jobInfo.name, error);
             }
         }
 
