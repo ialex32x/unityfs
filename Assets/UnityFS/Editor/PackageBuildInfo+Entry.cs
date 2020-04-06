@@ -61,7 +61,8 @@ namespace UnityFS.Editor
 
         private Entry GetEntry(string name)
         {
-            return _entries.TryGetValue(name, out var entry) ? entry : null;
+            Entry entry;
+            return _entries.TryGetValue(name, out entry) ? entry : null;
         }
 
         private void _AddDependencies(string[] depRefs, HashSet<Entry> deps)

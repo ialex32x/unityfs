@@ -154,7 +154,7 @@ namespace UnityFS
 
         protected override AsyncOperation LoadSceneAsync()
         {
-#if UNITY_EDITOR
+#if UNITY_EDITOR && UNITY_2018_3_OR_NEWER
             return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(_asset.assetPath, new LoadSceneParameters(_mode));
 #else
             return null;

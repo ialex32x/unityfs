@@ -177,7 +177,8 @@ namespace UnityFS.Editor
                 return false;
             }
 
-            if (asset is AssetListData listData)
+            var listData = asset as AssetListData;
+            if (listData !=null)
             {
                 return CollectAsset(data, bundle, listData);
             }

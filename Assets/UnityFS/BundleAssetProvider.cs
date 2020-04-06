@@ -68,7 +68,7 @@ namespace UnityFS
                 }
             }
 
-            remove => _callbacks.Remove(value);
+            remove { _callbacks.Remove(value); }
         }
 
         public BundleAssetProvider(ResourceManagerArgs args)
@@ -265,7 +265,8 @@ namespace UnityFS
         // 检查是否存在有效的本地包
         public bool IsBundleAvailable(string bundleName)
         {
-            return _bundlesMap.TryGetValue(bundleName, out var bundleInfo) && IsBundleAvailable(bundleInfo);
+            Manifest.BundleInfo bundleInfo;
+            return _bundlesMap.TryGetValue(bundleName, out bundleInfo) && IsBundleAvailable(bundleInfo);
         }
 
         private bool LoadBundleFile(UBundle bundle)
@@ -384,7 +385,9 @@ namespace UnityFS
             {
                 return null;
             }
-            return bundleInfo != null && _bundles.TryGetValue(bundleInfo.name, out var bundle) ? bundle : null;
+
+            UBundle bundle;
+            return bundleInfo != null && _bundles.TryGetValue(bundleInfo.name, out bundle) ? bundle : null;
         }
 
         public UBundle GetBundle(Manifest.BundleInfo bundleInfo)
