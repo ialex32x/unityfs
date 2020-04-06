@@ -343,19 +343,38 @@ namespace UnityFS
             // }
             _assetLoaders.Clear();
             _bundleLoaders.Clear();
-            var count = _bundles.Count;
-            if (count > 0)
+            
+            var assetCount = _assets.Count;
+            if (assetCount > 0)
             {
-                var bundles = new UBundle[count];
+                var assets = new WeakReference[assetCount];
+                _assets.Values.CopyTo(assets, 0);
+                for (var i = 0; i < assetCount; i++)
+                {
+                    var weak = assets[i];
+                    if (weak.IsAlive)
+                    {
+                        var asset = weak.Target as UAsset;
+                        asset?.Dispose();
+                    }
+                }
+                _assets.Clear();
+            }
+            
+            var bundleCount = _bundles.Count;
+            if (bundleCount > 0)
+            {
+                var bundles = new UBundle[bundleCount];
                 _bundles.Values.CopyTo(bundles, 0);
-                for (var i = 0; i < count; i++)
+                for (var i = 0; i < bundleCount; i++)
                 {
                     var bundle = bundles[i];
                     // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
                     bundle.Release();
                 }
+                _bundles.Clear();
             }
-            _assets.Clear();
+
             yield return null;
         }
 
