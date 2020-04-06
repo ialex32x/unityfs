@@ -19,6 +19,7 @@ namespace UnityFS
                 _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 var go = new GameObject("_ResourceManager");
                 go.hideFlags = HideFlags.HideInHierarchy;
+                DontDestroyOnLoad(go);
                 _mb = go.AddComponent<JobScheduler>();
                 _mb.StartCoroutine(_Update());
             }
@@ -45,7 +46,7 @@ namespace UnityFS
         // main thread only
         public static Coroutine DispatchCoroutine(IEnumerator co)
         {
-            return _mb.StartCoroutine(co);
+            return _mb != null ? _mb.StartCoroutine(co) : null;
         }
 
         private static IEnumerator _AfterSeconds(Action action, float seconds)
@@ -57,7 +58,10 @@ namespace UnityFS
         // main thread only
         public static void DispatchAfter(Action action, float seconds)
         {
-            _mb.StartCoroutine(_AfterSeconds(action, seconds));
+            if (_mb != null)
+            {
+                _mb.StartCoroutine(_AfterSeconds(action, seconds));
+            }
         }
 
         public static void DispatchMainAfter(Action action, float seconds)
@@ -81,6 +85,7 @@ namespace UnityFS
 
         void OnDestroy()
         {
+            _mb = null;
             ResourceManager.Close();
             DownloadTask.Destroy();
         }
