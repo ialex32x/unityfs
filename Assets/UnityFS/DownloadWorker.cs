@@ -35,7 +35,7 @@ namespace UnityFS
             public string path => finalPath;
         }
 
-        private static bool _destroy;
+        private bool _destroy;
         private byte[] _buffer;
         private int _timeout = 10 * 1000; // http 请求超时时间 (毫秒)
         private Utils.Crc16 _crc = new Utils.Crc16();
@@ -381,11 +381,6 @@ namespace UnityFS
                 Thread.Sleep(2000);
                 Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", jobInfo.bundleInfo.name, error);
             }
-        }
-
-        public static void Destroy()
-        {
-            _destroy = true;
         }
 
         private void Complete(JobInfo jobInfo)
