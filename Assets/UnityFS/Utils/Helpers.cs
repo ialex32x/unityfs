@@ -476,5 +476,28 @@ namespace UnityFS.Utils
             }
             oncomplete?.Invoke();
         }
+        
+        // Example: 空闲时执行下载
+        public static IEnumerator _IdleDownload()
+        {
+            var bundles= ResourceManager.GetInvalidatedBundles();
+            var size = bundles.Count;
+            var wait = new WaitForSeconds(30f);
+            yield return new WaitForSeconds(15f);
+            for (var i = 0; i < size; i++)
+            {
+                var bundle = bundles[i];
+                var job = ResourceManager.EnsureBundle(bundle);
+                if (job != null)
+                {
+                    Debug.LogFormat("idle download: {0}", bundle.name);
+                    while (!job.isDone)
+                    {
+                        yield return null;
+                    }
+                }
+                yield return wait;
+            }
+        }
     }
 }

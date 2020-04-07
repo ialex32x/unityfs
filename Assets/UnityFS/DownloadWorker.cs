@@ -16,25 +16,42 @@ namespace UnityFS
 
         public class JobInfo : ITask
         {
-            public Manifest.BundleInfo bundleInfo;
-            public int bytesPerSecond;
+            public int bytesPerSecond = 128 * 1024; // 下载限速 128KB/S
+            public bool emergency; // 是否紧急 (创建此任务时)
+            
             public int retry; // 重试次数 (<=0 时无限重试)
             public int tried; // 已重试次数
             public int bytes; // 当前字节数
-            public string finalPath; // 最终存储路径
             public string error; // 错误
             public Action callback;
+            
+            private string _finalPath; // 最终存储路径
+            private int _size;
+            private int _priority;
+            private string _name;
+            private string _checksum;
+            private string _comment;
 
             public bool isRunning { get; set; }
             public bool isDone { get; set; }
-            public float progress => Mathf.Clamp01((float) bytes / bundleInfo.size);
-            public int size => bundleInfo.size;
+            public float progress => Mathf.Clamp01((float) bytes / size);
+            public string path => _finalPath;
+            public int size => _size;
 
-            public int priority => bundleInfo.priority;
-            public string name => bundleInfo.name;
-            public string checksum => bundleInfo.checksum;
-            public string comment => bundleInfo.comment;
-            public string path => finalPath;
+            public int priority => _priority;
+            public string name => _name;
+            public string checksum => _checksum;
+            public string comment => _comment;
+
+            public JobInfo(string name, string checksum, string comment, int priority, int size, string finalPath)
+            {
+                _name = name;
+                _checksum = checksum;
+                _comment = comment;
+                _priority = priority;
+                _size = size;
+                _finalPath = finalPath;
+            }
         }
 
         private bool _destroy;
@@ -45,13 +62,16 @@ namespace UnityFS
         private Thread _thread;
         private AutoResetEvent _event = new AutoResetEvent(false);
         private FileStream _fileStream;
+        private IList<string> _urls;
 
         // invoke in main thread
         private Action<JobInfo> _callback;
 
-        public DownloadWorker(Action<JobInfo> callback, int bufferSize,
+        public DownloadWorker(Action<JobInfo> callback, int bufferSize, 
+            IList<string> urls, 
             System.Threading.ThreadPriority threadPriority)
         {
+            _urls = urls;
             _callback = callback;
             _buffer = new byte[bufferSize];
             _thread = new Thread(_Run)
@@ -117,8 +137,7 @@ namespace UnityFS
 
         private string GetUrl(JobInfo jobInfo)
         {
-            var urls = ResourceManager.urls;
-            var url = urls[jobInfo.tried % urls.Count];
+            var url = _urls[jobInfo.tried % _urls.Count];
 
             if (url.EndsWith("/"))
             {
@@ -173,7 +192,7 @@ namespace UnityFS
         private void ProcessJob(JobInfo jobInfo)
         {
             Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.comment);
-            var tempPath = jobInfo.finalPath + PartExt;
+            var tempPath = jobInfo.path + PartExt;
             if (_fileStream != null)
             {
                 _fileStream.Close();
@@ -222,7 +241,7 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        Debug.LogErrorFormat("file exception: {0}\n{1}", jobInfo.finalPath, exception);
+                        Debug.LogErrorFormat("file exception: {0}\n{1}", jobInfo.path, exception);
                         error = $"file exception: {exception}";
                         success = false;
                     }
@@ -343,12 +362,12 @@ namespace UnityFS
                         // _WriteStream(buffer, fileStream, finalPath);
                         _fileStream.Close();
                         _fileStream = null;
-                        if (File.Exists(jobInfo.finalPath))
+                        if (File.Exists(jobInfo.path))
                         {
-                            File.Delete(jobInfo.finalPath);
+                            File.Delete(jobInfo.path);
                         }
 
-                        File.Move(tempPath, jobInfo.finalPath);
+                        File.Move(tempPath, jobInfo.path);
                         // 写入额外的 meta
                         var meta = new Metadata()
                         {
@@ -356,7 +375,7 @@ namespace UnityFS
                             size = wsize,
                         };
                         var json = JsonUtility.ToJson(meta);
-                        var metaPath = jobInfo.finalPath + Metadata.Ext;
+                        var metaPath = jobInfo.path + Metadata.Ext;
                         File.WriteAllText(metaPath, json);
                         Complete(jobInfo);
                         break;

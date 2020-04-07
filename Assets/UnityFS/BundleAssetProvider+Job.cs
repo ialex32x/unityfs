@@ -24,7 +24,7 @@ namespace UnityFS
                     if (!IsBundleAvailable(bundleInfo))
                     {
                         countdown.Add();
-                        var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove(), _bytesPerSecond);
+                        var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove(), true);
                         if (job != null)
                         {
                             jobs.Add(job);
@@ -41,7 +41,7 @@ namespace UnityFS
         {
             if (!IsBundleAvailable(bundleInfo))
             {
-                return _DownloadBundleFile(bundleInfo, null, _bytesPerSecondIdle);
+                return _DownloadBundleFile(bundleInfo, null, false);
             }
 
             return null;
@@ -83,7 +83,7 @@ namespace UnityFS
 
         public void ForEachTask(Action<ITask> callback)
         {
-            for (var it = _tasks.First; it != null; it = it.Next)
+            for (var it = _jobs.First; it != null; it = it.Next)
             {
                 callback(it.Value);
             }
@@ -126,20 +126,20 @@ namespace UnityFS
                         else
                         {
                             Debug.LogWarningFormat("read from streamingassets failed: {0}", bundleInfo.name);
-                            _DownloadBundleFile(bundleInfo, callback, _bytesPerSecond);
+                            _DownloadBundleFile(bundleInfo, callback, true);
                         }
                     })
                 );
             }
             else
             {
-                _DownloadBundleFile(bundleInfo, callback, _bytesPerSecond);
+                _DownloadBundleFile(bundleInfo, callback, true);
             }
         }
 
         private DownloadWorker.JobInfo _FindDownloadJob(string bundleName)
         {
-            for (var it = _tasks.First; it != null; it = it.Next)
+            for (var it = _jobs.First; it != null; it = it.Next)
             {
                 var oldJob = it.Value;
                 if (oldJob.name == bundleName)
@@ -152,12 +152,17 @@ namespace UnityFS
         }
 
         //NOTE: 调用此接口时已经确认 StreamingAssets 以及本地包文件均无效
-        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback, int bytesPerSecond)
+        private DownloadWorker.JobInfo _DownloadBundleFile(Manifest.BundleInfo bundleInfo, Action callback, bool emergency)
         {
+            var bytesPerSecond = emergency ? _bytesPerSecond : _bytesPerSecondIdle;
             var oldJob = _FindDownloadJob(bundleInfo.name);
             if (oldJob != null)
             {
-                oldJob.bytesPerSecond = _bytesPerSecond;
+                if (oldJob.bytesPerSecond < bytesPerSecond)
+                {
+                    oldJob.bytesPerSecond = bytesPerSecond;
+                }
+
                 if (callback != null)
                 {
                     oldJob.callback += callback;
@@ -168,11 +173,10 @@ namespace UnityFS
 
             // 无法打开现有文件, 下载新文件
             var bundlePath = Path.Combine(_localPathRoot, bundleInfo.name);
-            var newJob = new DownloadWorker.JobInfo()
+            var newJob = new DownloadWorker.JobInfo(bundleInfo.name, bundleInfo.checksum, bundleInfo.comment, bundleInfo.priority, bundleInfo.size, bundlePath)
             {
+                emergency = emergency,
                 bytesPerSecond = bytesPerSecond,
-                bundleInfo = bundleInfo,
-                finalPath = bundlePath,
                 callback = callback
             };
             AddDownloadTask(newJob);
@@ -183,7 +187,7 @@ namespace UnityFS
         private void onDownloadJobDone(DownloadWorker.JobInfo jobInfo)
         {
             _activeJobs--;
-            _tasks.Remove(jobInfo);
+            _jobs.Remove(jobInfo);
             jobInfo.callback?.Invoke();
             ResourceManager.GetListener().OnTaskComplete(jobInfo);
             var bundle = TryGetBundle(jobInfo.name);
@@ -198,45 +202,43 @@ namespace UnityFS
             Schedule();
         }
 
-        private DownloadWorker.JobInfo AddDownloadTask(DownloadWorker.JobInfo newTask)
+        private DownloadWorker.JobInfo AddDownloadTask(DownloadWorker.JobInfo newJob)
         {
-            for (var it = _tasks.First; it != null; it = it.Next)
+            for (var it = _jobs.First; it != null; it = it.Next)
             {
                 var task = it.Value;
 
-                if (newTask.priority > task.priority)
+                if (newJob.priority > task.priority)
                 {
-                    _tasks.AddBefore(it, newTask);
-                    return newTask;
+                    _jobs.AddBefore(it, newJob);
+                    return newJob;
                 }
             }
 
-            _tasks.AddLast(newTask);
-            return newTask;
+            _jobs.AddLast(newJob);
+            return newJob;
         }
 
         private void Schedule()
         {
             if (_activeJobs == 0)
             {
-                var taskNode = _tasks.First;
+                var taskNode = _jobs.First;
                 if (taskNode != null)
                 {
                     var task = taskNode.Value;
 
                     _activeJobs++;
-                    _worker.AddJob(task);
+                    if (task.emergency)
+                    {
+                        _worker.AddJob(task);
+                    }
+                    else
+                    {
+                        _idleWorker.AddJob(task);
+                    }
+
                     ResourceManager.GetListener().OnTaskStart(task);
-                }
-                else
-                {
-                    /*
-                     * TODO: 空闲下载
-                     * if (idle download is on) {
-                     *     check if any idle job available
-                     *     generate a job and add it to idle worker
-                     * }
-                     */
                 }
             }
         }

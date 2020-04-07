@@ -36,7 +36,7 @@ namespace UnityFS
         private DownloadWorker _idleWorker; // 空闲下载工作线程 
 
         // 正在进行的下载任务
-        private LinkedList<DownloadWorker.JobInfo> _tasks = new LinkedList<DownloadWorker.JobInfo>();
+        private LinkedList<DownloadWorker.JobInfo> _jobs = new LinkedList<DownloadWorker.JobInfo>();
 
         private LinkedList<IEnumerator> _bundleLoaders = new LinkedList<IEnumerator>();
         private LinkedList<IEnumerator> _assetLoaders = new LinkedList<IEnumerator>();
@@ -75,9 +75,9 @@ namespace UnityFS
         {
             _bytesPerSecond = args.bytesPerSecond;
             _bytesPerSecondIdle = args.bytesPerSecondIdle;
-            _worker = new DownloadWorker(onDownloadJobDone, args.bufferSize,
+            _worker = new DownloadWorker(onDownloadJobDone, args.bufferSize, args.urls,
                 System.Threading.ThreadPriority.BelowNormal);
-            _idleWorker = new DownloadWorker(onDownloadJobDone, args.bufferSize,
+            _idleWorker = new DownloadWorker(onDownloadJobDone, args.bufferSize, args.urls,
                 System.Threading.ThreadPriority.Lowest);
             _localPathRoot = args.localPathRoot;
             _assetPathTransformer = args.assetPathTransformer;
@@ -317,7 +317,7 @@ namespace UnityFS
         private IEnumerator _OnClosing()
         {
             // 终止所有任务
-            _tasks.Clear();
+            _jobs.Clear();
             _worker.Abort();
             _idleWorker.Abort();
 
