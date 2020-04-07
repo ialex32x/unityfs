@@ -80,6 +80,7 @@ namespace UnityFS
                 Priority = threadPriority,
                 IsBackground = true
             };
+            ResourceManager.AddWorker(this);
             _thread.Start();
         }
 

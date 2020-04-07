@@ -35,6 +35,7 @@ namespace UnityFS
         private static IAssetProvider _assetProvider;
         private static Analyzer.IAssetsAnalyzer _analyzer;
         private static IAssetProviderListener _listener;
+        private static List<DownloadWorker> _allWorkers = new List<DownloadWorker>();
 
         public static string tag
         {
@@ -146,6 +147,12 @@ namespace UnityFS
 
         public static void Close()
         {
+            for (int i = 0, size = _allWorkers.Count; i < size; i++)
+            {
+                _allWorkers[i].Abort();
+            }
+
+            _allWorkers.Clear();
             if (_assetProvider != null)
             {
                 _assetProvider.Close();
@@ -281,6 +288,11 @@ namespace UnityFS
         public static IList<Manifest.BundleInfo> GetInvalidatedBundles()
         {
             return GetAssetProvider().GetInvalidatedBundles();
+        }
+
+        public static void AddWorker(DownloadWorker worker)
+        {
+            _allWorkers.Add(worker);
         }
     }
 }
