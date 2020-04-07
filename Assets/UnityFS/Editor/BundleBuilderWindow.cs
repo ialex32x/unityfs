@@ -50,7 +50,7 @@ namespace UnityFS.Editor
         protected override void OnEnable()
         {
             data = BundleBuilder.GetData();
-            BundleBuilder.Scan(data);
+            BundleBuilder.Scan(data, data.previewPlatform);
             titleContent = new GUIContent("Bundle Builder");
             _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
             _platforms =
@@ -89,6 +89,15 @@ namespace UnityFS.Editor
 
         private void OnDrawSettings()
         {
+            Block("Preview", () =>
+            {
+                EditorGUI.BeginChangeCheck();
+                data.previewPlatform = (PackagePlatforms) EditorGUILayout.EnumPopup("Platform", data.previewPlatform);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    data.MarkAsDirty();
+                }
+            });
             Block("Encryption", () =>
             {
                 EditorGUI.BeginChangeCheck();
@@ -164,13 +173,13 @@ namespace UnityFS.Editor
                 GUILayout.Space(20f);
                 if (GUILayout.Button("Refresh"))
                 {
-                    BundleBuilder.Scan(data);
+                    BundleBuilder.Scan(data, data.previewPlatform);
                     _treeView.Reload();
                 }
 
                 if (GUILayout.Button("Show Bundle Assets"))
                 {
-                    BundleBuilder.Scan(data);
+                    BundleBuilder.Scan(data, data.previewPlatform);
                     _treeView.ShowBundleReport();
                 }
 

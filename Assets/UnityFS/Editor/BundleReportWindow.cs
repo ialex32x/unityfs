@@ -160,6 +160,51 @@ namespace UnityFS.Editor
                         _data.MarkAsDirty();
                     }
                 });
+                
+                Block("Target Assets", () =>
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.Space(44f);
+                    var addObject = EditorGUILayout.ObjectField(null, typeof(Object), false);
+                    if (addObject != null)
+                    {
+                        Defer(() =>
+                        {
+                            bundle.targets.Add(new BundleBuilderData.BundleAssetTarget()
+                            {
+                                enabled = true, 
+                                target = addObject,
+                            });
+                        });
+                    }
+                    EditorGUILayout.EndHorizontal();
+                    
+                    var size = bundle.targets.Count;
+                    for (var i = 0; i < size; i++)
+                    {
+                        var target = bundle.targets[i];
+                        EditorGUILayout.BeginHorizontal();
+                        GUI.color = Color.red;
+                        if (GUILayout.Button("X", GUILayout.Width(20f)))
+                        {
+                            if (EditorUtility.DisplayDialog("删除", $"确定删除资源项?", "确定", "取消"))
+                            {
+                                Defer(() => bundle.targets.Remove(target));
+                            }
+                        }
+
+                        GUI.color = _GUIColor;
+                        EditorGUI.BeginChangeCheck();
+                        target.enabled = EditorGUILayout.Toggle(target.enabled, GUILayout.Width(12f));
+                        EditorGUILayout.ObjectField(target.target, typeof(Object), false);
+                        target.platforms = (PackagePlatforms) EditorGUILayout.EnumFlagsField(target.platforms);
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            _data.MarkAsDirty();
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                });
 
                 Block("Bundle Splits", () =>
                 {

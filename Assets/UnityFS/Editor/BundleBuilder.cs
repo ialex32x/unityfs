@@ -65,32 +65,33 @@ namespace UnityFS.Editor
         }
 
         // 根据 targets 遍历产生所有实际资源列表 assets
-        public static bool Scan(BundleBuilderData data)
+        public static bool Scan(BundleBuilderData data, PackagePlatforms buildPlatform)
         {
             data.Cleanup();
             var bundles = data.bundles.ToArray();
             Array.Sort(bundles, BundleComparer);
             foreach (var bundle in bundles)
             {
-                ScanBundle(data, bundle);
+                ScanBundle(data, bundle, buildPlatform);
             }
 
             return true;
         }
 
         // 根据 targets 遍历产生所有实际资源列表 assets
-        public static bool ScanBundle(BundleBuilderData data, BundleBuilderData.BundleInfo bundle)
+        public static bool ScanBundle(BundleBuilderData data, BundleBuilderData.BundleInfo bundle,
+            PackagePlatforms buildPlatform)
         {
             if (!bundle.enabled)
             {
                 return false;
             }
 
-            foreach (var target in bundle.targets)
+            foreach (var targetAsset in bundle.targets)
             {
-                if (target.enabled)
+                if (targetAsset.enabled && targetAsset.IsBuildPlatform(buildPlatform))
                 {
-                    Scan(data, bundle, target.target);
+                    Scan(data, bundle, targetAsset.target);
                 }
             }
 
@@ -178,7 +179,7 @@ namespace UnityFS.Editor
             }
 
             var listData = asset as AssetListData;
-            if (listData !=null)
+            if (listData != null)
             {
                 return CollectAsset(data, bundle, listData);
             }
@@ -332,6 +333,20 @@ namespace UnityFS.Editor
         {
             BuildPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platforms);
         }
+        
+        public static BuildTarget ToBuildTarget(PackagePlatforms platform)
+        {
+            switch (platform)
+            {
+                case PackagePlatforms.Active: return EditorUserBuildSettings.activeBuildTarget;
+                case PackagePlatforms.Android: return BuildTarget.Android;
+                case PackagePlatforms.IOS: return BuildTarget.iOS;
+                case PackagePlatforms.Windows64: return BuildTarget.StandaloneWindows64;
+                case PackagePlatforms.MacOS: return BuildTarget.StandaloneOSX;
+            }
+        
+            throw new NotSupportedException();
+        }
 
         private static BuildTarget[] GetBuildTargets(PackagePlatforms platforms)
         {
@@ -367,14 +382,31 @@ namespace UnityFS.Editor
         // (批量) 生成指定平台的资源包
         public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platforms)
         {
-            var targets = GetBuildTargets(platforms);
-
-            if (targets.Length > 0)
+            if (platforms != 0)
             {
-                foreach (var target in targets)
+                if ((platforms & PackagePlatforms.Active) != 0)
                 {
-                    var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
-                    BuildPackages(buildInfo);
+                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.Active);
+                }
+
+                if ((platforms & PackagePlatforms.Android) != 0)
+                {
+                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.Android);
+                }
+
+                if ((platforms & PackagePlatforms.IOS) != 0)
+                {
+                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.IOS);
+                }
+
+                if ((platforms & PackagePlatforms.Windows64) != 0)
+                {
+                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.Windows64);
+                }
+
+                if ((platforms & PackagePlatforms.MacOS) != 0)
+                {
+                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.MacOS);
                 }
             }
             else
@@ -383,48 +415,46 @@ namespace UnityFS.Editor
             }
         }
 
-        public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, BuildTarget target)
+        public static void BuildSinglePlatformPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platform)
         {
-            var buildInfo = new PackageBuildInfo(sharedBuildInfo, target);
-            BuildPackages(buildInfo);
+            BuildPackages(new PackageBuildInfo(sharedBuildInfo, platform, ToBuildTarget(platform)));
         }
 
-
         // 生成打包 
-        private static void BuildPackages(PackageBuildInfo buildInfo)
+        private static void BuildPackages(PackageBuildInfo packageBuildInfo)
         {
             Debug.Log($"building bundles...");
-            Scan(buildInfo.data);
+            Scan(packageBuildInfo.data, packageBuildInfo.buildPlatform);
 
-            var assetBundleBuilds = GenerateAssetBundleBuilds(buildInfo);
-            var zipArchiveBuilds = GenerateZipArchiveBuilds(buildInfo);
-            var fileListBuilds = GenerateFileListBuilds(buildInfo);
+            var assetBundleBuilds = GenerateAssetBundleBuilds(packageBuildInfo);
+            var zipArchiveBuilds = GenerateZipArchiveBuilds(packageBuildInfo);
+            var fileListBuilds = GenerateFileListBuilds(packageBuildInfo);
 
             AssetBundleManifest assetBundleManifest = null;
             ZipArchiveManifest zipArchiveManifest = null;
             FileListManifest fileListManifest = null;
             if (assetBundleBuilds.Length != 0)
             {
-                assetBundleManifest = BuildAssetBundles(buildInfo, assetBundleBuilds);
+                assetBundleManifest = BuildAssetBundles(packageBuildInfo, assetBundleBuilds);
             }
 
             if (zipArchiveBuilds.Count != 0)
             {
-                zipArchiveManifest = BuildZipArchives(buildInfo, zipArchiveBuilds);
+                zipArchiveManifest = BuildZipArchives(packageBuildInfo, zipArchiveBuilds);
             }
 
             if (fileListBuilds.Length != 0)
             {
-                fileListManifest = BuildFileLists(buildInfo, fileListBuilds);
+                fileListManifest = BuildFileLists(packageBuildInfo, fileListBuilds);
             }
 
             EmbeddedManifest embeddedManifest;
-            BuildFinalPackages(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest,
+            BuildFinalPackages(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest,
                 out embeddedManifest);
-            Cleanup(buildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, embeddedManifest);
-            buildInfo.DoAnalyze();
+            Cleanup(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, embeddedManifest);
+            packageBuildInfo.DoAnalyze();
             Debug.Log(
-                $"{buildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
+                $"{packageBuildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
         }
 
         // 将首包资源复制到 StreamingAssets 目录 (在 BuildPlayer 之前调用)
@@ -441,7 +471,7 @@ namespace UnityFS.Editor
                     // Debug.LogFormat("copy {0}", bundleInfo.name);
                     File.Copy(Path.Combine(packagePath, bundleInfo.name),
                         Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
-                    
+
                     //TODO: streamingassets copy
                     foreach (var entry in fileListManifest.fileEntrys)
                     {
@@ -458,6 +488,7 @@ namespace UnityFS.Editor
                 {
                     CleanupRecursively(dir, "Assets", fileListManifest, true);
                 }
+
                 foreach (var file in Directory.GetFiles(buildInfo.streamingAssetsPath))
                 {
                     var fi = new FileInfo(file);
@@ -504,7 +535,8 @@ namespace UnityFS.Editor
             return filename.Replace('\\', '/');
         }
 
-        private static void CleanupRecursively(string innerPath, string relativeDir, FileListManifest fileListManifest, bool bStreamingAssets)
+        private static void CleanupRecursively(string innerPath, string relativeDir, FileListManifest fileListManifest,
+            bool bStreamingAssets)
         {
             foreach (var dir in Directory.GetDirectories(innerPath))
             {
@@ -618,6 +650,7 @@ namespace UnityFS.Editor
                                 };
                                 build.fileEntrys.Add(fileListManifestFileInfo);
                             }
+
                             // FileUtil.CopyFileOrDirectory(assetPath, outPath);
                             // Debug.LogFormat("gen {0} from {1}", outFilePath, assetPath);
                         }
