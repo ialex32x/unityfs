@@ -86,7 +86,7 @@ namespace UnityFS
         public void Open(ResourceManagerArgs args)
         {
             _password = args.password;
-            Utils.Helpers.GetManifest(_localPathRoot, args.manifestChecksum, args.manifestSize, args.manifestRSize,
+            Helpers.GetManifest(_localPathRoot, _worker,  args.manifestChecksum, args.manifestSize, args.manifestRSize,
                 _password, (manifest, fileEntry) =>
                 {
                     _streamingAssets = new StreamingAssetsLoader();
@@ -197,7 +197,22 @@ namespace UnityFS
         // 验证当前清单是否最新
         public void ValidateManifest(IList<string> urls, int retry, Action<EValidationResult> callback)
         {
-            JobScheduler.DispatchCoroutine(_ValidateManifest(urls, retry, callback));
+            Helpers.ReadRemoteFile(urls, Manifest.ChecksumFileName, content =>
+            {
+                if (!string.IsNullOrEmpty(content))
+                {
+                    var fileEntry = JsonUtility.FromJson<FileEntry>(content);
+                    if (fileEntry != null)
+                    {
+                        var eq = Helpers.IsFileEntryEquals(_manifestFileEntry, fileEntry);
+
+                        callback(eq ? EValidationResult.Latest : EValidationResult.Update);
+                        return true;
+                    }
+                }
+
+                return --retry == 0;
+            });
         }
 
         // 临时, 检查当前清单是否最新
@@ -343,7 +358,7 @@ namespace UnityFS
             // }
             _assetLoaders.Clear();
             _bundleLoaders.Clear();
-            
+
             var assetCount = _assets.Count;
             if (assetCount > 0)
             {
@@ -358,9 +373,10 @@ namespace UnityFS
                         asset?.Dispose();
                     }
                 }
+
                 _assets.Clear();
             }
-            
+
             var bundleCount = _bundles.Count;
             if (bundleCount > 0)
             {
@@ -372,6 +388,7 @@ namespace UnityFS
                     // PrintLog($"关闭管理器, 强制释放资源包 {bundle.name}");
                     bundle.Release();
                 }
+
                 _bundles.Clear();
             }
 
@@ -408,7 +425,7 @@ namespace UnityFS
             UBundle bundle;
             return bundleInfo != null && _bundles.TryGetValue(bundleInfo.name, out bundle) ? bundle : null;
         }
-        
+
         // 尝试获取包对象 (不会自动创建并加载)
         public UBundle TryGetBundle(string bundleName)
         {
@@ -427,6 +444,7 @@ namespace UnityFS
             {
                 return null;
             }
+
             UBundle bundle = null;
             if (bundleInfo != null)
             {
@@ -483,6 +501,7 @@ namespace UnityFS
             {
                 return null;
             }
+
             IFileSystem fileSystem = null;
             WeakReference fileSystemRef;
             if (_fileSystems.TryGetValue(bundleName, out fileSystemRef))
@@ -573,6 +592,7 @@ namespace UnityFS
             {
                 return null;
             }
+
             string bundleName;
             if (_assetPath2Bundle.TryGetValue(TransformAssetPath(assetPath), out bundleName))
             {
@@ -588,6 +608,7 @@ namespace UnityFS
             {
                 return null;
             }
+
             UAsset asset = null;
             WeakReference assetRef;
             var transformedAssetPath = TransformAssetPath(assetPath);

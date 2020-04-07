@@ -99,7 +99,8 @@ namespace UnityFS.Utils
 
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
-        public static void GetManifest(string localPathRoot, string checksum, int size, int rsize, string password,
+        public static void GetManifest(string localPathRoot, DownloadWorker worker, string checksum, int size,
+            int rsize, string password,
             Action<Manifest, FileEntry> callback)
         {
             if (checksum != null && size != 0 && rsize != 0)
@@ -111,7 +112,7 @@ namespace UnityFS.Utils
                     size = size,
                     rsize = rsize
                 };
-                GetManifestDirect(localPathRoot, fileEntry, password, callback);
+                GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
                 return;
             }
 
@@ -120,24 +121,17 @@ namespace UnityFS.Utils
                 Directory.CreateDirectory(localPathRoot);
             }
 
-            var checksumPath = Path.Combine(localPathRoot, Manifest.ChecksumFileName);
-            DownloadTask.Create(Manifest.ChecksumFileName, null, 0, 0, checksumPath, 0, 10, checksumTask =>
+            ReadRemoteFile(ResourceManager.urls, Manifest.ChecksumFileName, content =>
             {
-                var checksumJson = File.ReadAllText(checksumTask.path);
-                try
-                {
-                    var fileEntry = JsonUtility.FromJson<FileEntry>(checksumJson);
-                    GetManifestDirect(localPathRoot, fileEntry, password, callback);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogErrorFormat("[GetManifest] failed to get checksum:{0}\n{1}", checksumJson, exception);
-                }
-            }).SetDebugMode(true).Run();
+                var fileEntry = JsonUtility.FromJson<FileEntry>(content);
+                GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
+                return true;
+            });
         }
 
         // 已知清单文件校验值和大小的情况下, 可以使用此接口, 略过 checksum 文件的获取 
-        public static void GetManifestDirect(string localPathRoot, FileEntry fileEntry, string password,
+        public static void GetManifestDirect(string localPathRoot, DownloadWorker worker, FileEntry fileEntry,
+            string password,
             Action<Manifest, FileEntry> callback)
         {
             var manifestPath = Path.Combine(localPathRoot, Manifest.ManifestFileName);
@@ -148,14 +142,17 @@ namespace UnityFS.Utils
             }
             else
             {
-                DownloadTask
-                    .Create(Manifest.ManifestFileName, fileEntry.checksum, fileEntry.size, 0, manifestPath, 0, 10,
-                        manifestTask =>
-                        {
-                            var manifest = ParseManifestStream(File.OpenRead(manifestTask.path), fileEntry, password);
-                            callback(manifest, fileEntry);
-                        })
-                    .SetDebugMode(true).Run();
+                var manifestJob = new DownloadWorker.JobInfo(Manifest.ManifestFileName, fileEntry.checksum, "Manifest",
+                    0, fileEntry.size, manifestPath)
+                {
+                    emergency = true,
+                    callback = () =>
+                    {
+                        var manifest = ParseManifestStream(File.OpenRead(manifestPath), fileEntry, password);
+                        callback(manifest, fileEntry);
+                    }
+                };
+                worker.AddJob(manifestJob);
             }
         }
 
@@ -434,7 +431,8 @@ namespace UnityFS.Utils
         }
 
         // 指定的文件清单复制到本地目录
-        public static IEnumerator CopyStreamingAssets(string outputPath, FileListManifest fileListManifest, Action oncomplete)
+        public static IEnumerator CopyStreamingAssets(string outputPath, FileListManifest fileListManifest,
+            Action oncomplete)
         {
             var count = fileListManifest.files.Count;
             for (var i = 0; i < count; i++)
@@ -474,13 +472,72 @@ namespace UnityFS.Utils
                     }
                 }
             }
+
             oncomplete?.Invoke();
         }
-        
+
+        // callback 返回 true 表示停止重试或完成
+        public static void ReadRemoteFile(IList<string> urls, string filename, Func<string, bool> callback)
+        {
+            JobScheduler.DispatchCoroutine(_ReadRemoteFile(urls, filename, callback));
+        }
+
+        private static IEnumerator _ReadRemoteFile(IList<string> urls, string filename, Func<string, bool> callback)
+        {
+            var urlIndex = 0;
+            var url = "";
+
+            while (true)
+            {
+                if (urlIndex < urls.Count)
+                {
+                    if (urls[urlIndex].EndsWith("/"))
+                    {
+                        url = urls[urlIndex] + filename;
+                    }
+                    else
+                    {
+                        url = urls[urlIndex] + "/" + filename;
+                    }
+
+                    ++urlIndex;
+                    url += "?checksum=" + DateTime.Now.Ticks;
+                }
+
+                var uwr = UnityWebRequest.Get(url);
+                yield return uwr.SendWebRequest();
+                try
+                {
+                    if (uwr.error == null)
+                    {
+                        var handler = uwr.downloadHandler;
+                        if (callback(handler.text))
+                        {
+                            yield break;
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarningFormat("retry {0}: {1}", url, uwr.error);
+                        if (callback(null))
+                        {
+                            yield break;
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogErrorFormat("exception {0}: {1}", url, exception);
+                }
+
+                yield return new WaitForSeconds(1.5f);
+            }
+        }
+
         // Example: 空闲时执行下载
         public static IEnumerator _IdleDownload()
         {
-            var bundles= ResourceManager.GetInvalidatedBundles();
+            var bundles = ResourceManager.GetInvalidatedBundles();
             var size = bundles.Count;
             var wait = new WaitForSeconds(30f);
             yield return new WaitForSeconds(15f);
@@ -496,6 +553,7 @@ namespace UnityFS.Utils
                         yield return null;
                     }
                 }
+
                 yield return wait;
             }
         }

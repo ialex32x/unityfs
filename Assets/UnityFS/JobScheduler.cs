@@ -87,7 +87,6 @@ namespace UnityFS
         {
             _mb = null;
             ResourceManager.Close();
-            DownloadTask.Destroy();
         }
     }
 }

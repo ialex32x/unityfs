@@ -186,8 +186,10 @@ namespace UnityFS
 
         private void onDownloadJobDone(DownloadWorker.JobInfo jobInfo)
         {
-            _activeJobs--;
-            _jobs.Remove(jobInfo);
+            if (_jobs.Remove(jobInfo))
+            {
+                _activeJobs--;                
+            }
             jobInfo.callback?.Invoke();
             ResourceManager.GetListener().OnTaskComplete(jobInfo);
             var bundle = TryGetBundle(jobInfo.name);

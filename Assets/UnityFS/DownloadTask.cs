@@ -10,6 +10,7 @@ namespace UnityFS
     using UnityEngine;
     using UnityEngine.Networking;
 
+    [Obsolete("use DownloadWorker instead.")]
     public class DownloadTask : ITask
     {
         public const string BundleContentType = "application/octet-stream";
