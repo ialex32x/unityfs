@@ -86,6 +86,7 @@ namespace UnityFS
 
         public void Abort()
         {
+            ResourceManager.RemoveWorker(this);
             _destroy = true;
             lock (_jobInfos)
             {

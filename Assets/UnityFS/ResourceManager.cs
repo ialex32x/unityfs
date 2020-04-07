@@ -147,12 +147,19 @@ namespace UnityFS
 
         public static void Close()
         {
-            for (int i = 0, size = _allWorkers.Count; i < size; i++)
+            var size = _allWorkers.Count;
+            if (size > 0)
             {
-                _allWorkers[i].Abort();
+                var workers = new DownloadWorker[size];
+                _allWorkers.CopyTo(workers, 0);
+                for (var i = 0; i < size; i++)
+                {
+                    workers[i].Abort();
+                }
+
+                _allWorkers.Clear();
             }
 
-            _allWorkers.Clear();
             if (_assetProvider != null)
             {
                 _assetProvider.Close();
@@ -293,6 +300,11 @@ namespace UnityFS
         public static void AddWorker(DownloadWorker worker)
         {
             _allWorkers.Add(worker);
+        }
+
+        public static void RemoveWorker(DownloadWorker worker)
+        {
+            _allWorkers.Remove(worker);
         }
     }
 }
