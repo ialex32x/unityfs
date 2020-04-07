@@ -100,6 +100,7 @@ namespace UnityFS
 
         public bool AddJob(JobInfo jobInfo)
         {
+            jobInfo.isRunning = true;
             lock (_jobInfos)
             {
                 if (_destroy)
@@ -391,7 +392,12 @@ namespace UnityFS
         {
             if (_callback != null)
             {
-                JobScheduler.DispatchMain(() => { _callback(jobInfo); });
+                JobScheduler.DispatchMain(() =>
+                {
+                    jobInfo.isDone = true;
+                    jobInfo.isRunning = false;
+                    _callback(jobInfo);
+                });
             }
         }
     }

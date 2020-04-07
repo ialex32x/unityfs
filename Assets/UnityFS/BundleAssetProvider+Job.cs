@@ -182,8 +182,6 @@ namespace UnityFS
 
         private void onDownloadJobDone(DownloadWorker.JobInfo jobInfo)
         {
-            jobInfo.isDone = true;
-            jobInfo.isRunning = false;
             _activeJobs--;
             _tasks.Remove(jobInfo);
             jobInfo.callback?.Invoke();
@@ -227,7 +225,6 @@ namespace UnityFS
                     var task = taskNode.Value;
 
                     _activeJobs++;
-                    task.isRunning = true;
                     _worker.AddJob(task);
                     ResourceManager.GetListener().OnTaskStart(task);
                 }
