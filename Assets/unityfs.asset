@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 28
   encryptionKey: test
+  previewPlatform: 2
   bundles:
   - id: 1
     buildOrder: 1000
@@ -23,18 +24,21 @@ MonoBehaviour:
     load: 2
     enabled: 1
     streamingAssets: 0
-    priority: 7910
+    priority: 7090
     targets:
     - id: 2
       enabled: 1
       target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
+      platforms: 0
     - id: 10
       enabled: 1
       target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,
         type: 3}
+      platforms: 0
     - id: 13
       enabled: 1
       target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
+      platforms: 0
     splits:
     - encrypted: 0
       name: 
@@ -120,9 +124,11 @@ MonoBehaviour:
     - id: 22
       enabled: 1
       target: {fileID: 102900000, guid: 2feb7197082914e38a692c44a3798c2d, type: 3}
+      platforms: 0
     - id: 23
       enabled: 1
       target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
+      platforms: 0
     splits:
     - encrypted: 1
       name: sc
@@ -162,6 +168,7 @@ MonoBehaviour:
     - id: 18
       enabled: 1
       target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
+      platforms: 0
     splits:
     - encrypted: 1
       name: 
@@ -173,6 +180,7 @@ MonoBehaviour:
         histroy:
         - e46dad9ccca72ad4587045373fba4ffa
         - ad80bd1399b82cc4ba0c7f4d055ac1ce
+        - 26d5d477691d5a64290cb20bade47e1a
   - id: 19
     buildOrder: 1000
     name: bundle_19.pkg
@@ -186,12 +194,15 @@ MonoBehaviour:
     - id: 20
       enabled: 1
       target: {fileID: 102900000, guid: 3753d2e5af63eac439ba9b0f36641e6d, type: 3}
+      platforms: 0
     - id: 21
       enabled: 1
       target: {fileID: 102900000, guid: b35be9c075bfa7d4990280e18b1ac7fb, type: 3}
+      platforms: 0
     - id: 24
       enabled: 1
       target: {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
+      platforms: 0
     splits:
     - encrypted: 0
       name: 
@@ -216,6 +227,7 @@ MonoBehaviour:
     - id: 26
       enabled: 1
       target: {fileID: 102900000, guid: 2a5ab583c0072634e95457d9c3788741, type: 3}
+      platforms: 2
     splits:
     - encrypted: 0
       name: 
@@ -240,6 +252,7 @@ MonoBehaviour:
     - id: 28
       enabled: 1
       target: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
+      platforms: 0
     splits:
     - encrypted: 0
       name: 
@@ -255,6 +268,16 @@ MonoBehaviour:
         - ce7ab5d846e45ac4ca42d89d2dd9bbde
         - b35be9c075bfa7d4990280e18b1ac7fb
         - 2a5ab583c0072634e95457d9c3788741
+  assetAttributesMap:
+    _keys:
+    - df4858d82a3ad344d88e9ce52e8cbaa0
+    - e6ed50713350f7f4495cb1c101ea3a83
+    - 992af6815f49f5c40a046b974de3c5d7
+    _values:
+    - priority: 3912
+    - priority: 0
+    - priority: 4883
   assetBundlePath: out/bundles
   zipArchivePath: out/zipArchives
   packagePath: out/packages
+  priorityMax: 10000

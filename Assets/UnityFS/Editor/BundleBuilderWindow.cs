@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace UnityFS.Editor
@@ -19,7 +20,7 @@ namespace UnityFS.Editor
         BundleBuilderTreeView _treeView;
 
         private int _tabIndex;
-        private string[] _tabs = new[] {"Packages", "Settings"};
+        private string[] _tabs = new[] {"Packages", "Assets", "Settings"};
         private bool dirty;
         private BundleBuilderData.BundleInfo selected;
         private BundleBuilderData data;
@@ -52,6 +53,7 @@ namespace UnityFS.Editor
             data = BundleBuilder.GetData();
             BundleBuilder.Scan(data, data.previewPlatform);
             titleContent = new GUIContent("Bundle Builder");
+            _searchKeyword = EditorPrefs.GetString("BundleBuilderWindow._searchKeyword");
             _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
             _platforms =
                 (PackagePlatforms) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatforms.Active);
@@ -82,9 +84,125 @@ namespace UnityFS.Editor
             {
                 case 0: OnDrawPackages();
                     break;
-                case 1: OnDrawSettings();
+                case 1: OnDrawAssets();
+                    break;
+                case 2: OnDrawSettings();
                     break;
             }
+        }
+
+        private int _selectedCollectAssetPath;
+        private Vector2 _searchSV;
+        private string _searchKeyword;
+        
+        private void OnDrawAssets()
+        {
+            EditorGUILayout.BeginHorizontal();
+            _selectedCollectAssetPath = EditorGUILayout.Popup("Define", _selectedCollectAssetPath, data.allCollectedAssetsPath);
+            var s_assetPath = _selectedCollectAssetPath >= 0 && _selectedCollectAssetPath < data.allCollectedAssetsPath.Length ? data.allCollectedAssetsPath[_selectedCollectAssetPath] : "";
+            var s_guid = AssetDatabase.AssetPathToGUID(s_assetPath);
+            EditorGUI.BeginDisabledGroup(string.IsNullOrEmpty(s_assetPath) || data.assetAttributesMap.ContainsKey(s_guid));
+            if (GUILayout.Button("Add", GUILayout.Width(60f)))
+            {
+                data.assetAttributesMap[s_guid] = new AssetAttributes();
+                data.MarkAsDirty();
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+            
+            Block("Search", () =>
+            {
+                _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
+                var nSearchKeyword = EditorGUILayout.TextField("Keyword", _searchKeyword);
+                if (nSearchKeyword != _searchKeyword)
+                {
+                    _searchKeyword = nSearchKeyword;
+                    EditorPrefs.SetString("BundleBuilderWindow._searchKeyword", _searchKeyword);
+                }
+                var showDefinedOnly = EditorPrefs.GetInt("BundleBuilderWindow.showDefinedOnly") == 1;
+                var nShowDefinedOnly = EditorGUILayout.Toggle("Show Defined Only", showDefinedOnly);
+                if (nShowDefinedOnly != showDefinedOnly)
+                {
+                    showDefinedOnly = nShowDefinedOnly;
+                    EditorPrefs.SetInt("BundleBuilderWindow.showDefinedOnly", showDefinedOnly ? 1 : 0);
+                }
+                EditorGUILayout.Space();
+                if (true)
+                {
+                    var searchCount = 200;
+                    for (var i = 0; i < data.allCollectedAssetsPath.Length; i++)
+                    {
+                        var assetPath = data.allCollectedAssetsPath[i];
+                        if (string.IsNullOrEmpty(_searchKeyword) || assetPath.IndexOf(_searchKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                            var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+                            AssetAttributes attrs;
+                            if (data.assetAttributesMap.TryGetValue(assetGuid, out attrs))
+                            {
+                                EditorGUILayout.BeginHorizontal();
+                                EditorGUILayout.TextField(assetPath);
+                                EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.Width(200f));
+                                EditorGUI.BeginChangeCheck();
+                                attrs.priority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax);
+                                if (EditorGUI.EndChangeCheck())
+                                {
+                                    data.MarkAsDirty();
+                                }
+                                GUI.color = Color.red;
+                                if (GUILayout.Button("Del", GUILayout.Width(60f)))
+                                {
+                                    if (EditorUtility.DisplayDialog("删除", $"确定删除资源项属性?", "确定", "取消"))
+                                    {
+                                        Defer(() =>
+                                        {
+                                            data.assetAttributesMap.Remove(assetGuid);
+                                            data.MarkAsDirty();
+                                        });
+                                    }
+                                }
+
+                                GUI.color = _GUIColor;
+                                EditorGUILayout.EndHorizontal();
+                                --searchCount;
+                            }
+                            else if (!showDefinedOnly)
+                            {
+                                EditorGUILayout.BeginHorizontal();
+                                EditorGUILayout.TextField(assetPath);
+                                EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.Width(200f));
+                                var nSlideValue = EditorGUILayout.IntSlider(0, 0, data.priorityMax);
+                                if (nSlideValue != 0)
+                                {
+                                    AddAssetAttribute(assetGuid, nSlideValue);
+                                }
+                                if (GUILayout.Button("Add", GUILayout.Width(60f)))
+                                {
+                                    AddAssetAttribute(assetGuid, 0);
+                                }
+                                EditorGUILayout.EndHorizontal();
+                                --searchCount;
+                            }
+
+                            if (searchCount <= 0)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                EditorGUILayout.EndScrollView();
+            });
+            EditorGUILayout.Space();
+        }
+
+        private void AddAssetAttribute(string assetGuid, int priority)
+        {
+            data.assetAttributesMap[assetGuid] = new AssetAttributes()
+            {
+                priority = priority
+            };
+            data.MarkAsDirty();
         }
 
         private void OnDrawSettings()

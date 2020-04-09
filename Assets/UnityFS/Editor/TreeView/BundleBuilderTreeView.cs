@@ -473,7 +473,7 @@ namespace UnityFS.Editor
                     if (item.depth == 0)
                     {
                         var bundleInfo = (item as BundleBuilderTreeViewBundle).bundleInfo;
-                        var priority = EditorGUI.IntSlider(cellRect, bundleInfo.priority, 0, 10000);
+                        var priority = EditorGUI.IntSlider(cellRect, bundleInfo.priority, 0, _data.priorityMax);
                         if (priority != bundleInfo.priority)
                         {
                             bundleInfo.priority = priority;
