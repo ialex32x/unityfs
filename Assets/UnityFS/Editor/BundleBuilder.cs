@@ -703,6 +703,25 @@ namespace UnityFS.Editor
             return GenFileEntry(name, targetFilePath);
         }
 
+        private static int GetPriority(PackageBuildInfo buildInfo, BundleBuilderData.BundleInfo bundleInfo,
+            BundleBuilderData.BundleSlice bundleSlice)
+        {
+            var priority = bundleInfo.priority;
+            for (int i = 0, size = bundleSlice.assetGuids.Count; i < size; i++)
+            {
+                var guid = bundleSlice.assetGuids[i];
+                AssetAttributes attrs;
+                if (buildInfo.data.assetAttributesMap.TryGetValue(guid, out attrs))
+                {
+                    if (attrs.priority > priority)
+                    {
+                        priority = attrs.priority;
+                    }
+                }
+            }
+            return priority;
+        }
+
         // 生成最终包文件, 生成最终清单
         public static void BuildFinalPackages(PackageBuildInfo buildInfo,
             AssetBundleManifest assetBundleManifest,
@@ -737,7 +756,7 @@ namespace UnityFS.Editor
                         bundle.checksum = fileEntry.checksum;
                         bundle.size = fileEntry.size;
                         bundle.load = bundleInfo.load;
-                        bundle.priority = bundleInfo.priority;
+                        bundle.priority = GetPriority(buildInfo, bundleInfo, bundleSlice);
                         foreach (var assetGuid in bundleSlice.assetGuids)
                         {
                             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
@@ -776,7 +795,7 @@ namespace UnityFS.Editor
                         bundle.checksum = fileEntry.checksum;
                         bundle.size = fileEntry.size;
                         bundle.load = bundleInfo.load;
-                        bundle.priority = bundleInfo.priority;
+                        bundle.priority = GetPriority(buildInfo, bundleInfo, bundleSlice);
                         foreach (var assetPath in zipArchive.assets)
                         {
                             bundle.assets.Add(assetPath);
