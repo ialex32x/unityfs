@@ -91,42 +91,33 @@ namespace UnityFS.Editor
             }
         }
 
-        private int _selectedCollectAssetPath;
         private Vector2 _searchSV;
         private string _searchKeyword;
         
         private void OnDrawAssets()
         {
-            EditorGUILayout.BeginHorizontal();
-            _selectedCollectAssetPath = EditorGUILayout.Popup("Define", _selectedCollectAssetPath, data.allCollectedAssetsPath);
-            var s_assetPath = _selectedCollectAssetPath >= 0 && _selectedCollectAssetPath < data.allCollectedAssetsPath.Length ? data.allCollectedAssetsPath[_selectedCollectAssetPath] : "";
-            var s_guid = AssetDatabase.AssetPathToGUID(s_assetPath);
-            EditorGUI.BeginDisabledGroup(string.IsNullOrEmpty(s_assetPath) || data.assetAttributesMap.ContainsKey(s_guid));
-            if (GUILayout.Button("Add", GUILayout.Width(60f)))
-            {
-                data.assetAttributesMap[s_guid] = new AssetAttributes();
-                data.MarkAsDirty();
-            }
-            EditorGUI.EndDisabledGroup();
-            EditorGUILayout.EndHorizontal();
-            
+            var showDefinedOnly = EditorPrefs.GetInt("BundleBuilderWindow.showDefinedOnly") == 1;
             Block("Search", () =>
             {
-                _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
                 var nSearchKeyword = EditorGUILayout.TextField("Keyword", _searchKeyword);
                 if (nSearchKeyword != _searchKeyword)
                 {
                     _searchKeyword = nSearchKeyword;
                     EditorPrefs.SetString("BundleBuilderWindow._searchKeyword", _searchKeyword);
                 }
-                var showDefinedOnly = EditorPrefs.GetInt("BundleBuilderWindow.showDefinedOnly") == 1;
                 var nShowDefinedOnly = EditorGUILayout.Toggle("Show Defined Only", showDefinedOnly);
                 if (nShowDefinedOnly != showDefinedOnly)
                 {
                     showDefinedOnly = nShowDefinedOnly;
                     EditorPrefs.SetInt("BundleBuilderWindow.showDefinedOnly", showDefinedOnly ? 1 : 0);
                 }
-                EditorGUILayout.Space();
+            });
+            
+            EditorGUILayout.Space();
+            Block("Results", () =>
+            {
+                _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
+                
                 if (true)
                 {
                     var searchCount = 200;
