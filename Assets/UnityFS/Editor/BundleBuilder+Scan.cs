@@ -183,10 +183,9 @@ namespace UnityFS.Editor
 
                 if (ruleMatch)
                 {
-                    if (!ContainsAsset(data, asset))
+                    if (!ContainsAsset(data, asset) && split.AddObject(asset))
                     {
                         data.OnAssetCollect(asset, assetPath);
-                        split.AddObject(asset);
                         data.MarkAsDirty();
                     }
 

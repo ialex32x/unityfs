@@ -339,7 +339,7 @@ namespace UnityFS
 
                 if (success && _crc.hex != jobInfo.checksum)
                 {
-                    if (jobInfo.checksum != null)
+                    if (!string.IsNullOrEmpty(jobInfo.checksum))
                     {
                         error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, _crc.hex,
                             jobInfo.checksum);

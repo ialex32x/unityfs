@@ -22,9 +22,10 @@ namespace UnityFS.Editor
 
             public List<BundleSlice> slices = new List<BundleSlice>();
 
-            public void AddObject(Object asset)
+            public bool AddObject(Object asset)
             {
                 _assets.Add(asset);
+                return true;
             }
 
             public bool ContainsObject(Object asset)
