@@ -141,7 +141,7 @@ namespace UnityFS.Editor
 
         private void UpdateSearchResults()
         {
-            UpdateSearchResults(_searchKeyword, _showDefinedOnly, _showSelectionOnly, 200);
+            UpdateSearchResults(_searchKeyword, _showDefinedOnly, _showSelectionOnly, data.searchMax);
         }
 
         // showDefinedOnly: 只显示已定义
@@ -402,6 +402,7 @@ namespace UnityFS.Editor
                 // 最终包输出目录
                 data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
                 data.priorityMax = EditorGUILayout.IntField("Priority Max", data.priorityMax);
+                data.searchMax =  EditorGUILayout.IntField("Search Max", data.searchMax);
                 if (EditorGUI.EndChangeCheck())
                 {
                     data.MarkAsDirty();

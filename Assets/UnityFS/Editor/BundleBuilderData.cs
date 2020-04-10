@@ -59,6 +59,7 @@ namespace UnityFS.Editor
         public string zipArchivePath = "out/zipArchives";
         public string packagePath = "out/packages";
         public int priorityMax = 10000;
+        public int searchMax = 200;
         public AssetListData assetListData;
 
         [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();
