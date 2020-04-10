@@ -703,6 +703,7 @@ namespace UnityFS.Editor
             return GenFileEntry(name, targetFilePath);
         }
 
+        // 计算指定 slice 中最高的资源优先级作为包优先级 (最低不低于 bundleInfo定义的优先级)
         private static int GetPriority(PackageBuildInfo buildInfo, BundleBuilderData.BundleInfo bundleInfo,
             BundleBuilderData.BundleSlice bundleSlice)
         {
@@ -766,7 +767,7 @@ namespace UnityFS.Editor
                         bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
                         buildInfo.CreateEntry(bundle);
                         manifest.bundles.Add(bundle);
-                        if (bundleInfo.streamingAssets)
+                        if (bundleSlice.streamingAssets)
                         {
                             embeddedManifest.bundles.Add(fileEntry);
                         }
@@ -802,7 +803,7 @@ namespace UnityFS.Editor
                         }
 
                         manifest.bundles.Add(bundle);
-                        if (bundleInfo.streamingAssets)
+                        if (bundleSlice.streamingAssets)
                         {
                             embeddedManifest.bundles.Add(fileEntry);
                         }
