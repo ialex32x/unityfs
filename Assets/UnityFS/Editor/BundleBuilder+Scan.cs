@@ -186,7 +186,6 @@ namespace UnityFS.Editor
                     if (!ContainsAsset(data, asset) && split.AddObject(asset))
                     {
                         data.OnAssetCollect(asset, assetPath);
-                        data.MarkAsDirty();
                     }
 
                     return true;

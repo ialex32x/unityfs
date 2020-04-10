@@ -54,7 +54,8 @@ namespace UnityFS.Editor
         public string encryptionKey;
         public PackagePlatforms previewPlatform; // 查看打包内容时使用的预览平台
         public List<BundleInfo> bundles = new List<BundleInfo>();
-        public AssetAttributesMap assetAttributesMap = new AssetAttributesMap();
+        [SerializeField]
+        private AssetAttributesMap assetAttributesMap = new AssetAttributesMap();
         public string assetBundlePath = "out/bundles";
         public string zipArchivePath = "out/zipArchives";
         public string packagePath = "out/packages";
@@ -77,10 +78,40 @@ namespace UnityFS.Editor
             return data;
         }
 
+        public AssetAttributes AddAssetAttributes(string guid, int priority)
+        {
+            AssetAttributes attrs;
+            if (!assetAttributesMap.TryGetValue(guid, out attrs))
+            {
+                attrs = assetAttributesMap[guid] = new AssetAttributes();
+                attrs.priority = priority;
+                MarkAsDirty();   
+            }
+            return attrs;
+        }
+
+        public bool RemoveAssetAttributes(string guid)
+        {
+            if (assetAttributesMap.Remove(guid))
+            {
+                MarkAsDirty();
+                return true;
+            }
+
+            return false;
+        }
+
+        public AssetAttributes GetAssetAttributes(string guid)
+        {
+            AssetAttributes attrs;
+            return assetAttributesMap.TryGetValue(guid, out attrs) ? attrs : null;
+        }
+
         public void OnAssetCollect(Object asset, string assetPath)
         {
             allCollectedAssets.Add(asset);
             ArrayUtility.Add(ref allCollectedAssetsPath, assetPath);
+            MarkAsDirty();
         }
 
         public void MarkAsDirty()

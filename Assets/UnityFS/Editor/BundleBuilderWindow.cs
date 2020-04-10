@@ -128,8 +128,8 @@ namespace UnityFS.Editor
                         {
                             var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
                             var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
-                            AssetAttributes attrs;
-                            if (data.assetAttributesMap.TryGetValue(assetGuid, out attrs))
+                            var attrs = data.GetAssetAttributes(assetGuid);
+                            if (attrs != null)
                             {
                                 EditorGUILayout.BeginHorizontal();
                                 EditorGUILayout.TextField(assetPath);
@@ -145,11 +145,7 @@ namespace UnityFS.Editor
                                 {
                                     if (EditorUtility.DisplayDialog("删除", $"确定删除资源项属性?", "确定", "取消"))
                                     {
-                                        Defer(() =>
-                                        {
-                                            data.assetAttributesMap.Remove(assetGuid);
-                                            data.MarkAsDirty();
-                                        });
+                                        Defer(() => data.RemoveAssetAttributes(assetGuid));
                                     }
                                 }
 
@@ -165,11 +161,11 @@ namespace UnityFS.Editor
                                 var nSlideValue = EditorGUILayout.IntSlider(0, 0, data.priorityMax);
                                 if (nSlideValue != 0)
                                 {
-                                    AddAssetAttribute(assetGuid, nSlideValue);
+                                    data.AddAssetAttributes(assetGuid, nSlideValue);
                                 }
                                 if (GUILayout.Button("Add", GUILayout.Width(60f)))
                                 {
-                                    AddAssetAttribute(assetGuid, 0);
+                                    data.AddAssetAttributes(assetGuid, 0);
                                 }
                                 EditorGUILayout.EndHorizontal();
                                 --searchCount;
@@ -185,15 +181,6 @@ namespace UnityFS.Editor
                 EditorGUILayout.EndScrollView();
             });
             EditorGUILayout.Space();
-        }
-
-        private void AddAssetAttribute(string assetGuid, int priority)
-        {
-            data.assetAttributesMap[assetGuid] = new AssetAttributes()
-            {
-                priority = priority
-            };
-            data.MarkAsDirty();
         }
 
         private void OnDrawSettings()

@@ -7,12 +7,22 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
+    // 首包选择
+    [Serializable]
+    public enum AssetPacker
+    {
+        Auto = 0,     // 根据资源运行分析列表自动确定是否进入 StreamingAssets 
+        Always = 1,   // 总是进入
+        Never = 2,    // 不进
+    }
+
     // 显式指定资源的优先级 (将改变所在 bundleSlice 的优先级)
     [Serializable]
     public class AssetAttributes
     {
         // public string assetGuid;
         public int priority;
+        public AssetPacker packer;
     }
  
     [Serializable]

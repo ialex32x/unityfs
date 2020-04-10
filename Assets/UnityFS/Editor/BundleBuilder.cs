@@ -710,8 +710,8 @@ namespace UnityFS.Editor
             for (int i = 0, size = bundleSlice.assetGuids.Count; i < size; i++)
             {
                 var guid = bundleSlice.assetGuids[i];
-                AssetAttributes attrs;
-                if (buildInfo.data.assetAttributesMap.TryGetValue(guid, out attrs))
+                var attrs = buildInfo.data.GetAssetAttributes(guid);
+                if (attrs != null)
                 {
                     if (attrs.priority > priority)
                     {
