@@ -16,9 +16,11 @@ namespace UnityFS
         public string guid;
     }
 
-    public class AssetListData : ScriptableObject
+    [Serializable]
+    public class AssetListData : ScriptableObject, ISerializationCallbackReceiver
     {
         public float timeSeconds = 30f;
+        private HashSet<string> _keys = new HashSet<string>();
         public List<AssetTimestamp> timestamps = new List<AssetTimestamp>();
 
         public void Begin()
@@ -26,6 +28,7 @@ namespace UnityFS
 #if UNITY_EDITOR
             if (timestamps.Count != 0)
             {
+                _keys.Clear();
                 timestamps.Clear();
                 EditorUtility.SetDirty(this);
             }
@@ -36,6 +39,11 @@ namespace UnityFS
         {
         }
 
+        public bool Contains(string guid)
+        {
+            return _keys.Contains(guid);
+        }
+
         public void AddObject(float time, string assetPath)
         {
 #if UNITY_EDITOR
@@ -44,6 +52,7 @@ namespace UnityFS
                 var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
                 if (!string.IsNullOrEmpty(assetGuid))
                 {
+                    _keys.Add(assetGuid);
                     timestamps.Add(new AssetTimestamp()
                     {
                         time = time,
@@ -57,6 +66,19 @@ namespace UnityFS
                 }
             }
 #endif
+        }
+
+        public void OnBeforeSerialize()
+        {
+        }
+
+        public void OnAfterDeserialize()
+        {
+            _keys.Clear();
+            for (var i = 0; i < timestamps.Count; i++)
+            {
+                _keys.Add(timestamps[i].guid);
+            }
         }
     }
 }

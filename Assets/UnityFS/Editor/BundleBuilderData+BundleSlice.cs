@@ -14,6 +14,7 @@ namespace UnityFS.Editor
         {
             public string name;
             public int capacity;
+            public bool streamingAssets; // 是否进入 StreamingAssets
 
             // 最终进入打包的所有资源对象
             private List<string> _assetGuids;
@@ -29,10 +30,11 @@ namespace UnityFS.Editor
 
             public List<string> histroy = new List<string>();
 
-            public BundleSlice(string name, int cap)
+            public BundleSlice(string name, int capacity, bool streamingAssets)
             {
                 this.name = name;
-                this.capacity = cap;
+                this.capacity = capacity;
+                this.streamingAssets = streamingAssets;
             }
 
             public void Cleanup()

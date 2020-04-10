@@ -60,7 +60,7 @@ namespace UnityFS.Editor
                 }
             }
 
-            if (bundle.Slice())
+            if (bundle.Slice(data))
             {
                 data.MarkAsDirty();
             }

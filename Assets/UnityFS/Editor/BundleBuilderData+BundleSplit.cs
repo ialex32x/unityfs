@@ -42,14 +42,14 @@ namespace UnityFS.Editor
                 }
             }
 
-            public bool Slice(string bundleName)
+            public bool Slice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName)
             {
                 var dirty = false;
                 foreach (var asset in _assets)
                 {
                     var assetPath = AssetDatabase.GetAssetPath(asset);
                     var guid = AssetDatabase.AssetPathToGUID(assetPath);
-                    if (AdjustBundleSlice(bundleName, guid))
+                    if (AdjustBundleSlice(data, bundleInfo, bundleName, guid))
                     {
                         dirty = true;
                     }
@@ -89,23 +89,40 @@ namespace UnityFS.Editor
                 return prefix + baseName + suffix;
             }
 
-            public bool AdjustBundleSlice(string bundleName, string guid)
+            // 返回最后一个符合 StreamingAssets 性质的 slice 包
+            private BundleSlice GetLastSlice(bool streamingAssets)
             {
+                var count = this.slices.Count;
+                for (var i = count - 1; i >= 0; i--)
+                {
+                    var slice = slices[i];
+                    if (slice.streamingAssets == streamingAssets)
+                    {
+                        return slice;
+                    }
+                }
+
+                return null;
+            }
+
+            // 将指定资源放入合适的分包中, 产生变化时返回 true
+            private bool AdjustBundleSlice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName, string guid)
+            {
+                var streamingAssets = data.IsStreamingAssets(guid, bundleInfo);
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];
-                    if (oldSlice.AddHistory(guid))
+                    if (oldSlice.streamingAssets == streamingAssets && oldSlice.AddHistory(guid))
                     {
                         return false;
                     }
                 }
 
-                var count = this.slices.Count;
-                var lastSlice = count > 0 ? this.slices[count - 1] : null;
+                var lastSlice = GetLastSlice(streamingAssets);
                 if (lastSlice == null || !lastSlice.AddNew(guid))
                 {
                     var sliceName = GetBundleName(bundleName).ToLower();
-                    var newSlice = new BundleSlice(sliceName, this.sliceObjects);
+                    var newSlice = new BundleSlice(sliceName, sliceObjects, streamingAssets);
                     this.slices.Add(newSlice);
                     newSlice.AddNew(guid);
                 }

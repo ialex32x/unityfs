@@ -324,6 +324,9 @@ namespace UnityFS.Editor
             Block("Path", () =>
             {
                 EditorGUI.BeginChangeCheck();
+                data.assetListData =
+                    (AssetListData) EditorGUILayout.ObjectField("资源访问分析", data.assetListData, typeof(AssetListData),
+                        false);
                 // 中间输出目录
                 data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", data.assetBundlePath);
                 data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", data.zipArchivePath);

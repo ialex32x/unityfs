@@ -60,6 +60,7 @@ namespace UnityFS.Editor
         public string zipArchivePath = "out/zipArchives";
         public string packagePath = "out/packages";
         public int priorityMax = 10000;
+        public AssetListData assetListData;
 
         [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();
 
@@ -132,6 +133,27 @@ namespace UnityFS.Editor
                     MarkAsDirty();
                 }
             }
+        }
+
+        // 确定一个资源是否需要进入 StreamingAssets
+        public bool IsStreamingAssets(string guid, BundleBuilderData.BundleInfo bundleInfo)
+        {
+            var assetAttributes = GetAssetAttributes(guid);
+            
+            // 配置为自动分配 StreamingAssets
+            if (assetAttributes == null || assetAttributes.packer == AssetPacker.Auto)
+            {
+                // 出现在分析列表中 
+                if (assetListData != null && assetListData.Contains(guid))
+                {
+                    return true;
+                }
+
+                // 继承主包属性
+                return bundleInfo.streamingAssets;
+            }
+
+            return assetAttributes.packer == AssetPacker.Always;
         }
     }
 

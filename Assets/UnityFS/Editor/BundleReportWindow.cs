@@ -248,17 +248,19 @@ namespace UnityFS.Editor
                                     if (assetCount > 0)
                                     {
                                         validIndex++;
+                                        var sliceName = slice.name;
                                         if (sliceCount > 1)
                                         {
-                                            var sliceName = string.Format("[{0}] {1}/{2}: {3}", validIndex,
+                                            sliceName = string.Format("[{0}] {1}/{2}: {3}", validIndex,
                                                 sliceIndex + 1, sliceCount,
-                                                slice.name);
-                                            EditorGUILayout.LabelField(sliceName);
+                                                sliceName);
                                         }
-                                        else
+
+                                        if (slice.streamingAssets)
                                         {
-                                            EditorGUILayout.LabelField(slice.name);
+                                            GUI.color = Color.green;
                                         }
+                                        EditorGUILayout.LabelField(sliceName);
 
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
@@ -271,6 +273,7 @@ namespace UnityFS.Editor
                                             EditorGUILayout.ObjectField(assetObject, typeof(Object), false);
                                             EditorGUILayout.EndHorizontal();
                                         }
+                                        GUI.color = _GUIColor;
                                     }
                                 }
                             });
