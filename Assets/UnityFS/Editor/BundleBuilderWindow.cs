@@ -387,6 +387,7 @@ namespace UnityFS.Editor
                 data.previewPlatform = (PackagePlatforms) EditorGUILayout.EnumPopup("Platform", data.previewPlatform);
                 if (EditorGUI.EndChangeCheck())
                 {
+                    Reload();
                     data.MarkAsDirty();
                 }
             });
@@ -468,8 +469,7 @@ namespace UnityFS.Editor
                 GUILayout.Space(20f);
                 if (GUILayout.Button("Reload"))
                 {
-                    BundleBuilder.Scan(data, data.previewPlatform);
-                    _treeView.Reload();
+                    Reload();
                 }
                 // if (GUILayout.Button("Details"))
                 // {
@@ -499,6 +499,12 @@ namespace UnityFS.Editor
                 data.MarkAsDirty();
                 dirty = false;
             }
+        }
+
+        private void Reload()
+        {
+            BundleBuilder.Scan(data, data.previewPlatform);
+            _treeView.Reload();
         }
     }
 }
