@@ -261,6 +261,18 @@ namespace UnityFS.Editor
                                             GUI.color = Color.green;
                                         }
                                         EditorGUILayout.LabelField(sliceName);
+                                        var intent = 40f;
+                                        EditorGUILayout.BeginHorizontal();
+                                        GUILayout.Space(intent);
+                                        var nStreamingAssets =
+                                            EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
+                                        if (nStreamingAssets != slice.streamingAssets)
+                                        {
+                                            slice.streamingAssets = nStreamingAssets;
+                                            _data.MarkAsDirty();
+                                        }
+                                        EditorGUILayout.EndHorizontal();
+                                        GUILayout.Space(6f);
 
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
@@ -268,9 +280,13 @@ namespace UnityFS.Editor
                                             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                                             var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
                                             EditorGUILayout.BeginHorizontal();
-                                            GUILayout.Space(20f);
+                                            GUILayout.Space(intent);
                                             EditorGUILayout.TextField(assetPath);
                                             EditorGUILayout.ObjectField(assetObject, typeof(Object), false);
+                                            if (GUILayout.Button("?", GUILayout.Width(20f)))
+                                            {
+                                                BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
+                                            }
                                             EditorGUILayout.EndHorizontal();
                                         }
                                         GUI.color = _GUIColor;

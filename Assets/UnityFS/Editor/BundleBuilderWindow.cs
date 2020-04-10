@@ -15,6 +15,8 @@ namespace UnityFS.Editor
     {
         public const string KeyForPackagePlatforms = ".BundleBuilderWindow.Platforms";
         public const string KeyForTabIndex = ".BundleBuilderWindow.TabIndex";
+        public const string KeyForSearchKey = "BundleBuilderWindow._searchKeyword";
+        public const string KeyForShowDefinedOnly = "BundleBuilderWindow.showDefinedOnly";
         [SerializeField] MultiColumnHeaderState _headerState;
         [SerializeField] TreeViewState _treeViewState = new TreeViewState();
         BundleBuilderTreeView _treeView;
@@ -53,8 +55,8 @@ namespace UnityFS.Editor
             data = BundleBuilder.GetData();
             BundleBuilder.Scan(data, data.previewPlatform);
             titleContent = new GUIContent("Bundle Builder");
-            _searchKeyword = EditorPrefs.GetString("BundleBuilderWindow._searchKeyword");
-            _showDefinedOnly = EditorPrefs.GetInt("BundleBuilderWindow.showDefinedOnly") == 1;
+            _searchKeyword = EditorPrefs.GetString(KeyForSearchKey);
+            _showDefinedOnly = EditorPrefs.GetInt(KeyForShowDefinedOnly) == 1;
             UpdateSearchResults();
             _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
             _platforms =
@@ -71,6 +73,17 @@ namespace UnityFS.Editor
 
             _treeView = new BundleBuilderTreeView(_treeViewState, header);
             _treeView.SetData(data);
+        }
+
+        public static void DisplayAssetAttributes(string guid)
+        {
+            var window = GetWindow<BundleBuilderWindow>();
+            window._tabIndex = 1;
+            window._searchKeyword = AssetDatabase.GUIDToAssetPath(guid);
+            window._showDefinedOnly = false;
+            EditorPrefs.SetString(KeyForSearchKey, window._searchKeyword);
+            EditorPrefs.SetInt(KeyForShowDefinedOnly, window._showDefinedOnly ? 1: 0);
+            window.UpdateSearchResults();
         }
 
         protected override void OnGUIDraw()
@@ -173,14 +186,14 @@ namespace UnityFS.Editor
                 if (nSearchKeyword != _searchKeyword)
                 {
                     _searchKeyword = nSearchKeyword;
-                    EditorPrefs.SetString("BundleBuilderWindow._searchKeyword", _searchKeyword);
+                    EditorPrefs.SetString(KeyForSearchKey, _searchKeyword);
                     UpdateSearchResults();
                 }
                 var nShowDefinedOnly = EditorGUILayout.Toggle("Show Defined Only", _showDefinedOnly);
                 if (nShowDefinedOnly != _showDefinedOnly)
                 {
                     _showDefinedOnly = nShowDefinedOnly;
-                    EditorPrefs.SetInt("BundleBuilderWindow.showDefinedOnly", _showDefinedOnly ? 1 : 0);
+                    EditorPrefs.SetInt(KeyForShowDefinedOnly, _showDefinedOnly ? 1 : 0);
                     UpdateSearchResults();
                 }
             });
@@ -387,12 +400,12 @@ namespace UnityFS.Editor
                 //     _treeView._ExpandAll();
                 // }
                 //
-                // GUILayout.Space(20f);
-                // if (GUILayout.Button("Refresh"))
-                // {
-                //     BundleBuilder.Scan(data, data.previewPlatform);
-                //     _treeView.Reload();
-                // }
+                GUILayout.Space(20f);
+                if (GUILayout.Button("Reload"))
+                {
+                    BundleBuilder.Scan(data, data.previewPlatform);
+                    _treeView.Reload();
+                }
                 // if (GUILayout.Button("Details"))
                 // {
                 //     BundleBuilder.Scan(data, data.previewPlatform);

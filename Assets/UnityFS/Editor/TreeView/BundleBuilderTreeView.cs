@@ -13,7 +13,6 @@ namespace UnityFS.Editor
     {
         private const float kRowHeights = 20f;
         private const float kToggleWidth = 18f;
-        static Texture2D kIconDelete1 = EditorGUIUtility.FindTexture("d_AS Badge Delete");
         static GUIContent kIconPrefab = EditorGUIUtility.IconContent("Prefab Icon");
         static Texture2D kIconFolder = EditorGUIUtility.FindTexture("Folder Icon");
         static Texture2D kIconFavorite = EditorGUIUtility.FindTexture("Favorite Icon");
@@ -22,7 +21,8 @@ namespace UnityFS.Editor
         static GUIContent kIconTextAsset = EditorGUIUtility.IconContent("TextAsset Icon");
         static GUIContent kIconTexture = EditorGUIUtility.IconContent("Texture Icon");
         static GUIContent kIconMaterial = EditorGUIUtility.IconContent("Material Icon");
-        static GUIContent kIconDelete2 = EditorGUIUtility.IconContent("d_P4_DeletedLocal");
+        // static Texture2D kIconDelete1 = EditorGUIUtility.FindTexture("d_AS Badge Delete");
+        // static GUIContent kIconDelete2 = EditorGUIUtility.IconContent("d_P4_DeletedLocal");
 
         private BundleBuilderData _data;
 

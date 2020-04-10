@@ -28,8 +28,10 @@ namespace UnityFS.Editor
     [Serializable]
     public class AssetAttributesMap: Dictionary<string, AssetAttributes>, ISerializationCallbackReceiver
     {
+#pragma warning disable 0649
         [SerializeField] private List<string> _keys;
         [SerializeField] private List<AssetAttributes> _values;
+#pragma warning restore 0649
 
         public void OnBeforeSerialize()
         {

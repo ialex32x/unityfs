@@ -57,36 +57,57 @@ namespace UnityFS.Editor
 
                 return dirty;
             }
+            
+            private const string encodingBase = "23456789abcdefghijklmnopqrstuvwxyzABCDEFGHJMNPQRTVWY";
+            
+            private static string encode(long rawValue)
+            {
+                var result = "";
+                do
+                {
+                    var part = rawValue % encodingBase.Length;
+                    result += encodingBase[(int) part];
+                    rawValue = (rawValue - part) / encodingBase.Length;
+                } while (rawValue > 0);
+                return result;
+            }
 
             // 将 slice 切分命名插入 split 命名与文件后缀名之间
-            public string GetBundleName(string bundleName)
+            public string GetBundleSliceName(string bundleName)
             {
-                var baseName = this.name ?? string.Empty;
-                if (this.sliceObjects != 0 && this.slices.Count != 0)
+                string part1;
+                string part2;
+                var dotIndex = bundleName.LastIndexOf(".");
+                if (dotIndex >= 0)
                 {
-                    baseName = "_" + baseName + "_" + this.slices.Count;
-                }
-
-                if (string.IsNullOrEmpty(baseName))
-                {
-                    return bundleName;
-                }
-
-                var dot = bundleName.LastIndexOf('.');
-                string prefix;
-                string suffix;
-                if (dot >= 0)
-                {
-                    prefix = bundleName.Substring(0, dot);
-                    suffix = bundleName.Substring(dot);
+                    part1 = bundleName.Substring(0, dotIndex);
+                    part2 = bundleName.Substring(dotIndex);
                 }
                 else
                 {
-                    prefix = bundleName;
-                    suffix = string.Empty;
+                    part1 = bundleName;
+                    part2 = "";
+                }
+                if (!string.IsNullOrEmpty(name))
+                {
+                    if (part1.Length > 0)
+                    {
+                        part1 += "_" + name;
+                    }
+                    else
+                    {
+                        part1 = name;
+                    }
                 }
 
-                return prefix + baseName + suffix;
+                if (part1.Length > 0)
+                {
+                    part1 += "_";
+                }
+
+                var p1 = encode(DateTime.Now.Ticks);
+                var p2 = encode(Random.Range(0, int.MaxValue));
+                return part1 + p1 + "_" + p2 + part2;
             }
 
             // 返回最后一个符合 StreamingAssets 性质的 slice 包
@@ -121,7 +142,7 @@ namespace UnityFS.Editor
                 var lastSlice = GetLastSlice(streamingAssets);
                 if (lastSlice == null || !lastSlice.AddNew(guid))
                 {
-                    var sliceName = GetBundleName(bundleName).ToLower();
+                    var sliceName = GetBundleSliceName(bundleName).ToLower();
                     var newSlice = new BundleSlice(sliceName, sliceObjects, streamingAssets);
                     this.slices.Add(newSlice);
                     newSlice.AddNew(guid);
