@@ -98,6 +98,7 @@ namespace UnityFS.Editor
         private string _searchKeyword;
         private bool _batchedSelectMarks;
         private AssetAttributes _newAttrs = new AssetAttributes();
+        private int _selectedInResults;
         private HashSet<string> _searchMarks = new HashSet<string>();
         private List<string> _searchResults = new List<string>();
 
@@ -185,8 +186,9 @@ namespace UnityFS.Editor
             });
             
             EditorGUILayout.Space();
-            Block("Results", () =>
+            Block(string.Format("Results ({0}/{1})", _selectedInResults, _searchResults.Count), () =>
             {
+                _selectedInResults = 0;
                 var nbatchedSelectMarks = EditorGUILayout.Toggle(_batchedSelectMarks, GUILayout.Width(20f));
                 if (nbatchedSelectMarks != _batchedSelectMarks)
                 {
@@ -222,6 +224,7 @@ namespace UnityFS.Editor
                     nMarked = EditorGUILayout.Toggle(marked, GUILayout.Width(20f));
                     if (marked)
                     {
+                        _selectedInResults++;
                         _batchedSelectMarks = true;
                         GUI.color = Color.green;
                     }
