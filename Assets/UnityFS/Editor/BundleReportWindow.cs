@@ -277,12 +277,9 @@ namespace UnityFS.Editor
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
                                             var assetGuid = slice.assetGuids[assetIndex];
-                                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                                            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
                                             EditorGUILayout.BeginHorizontal();
                                             GUILayout.Space(intent);
-                                            EditorGUILayout.TextField(assetPath);
-                                            EditorGUILayout.ObjectField(assetObject, typeof(Object), false);
+                                            BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid);
                                             if (GUILayout.Button("?", GUILayout.Width(20f)))
                                             {
                                                 BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
