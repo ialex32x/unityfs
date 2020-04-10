@@ -401,6 +401,7 @@ namespace UnityFS.Editor
                 data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", data.zipArchivePath);
                 // 最终包输出目录
                 data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
+                data.priorityMax = EditorGUILayout.IntField("Priority Max", data.priorityMax);
                 if (EditorGUI.EndChangeCheck())
                 {
                     data.MarkAsDirty();
