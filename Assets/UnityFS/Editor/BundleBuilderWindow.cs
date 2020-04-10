@@ -90,6 +90,7 @@ namespace UnityFS.Editor
             if (_showSelectionOnly)
             {
                 UpdateSearchResults();
+                Repaint();
             }
         }
 
