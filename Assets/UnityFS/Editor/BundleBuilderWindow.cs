@@ -54,6 +54,8 @@ namespace UnityFS.Editor
             BundleBuilder.Scan(data, data.previewPlatform);
             titleContent = new GUIContent("Bundle Builder");
             _searchKeyword = EditorPrefs.GetString("BundleBuilderWindow._searchKeyword");
+            _showDefinedOnly = EditorPrefs.GetInt("BundleBuilderWindow.showDefinedOnly") == 1;
+            UpdateSearchResults();
             _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
             _platforms =
                 (PackagePlatforms) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatforms.Active);
@@ -92,11 +94,78 @@ namespace UnityFS.Editor
         }
 
         private Vector2 _searchSV;
+        private bool _showDefinedOnly;
         private string _searchKeyword;
+        private bool _batchedSelectMarks;
+        private AssetAttributes _newAttrs = new AssetAttributes();
+        private HashSet<string> _searchMarks = new HashSet<string>();
+        private List<string> _searchResults = new List<string>();
+
+        private void UpdateSearchResults()
+        {
+            UpdateSearchResults(_searchKeyword, _showDefinedOnly, 200);            
+        }
+        
+        // showDefinedOnly: 只显示已定义
+        // searchCount: 结果数量限制
+        private void UpdateSearchResults(string keyword, bool showDefinedOnly, int searchCount)
+        {
+            _searchResults.Clear();
+            for (var i = 0; i < data.allCollectedAssetsPath.Length; i++)
+            {
+                var assetPath = data.allCollectedAssetsPath[i];
+                if (string.IsNullOrEmpty(keyword) || assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+                    var attrs = data.GetAssetAttributes(assetGuid);
+                    if (attrs != null || !showDefinedOnly)
+                    {
+                        _searchResults.Add(assetPath);
+                    }
+
+                    if (_searchResults.Count >= searchCount)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void ApplyAllMarks(Action<AssetAttributes> callback)
+        {
+            foreach (var searchMark in _searchMarks)
+            {
+                if (_searchResults.Contains(searchMark))
+                {
+                    var markGuid = AssetDatabase.AssetPathToGUID(searchMark);
+                    var markAttrs = data.GetAssetAttributes(markGuid);
+                    var bNew = markAttrs == null;
+                    
+                    callback(bNew ? _newAttrs : markAttrs);
+                    if (bNew)
+                    {
+                        if (_newAttrs.priority != 0 || _newAttrs.packer != AssetPacker.Auto)
+                        {
+                            var newAttributes = data.AddAssetAttributes(markGuid);
+                            newAttributes.priority = _newAttrs.priority;
+                            newAttributes.packer = _newAttrs.packer;
+                            _newAttrs.priority = 0;
+                            _newAttrs.packer = AssetPacker.Auto;
+                        }
+                    }
+                    else
+                    {
+                        if (markAttrs.priority == 0 && markAttrs.packer == AssetPacker.Auto)
+                        {
+                            data.RemoveAssetAttributes(markGuid);
+                        }
+                    }
+                }
+            }
+        }
         
         private void OnDrawAssets()
         {
-            var showDefinedOnly = EditorPrefs.GetInt("BundleBuilderWindow.showDefinedOnly") == 1;
             Block("Search", () =>
             {
                 var nSearchKeyword = EditorGUILayout.TextField("Keyword", _searchKeyword);
@@ -104,77 +173,123 @@ namespace UnityFS.Editor
                 {
                     _searchKeyword = nSearchKeyword;
                     EditorPrefs.SetString("BundleBuilderWindow._searchKeyword", _searchKeyword);
+                    UpdateSearchResults();
                 }
-                var nShowDefinedOnly = EditorGUILayout.Toggle("Show Defined Only", showDefinedOnly);
-                if (nShowDefinedOnly != showDefinedOnly)
+                var nShowDefinedOnly = EditorGUILayout.Toggle("Show Defined Only", _showDefinedOnly);
+                if (nShowDefinedOnly != _showDefinedOnly)
                 {
-                    showDefinedOnly = nShowDefinedOnly;
-                    EditorPrefs.SetInt("BundleBuilderWindow.showDefinedOnly", showDefinedOnly ? 1 : 0);
+                    _showDefinedOnly = nShowDefinedOnly;
+                    EditorPrefs.SetInt("BundleBuilderWindow.showDefinedOnly", _showDefinedOnly ? 1 : 0);
+                    UpdateSearchResults();
                 }
             });
             
             EditorGUILayout.Space();
             Block("Results", () =>
             {
-                _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
-                
-                if (true)
+                var nbatchedSelectMarks = EditorGUILayout.Toggle(_batchedSelectMarks, GUILayout.Width(20f));
+                if (nbatchedSelectMarks != _batchedSelectMarks)
                 {
-                    var searchCount = 200;
-                    for (var i = 0; i < data.allCollectedAssetsPath.Length; i++)
+                    _batchedSelectMarks = nbatchedSelectMarks;
+                    _searchMarks.Clear();
+                    if (_batchedSelectMarks)
                     {
-                        var assetPath = data.allCollectedAssetsPath[i];
-                        if (string.IsNullOrEmpty(_searchKeyword) || assetPath.IndexOf(_searchKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        for (var i = 0; i < _searchResults.Count; i++)
                         {
-                            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                            var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
-                            var attrs = data.GetAssetAttributes(assetGuid);
-                            if (attrs != null)
-                            {
-                                EditorGUILayout.BeginHorizontal();
-                                EditorGUILayout.TextField(assetPath);
-                                EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.Width(200f));
-                                EditorGUI.BeginChangeCheck();
-                                attrs.priority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax);
-                                if (EditorGUI.EndChangeCheck())
-                                {
-                                    data.MarkAsDirty();
-                                }
-                                GUI.color = Color.red;
-                                if (GUILayout.Button("Del", GUILayout.Width(60f)))
-                                {
-                                    if (EditorUtility.DisplayDialog("删除", $"确定删除资源项属性?", "确定", "取消"))
-                                    {
-                                        Defer(() => data.RemoveAssetAttributes(assetGuid));
-                                    }
-                                }
+                            _searchMarks.Add(_searchResults[i]);
+                        }
+                    }
+                }
+                _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
 
-                                GUI.color = _GUIColor;
-                                EditorGUILayout.EndHorizontal();
-                                --searchCount;
-                            }
-                            else if (!showDefinedOnly)
-                            {
-                                EditorGUILayout.BeginHorizontal();
-                                EditorGUILayout.TextField(assetPath);
-                                EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.Width(200f));
-                                var nSlideValue = EditorGUILayout.IntSlider(0, 0, data.priorityMax);
-                                if (nSlideValue != 0)
-                                {
-                                    data.AddAssetAttributes(assetGuid, nSlideValue);
-                                }
-                                if (GUILayout.Button("Add", GUILayout.Width(60f)))
-                                {
-                                    data.AddAssetAttributes(assetGuid, 0);
-                                }
-                                EditorGUILayout.EndHorizontal();
-                                --searchCount;
-                            }
+                _batchedSelectMarks = false;
+                for (var i = 0; i < _searchResults.Count; i++)
+                {
+                    var assetPath = _searchResults[i];
+                    var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                    var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+                    var attrs = data.GetAssetAttributes(assetGuid);
+                    var bNew = attrs == null;
+                    var marked = _searchMarks.Contains(assetPath);
+                    var nMarked = marked;
+                    var modifiedByMarks = false;
+                    if (bNew)
+                    {
+                        attrs = _newAttrs;
+                    }
+                    
+                    EditorGUILayout.BeginHorizontal();
+                    nMarked = EditorGUILayout.Toggle(marked, GUILayout.Width(20f));
+                    if (marked)
+                    {
+                        _batchedSelectMarks = true;
+                        GUI.color = Color.green;
+                    }
+                    var nAssetPacker = (AssetPacker) EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(80f));
+                    var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax, GUILayout.MaxWidth(220f));
+                    EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
+                    EditorGUILayout.TextField(assetPath);
+                    GUI.color = _GUIColor;
+                    if (nAssetPacker != attrs.packer)
+                    {
+                        if (marked)
+                        {
+                            modifiedByMarks = true;
+                            ApplyAllMarks(attributes => attributes.packer = nAssetPacker);
+                        }
+                        else
+                        {
+                            attrs.packer = nAssetPacker;
+                            data.MarkAsDirty();
+                        }
+                    }
 
-                            if (searchCount <= 0)
+                    if (nPriority != attrs.priority)
+                    {
+                        if (marked)
+                        {
+                            var deltaPriority = nPriority - attrs.priority;
+                            modifiedByMarks = true;
+                            ApplyAllMarks(attributes => attributes.priority =Math.Max(0, Math.Min(data.priorityMax, attributes.priority + deltaPriority)));
+                        }
+                        else
+                        {
+                            attrs.priority = nPriority;
+                            data.MarkAsDirty();
+                        }
+                    }
+
+                    if (!modifiedByMarks)
+                    {
+                        if (attrs.priority == 0 && attrs.packer == AssetPacker.Auto)
+                        {
+                            data.RemoveAssetAttributes(assetGuid);
+                        }
+
+                        if (bNew && !marked)
+                        {
+                            if (attrs.priority != 0 || attrs.packer != AssetPacker.Auto)
                             {
-                                break;
+                                var newAttributes = data.AddAssetAttributes(assetGuid);
+                                newAttributes.priority = attrs.priority;
+                                newAttributes.packer = attrs.packer;
+                                _newAttrs.priority = 0;
+                                _newAttrs.packer = AssetPacker.Auto;
                             }
+                        }
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                    
+                    if (nMarked != marked)
+                    {
+                        if (nMarked)
+                        {
+                            _searchMarks.Add(assetPath);
+                        }
+                        else
+                        {
+                            _searchMarks.Remove(assetPath);
                         }
                     }
                 }

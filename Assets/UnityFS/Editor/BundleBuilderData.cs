@@ -78,13 +78,12 @@ namespace UnityFS.Editor
             return data;
         }
 
-        public AssetAttributes AddAssetAttributes(string guid, int priority)
+        public AssetAttributes AddAssetAttributes(string guid)
         {
             AssetAttributes attrs;
             if (!assetAttributesMap.TryGetValue(guid, out attrs))
             {
                 attrs = assetAttributesMap[guid] = new AssetAttributes();
-                attrs.priority = priority;
                 MarkAsDirty();   
             }
             return attrs;
