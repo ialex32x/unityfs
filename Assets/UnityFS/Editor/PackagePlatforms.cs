@@ -8,12 +8,13 @@ namespace UnityFS.Editor
     using UnityEditor;
 
     [Flags]
-    public enum PackagePlatforms
+    [Serializable]
+    public enum PackagePlatform
     {
-        Active = 1, 
-        Android = 2, 
-        IOS = 4,
-        Windows64 = 8, 
-        MacOS = 16, 
+        Any = 0, 
+        Android = 1, 
+        IOS = 2,
+        Windows64 = 3, 
+        MacOS = 4, 
     }
 }

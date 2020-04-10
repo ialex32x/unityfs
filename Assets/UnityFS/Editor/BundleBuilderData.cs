@@ -21,13 +21,13 @@ namespace UnityFS.Editor
 
             public Object target;
 
-            public PackagePlatforms platforms; // 在特定平台中生效
+            public PackagePlatform platform; // 在特定平台中生效
             // public BundleAssetTypes types = (BundleAssetTypes)~0; // (仅搜索目录时) 仅包含指定资源类型
             // public List<string> extensions = new List<string>();  // (仅搜索目录时) 额外包含指定后缀的文件
 
-            public bool IsBuildPlatform(PackagePlatforms platform)
+            public bool IsBuildPlatform(PackagePlatform buildPlatform)
             {
-                return platforms == 0 || platforms == PackagePlatforms.Active || (platforms & platform) != 0;
+                return platform == PackagePlatform.Any || platform == buildPlatform;
             }
         }
 
@@ -52,7 +52,6 @@ namespace UnityFS.Editor
 
         public int id;
         public string encryptionKey;
-        public PackagePlatforms previewPlatform; // 查看打包内容时使用的预览平台
         public List<BundleInfo> bundles = new List<BundleInfo>();
         [SerializeField]
         private AssetAttributesMap assetAttributesMap = new AssetAttributesMap();

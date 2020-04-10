@@ -236,7 +236,7 @@ namespace UnityFS.Editor
 
         public void ShowBundleReport()
         {
-            BundleBuilder.Scan(_data, _data.previewPlatform);
+            BundleBuilder.Scan(_data);
             var selectedBundles = new List<BundleBuilderData.BundleInfo>();
             foreach (var bundle in _data.bundles)
             {

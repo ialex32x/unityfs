@@ -27,7 +27,7 @@ namespace UnityFS.Editor
         private bool dirty;
         private BundleBuilderData.BundleInfo selected;
         private BundleBuilderData data;
-        private PackagePlatforms _platforms;
+        private PackagePlatform _platform;
 
         [MenuItem("UnityFS/Builder")]
         public static void OpenBuilderWindow()
@@ -62,15 +62,14 @@ namespace UnityFS.Editor
             base.OnEnable();
             Selection.selectionChanged += OnSelectionChanged;
             data = BundleBuilder.GetData();
-            BundleBuilder.Scan(data, data.previewPlatform);
+            BundleBuilder.Scan(data);
             titleContent = new GUIContent("Bundle Builder");
             _searchKeyword = EditorPrefs.GetString(KeyForSearchKey);
             _showDefinedOnly = EditorPrefs.GetInt(KeyForShowDefinedOnly) == 1;
             _showSelectionOnly = EditorPrefs.GetInt(KeyForShowSelectionOnly) == 1;
             UpdateSearchResults();
             _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
-            _platforms =
-                (PackagePlatforms) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatforms.Active);
+            _platform = (PackagePlatform) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatform.Any);
             // bool firstInit = _headerState == null;
             var headerState = BundleBuilderTreeView.CreateDefaultMultiColumnHeaderState(this.position.width);
             if (MultiColumnHeaderState.CanOverwriteSerializedFields(_headerState, headerState))
@@ -171,6 +170,7 @@ namespace UnityFS.Editor
                 {
                     continue;
                 }
+
                 if (string.IsNullOrEmpty(keyword) ||
                     assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
@@ -381,16 +381,6 @@ namespace UnityFS.Editor
 
         private void OnDrawSettings()
         {
-            Block("Preview", () =>
-            {
-                EditorGUI.BeginChangeCheck();
-                data.previewPlatform = (PackagePlatforms) EditorGUILayout.EnumPopup("Platform", data.previewPlatform);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    Reload();
-                    data.MarkAsDirty();
-                }
-            });
             Block("Encryption", () =>
             {
                 EditorGUI.BeginChangeCheck();
@@ -479,16 +469,16 @@ namespace UnityFS.Editor
 
                 GUILayout.Space(20f);
                 EditorGUILayout.LabelField("Targets", GUILayout.Width(46f));
-                var platforms = (PackagePlatforms) EditorGUILayout.EnumFlagsField(_platforms, GUILayout.Width(90f));
-                if (platforms != _platforms)
+                var platforms = (PackagePlatform) EditorGUILayout.EnumPopup(_platform, GUILayout.Width(90f));
+                if (platforms != _platform)
                 {
-                    _platforms = platforms;
-                    EditorPrefs.SetInt(KeyForPackagePlatforms, (int) _platforms);
+                    _platform = platforms;
+                    EditorPrefs.SetInt(KeyForPackagePlatforms, (int) _platform);
                 }
 
                 if (GUILayout.Button("Build Packages"))
                 {
-                    BundleBuilder.BuildPackages(data, "", _platforms);
+                    BundleBuilder.BuildPackages(data, "", _platform);
                 }
             }
 
@@ -503,7 +493,7 @@ namespace UnityFS.Editor
 
         private void Reload()
         {
-            BundleBuilder.Scan(data, data.previewPlatform);
+            BundleBuilder.Scan(data);
             _treeView.Reload();
         }
     }

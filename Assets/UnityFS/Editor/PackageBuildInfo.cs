@@ -13,7 +13,7 @@ namespace UnityFS.Editor
         private PackageSharedBuildInfo _sharedBuildInfo;
         private BundleBuilderData _data;
         private BuildTarget _buildTarget;
-        private PackagePlatforms _buildPlatform;
+        private PackagePlatform _buildPlatform;
 
         // 分平台
         private string _assetBundlePath; // 原始 assetbundle 输出目录
@@ -26,7 +26,7 @@ namespace UnityFS.Editor
         public PackageSharedBuildInfo sharedBuildInfo => _sharedBuildInfo;
 
         public BuildTarget buildTarget => _buildTarget;
-        public PackagePlatforms buildPlatform => _buildPlatform;
+        public PackagePlatform buildPlatform => _buildPlatform;
 
         public string assetBundlePath => _assetBundlePath;
 
@@ -40,7 +40,7 @@ namespace UnityFS.Editor
         public List<string> filelist = new List<string>();
 
         // outputPath: 输出的总目录 [可选]
-        public PackageBuildInfo(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms buildBuildPlatform, BuildTarget buildTarget)
+        public PackageBuildInfo(PackageSharedBuildInfo sharedBuildInfo, PackagePlatform buildBuildPlatform, BuildTarget buildTarget)
         {
             _sharedBuildInfo = sharedBuildInfo;
             _data = sharedBuildInfo.data;

@@ -53,102 +53,35 @@ namespace UnityFS.Editor
             return _data;
         }
 
-        public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatforms platforms)
+        public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatform platform)
         {
-            BuildPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platforms);
+            BuildSinglePlatformPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platform);
         }
         
-        public static BuildTarget ToBuildTarget(PackagePlatforms platform)
+        public static BuildTarget ToBuildTarget(PackagePlatform platform)
         {
             switch (platform)
             {
-                case PackagePlatforms.Active: return EditorUserBuildSettings.activeBuildTarget;
-                case PackagePlatforms.Android: return BuildTarget.Android;
-                case PackagePlatforms.IOS: return BuildTarget.iOS;
-                case PackagePlatforms.Windows64: return BuildTarget.StandaloneWindows64;
-                case PackagePlatforms.MacOS: return BuildTarget.StandaloneOSX;
+                case PackagePlatform.Any: return EditorUserBuildSettings.activeBuildTarget;
+                case PackagePlatform.Android: return BuildTarget.Android;
+                case PackagePlatform.IOS: return BuildTarget.iOS;
+                case PackagePlatform.Windows64: return BuildTarget.StandaloneWindows64;
+                case PackagePlatform.MacOS: return BuildTarget.StandaloneOSX;
             }
         
             throw new NotSupportedException();
         }
 
-        private static BuildTarget[] GetBuildTargets(PackagePlatforms platforms)
+        public static void BuildSinglePlatformPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatform platform)
         {
-            var targets = new HashSet<BuildTarget>();
-            if ((platforms & PackagePlatforms.Active) != 0)
-            {
-                targets.Add(EditorUserBuildSettings.activeBuildTarget);
-            }
-
-            if ((platforms & PackagePlatforms.Android) != 0)
-            {
-                targets.Add(BuildTarget.Android);
-            }
-
-            if ((platforms & PackagePlatforms.IOS) != 0)
-            {
-                targets.Add(BuildTarget.iOS);
-            }
-
-            if ((platforms & PackagePlatforms.Windows64) != 0)
-            {
-                targets.Add(BuildTarget.StandaloneWindows64);
-            }
-
-            if ((platforms & PackagePlatforms.MacOS) != 0)
-            {
-                targets.Add(BuildTarget.StandaloneOSX);
-            }
-
-            return targets.ToArray();
-        }
-
-        // (批量) 生成指定平台的资源包
-        public static void BuildPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platforms)
-        {
-            if (platforms != 0)
-            {
-                if ((platforms & PackagePlatforms.Active) != 0)
-                {
-                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.Active);
-                }
-
-                if ((platforms & PackagePlatforms.Android) != 0)
-                {
-                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.Android);
-                }
-
-                if ((platforms & PackagePlatforms.IOS) != 0)
-                {
-                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.IOS);
-                }
-
-                if ((platforms & PackagePlatforms.Windows64) != 0)
-                {
-                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.Windows64);
-                }
-
-                if ((platforms & PackagePlatforms.MacOS) != 0)
-                {
-                    BuildSinglePlatformPackages(sharedBuildInfo, PackagePlatforms.MacOS);
-                }
-            }
-            else
-            {
-                Debug.LogWarningFormat("no build target for packaging.");
-            }
-        }
-
-        public static void BuildSinglePlatformPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatforms platform)
-        {
-            BuildPackages(new PackageBuildInfo(sharedBuildInfo, platform, ToBuildTarget(platform)));
+            _BuildPackages(new PackageBuildInfo(sharedBuildInfo, platform, ToBuildTarget(platform)));
         }
 
         // 生成打包 
-        private static void BuildPackages(PackageBuildInfo packageBuildInfo)
+        private static void _BuildPackages(PackageBuildInfo packageBuildInfo)
         {
             Debug.Log($"building bundles...");
-            Scan(packageBuildInfo.data, packageBuildInfo.buildPlatform);
+            Scan(packageBuildInfo.data);
 
             var assetBundleBuilds = GenerateAssetBundleBuilds(packageBuildInfo);
             var zipArchiveBuilds = GenerateZipArchiveBuilds(packageBuildInfo);
@@ -511,25 +444,28 @@ namespace UnityFS.Editor
                     for (var sliceIndex = 0; sliceIndex < bundleSplit.slices.Count; sliceIndex++)
                     {
                         var bundleSlice = bundleSplit.slices[sliceIndex];
-                        var assetNames = new List<string>();
-                        for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                        if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
-                            var assetGuid = bundleSlice.assetGuids[assetIndex];
-                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                            assetNames.Add(assetPath);
-                        }
+                            var assetNames = new List<string>();
+                            for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                            {
+                                var assetGuid = bundleSlice.assetGuids[assetIndex];
+                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                assetNames.Add(assetPath);
+                            }
 
-                        if (assetNames.Count != 0)
-                        {
-                            var build = new ZipArchiveBuild();
-                            build.name = bundleSlice.name;
-                            build.assetPaths = assetNames;
-                            builds.Add(build);
-                            // Debug.Log($"{build.assetBundleName}: {build.assetNames.Length}");
-                        }
-                        else
-                        {
-                            Debug.Log($"skip empty bundle slice {bundleSlice.name}");
+                            if (assetNames.Count != 0)
+                            {
+                                var build = new ZipArchiveBuild();
+                                build.name = bundleSlice.name;
+                                build.assetPaths = assetNames;
+                                builds.Add(build);
+                                // Debug.Log($"{build.assetBundleName}: {build.assetNames.Length}");
+                            }
+                            else
+                            {
+                                Debug.Log($"skip empty bundle slice {bundleSlice.name}");
+                            }
                         }
                     }
                 }
@@ -555,27 +491,26 @@ namespace UnityFS.Editor
                     for (var sliceIndex = 0; sliceIndex < bundleSplit.slices.Count; sliceIndex++)
                     {
                         var bundleSlice = bundleSplit.slices[sliceIndex];
-                        var assetNames = new List<string>();
-                        for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                        if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
-                            var assetGuid = bundleSlice.assetGuids[assetIndex];
-                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                            assetNames.Add(assetPath);
-                        }
+                            var assetNames = new List<string>();
+                            for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                            {
+                                var assetGuid = bundleSlice.assetGuids[assetIndex];
+                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                assetNames.Add(assetPath);
+                            }
 
-                        if (assetNames.Count != 0)
-                        {
-                            var names = assetNames.ToArray();
-                            var build = new AssetBundleBuild();
-                            build.assetBundleName = bundleSlice.name;
-                            build.assetNames = names;
-                            build.addressableNames = names;
-                            builds.Add(build);
-                            // Debug.Log($"{build.assetBundleName}: {build.assetNames.Length}");
-                        }
-                        else
-                        {
-                            // Debug.Log($"skip empty bundle slice {bundleSlice.name}");
+                            if (assetNames.Count != 0)
+                            {
+                                var names = assetNames.ToArray();
+                                var build = new AssetBundleBuild();
+                                build.assetBundleName = bundleSlice.name;
+                                build.assetNames = names;
+                                build.addressableNames = names;
+                                builds.Add(build);
+                                // Debug.Log($"{build.assetBundleName}: {build.assetNames.Length}");
+                            }
                         }
                     }
                 }

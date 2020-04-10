@@ -197,7 +197,7 @@ namespace UnityFS.Editor
                         EditorGUI.BeginChangeCheck();
                         target.enabled = EditorGUILayout.Toggle(target.enabled, GUILayout.Width(12f));
                         EditorGUILayout.ObjectField(target.target, typeof(Object), false);
-                        target.platforms = (PackagePlatforms) EditorGUILayout.EnumFlagsField(target.platforms);
+                        target.platform = (PackagePlatform) EditorGUILayout.EnumPopup(target.platform);
                         if (EditorGUI.EndChangeCheck())
                         {
                             _data.MarkAsDirty();
@@ -265,6 +265,7 @@ namespace UnityFS.Editor
                                         EditorGUILayout.BeginHorizontal();
                                         GUILayout.Space(intent);
                                         EditorGUILayout.BeginVertical();
+                                        EditorGUI.BeginDisabledGroup(true);
                                         // var nStreamingAssets =
                                         EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
                                         // if (nStreamingAssets != slice.streamingAssets)
@@ -272,7 +273,8 @@ namespace UnityFS.Editor
                                         //     slice.streamingAssets = nStreamingAssets;
                                         //     _data.MarkAsDirty();
                                         // }
-                                        EditorGUILayout.EnumPopup("Platform", slice.platform == 0 ? PackagePlatforms.Active : slice.platform);
+                                        EditorGUILayout.EnumPopup("Platform", slice.platform);
+                                        EditorGUI.EndDisabledGroup();
 
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {

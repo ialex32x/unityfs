@@ -11,7 +11,7 @@ namespace UnityFS.Editor
     {
         public class PackedObject
         {
-            public PackagePlatforms platforms;
+            public PackagePlatform platform;
             public Object asset;
         }
 
@@ -29,13 +29,13 @@ namespace UnityFS.Editor
 
             public List<BundleSlice> slices = new List<BundleSlice>();
 
-            public bool AddObject(Object asset, PackagePlatforms platforms)
+            public bool AddObject(Object asset, PackagePlatform platform)
             {
                 _assetHashSet.Add(asset);
                 _assets.Add(new PackedObject()
                 {
                     asset = asset,
-                    platforms = platforms,
+                    platform = platform,
                 });
                 return true;
             }
@@ -55,12 +55,12 @@ namespace UnityFS.Editor
                 }
             }
 
-            public bool Slice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName, PackagePlatforms buildPlatform)
+            public bool Slice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName)
             {
                 var dirty = false;
                 foreach (var asset in _assets)
                 {
-                    if (AdjustBundleSlice(data, bundleInfo, bundleName, asset, buildPlatform))
+                    if (AdjustBundleSlice(data, bundleInfo, bundleName, asset))
                     {
                         dirty = true;
                     }
@@ -124,13 +124,13 @@ namespace UnityFS.Editor
             }
 
             // 返回最后一个符合 StreamingAssets 性质的 slice 包
-            private BundleSlice GetLastSlice(bool streamingAssets, PackagePlatforms platforms)
+            private BundleSlice GetLastSlice(bool streamingAssets, PackagePlatform platform)
             {
                 var count = this.slices.Count;
                 for (var i = count - 1; i >= 0; i--)
                 {
                     var slice = slices[i];
-                    if (slice.streamingAssets == streamingAssets && slice.platform == platforms)
+                    if (slice.streamingAssets == streamingAssets && slice.platform == platform)
                     {
                         return slice;
                     }
@@ -142,14 +142,12 @@ namespace UnityFS.Editor
             // 将指定资源放入合适的分包中, 产生变化时返回 true
             // buildPlatform: 当前正在打包的平台
             private bool AdjustBundleSlice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo,
-                string bundleName, PackedObject packedObject, PackagePlatforms buildPlatform)
+                string bundleName, PackedObject packedObject)
             {
                 var assetPath = AssetDatabase.GetAssetPath(packedObject.asset);
                 var guid = AssetDatabase.AssetPathToGUID(assetPath);
                 var streamingAssets = data.IsStreamingAssets(guid, bundleInfo);
-                var slicePlatform = packedObject.platforms != 0 && packedObject.platforms != PackagePlatforms.Active
-                    ? buildPlatform
-                    : PackagePlatforms.Active;
+                var slicePlatform = packedObject.platform;
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];

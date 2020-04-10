@@ -15,7 +15,7 @@ namespace UnityFS.Editor
             public string name;
             public int capacity;
             public bool streamingAssets; // 是否进入 StreamingAssets
-            public PackagePlatforms platform; // 打包资源的平台性质
+            public PackagePlatform platform; // 打包资源的平台性质
 
             // 最终进入打包的所有资源对象
             private List<string> _assetGuids;
@@ -31,12 +31,18 @@ namespace UnityFS.Editor
 
             public List<string> histroy = new List<string>();
 
-            public BundleSlice(string name, int capacity, bool streamingAssets, PackagePlatforms platforms)
+            public BundleSlice(string name, int capacity, bool streamingAssets, PackagePlatform platform)
             {
                 this.name = name;
                 this.capacity = capacity;
                 this.streamingAssets = streamingAssets;
-                this.platform = platforms;
+                this.platform = platform;
+            }
+
+            // 是否为指定平台打包
+            public bool IsBuild(PackagePlatform buildPlatform)
+            {
+                return this.platform == PackagePlatform.Any || this.platform == buildPlatform;
             }
 
             public void Cleanup()
