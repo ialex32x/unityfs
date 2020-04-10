@@ -20,6 +20,10 @@ namespace UnityFS.Editor
 
         private BuildTarget _targetPlatform;
 
+        protected virtual void OnDisable()
+        {
+        }
+
         protected virtual void OnEnable()
         {
             _blockStyle.normal.background = MakeTex(100, 100, new Color32(56, 56, 56, 0));

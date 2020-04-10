@@ -262,17 +262,17 @@ namespace UnityFS.Editor
                                         }
                                         EditorGUILayout.LabelField(sliceName);
                                         var intent = 40f;
-                                        EditorGUILayout.BeginHorizontal();
-                                        GUILayout.Space(intent);
-                                        var nStreamingAssets =
-                                            EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
-                                        if (nStreamingAssets != slice.streamingAssets)
-                                        {
-                                            slice.streamingAssets = nStreamingAssets;
-                                            _data.MarkAsDirty();
-                                        }
-                                        EditorGUILayout.EndHorizontal();
-                                        GUILayout.Space(6f);
+                                        // EditorGUILayout.BeginHorizontal();
+                                        // GUILayout.Space(intent);
+                                        // var nStreamingAssets =
+                                        //     EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
+                                        // if (nStreamingAssets != slice.streamingAssets)
+                                        // {
+                                        //     slice.streamingAssets = nStreamingAssets;
+                                        //     _data.MarkAsDirty();
+                                        // }
+                                        // EditorGUILayout.EndHorizontal();
+                                        // GUILayout.Space(6f);
 
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
