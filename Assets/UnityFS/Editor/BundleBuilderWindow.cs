@@ -377,28 +377,27 @@ namespace UnityFS.Editor
                 GUI.color = _GUIColor;
 
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Collapse All"))
-                {
-                    _treeView.CollapseAll();
-                }
-
-                if (GUILayout.Button("Expand All"))
-                {
-                    _treeView._ExpandAll();
-                }
-
-                GUILayout.Space(20f);
-                if (GUILayout.Button("Refresh"))
-                {
-                    BundleBuilder.Scan(data, data.previewPlatform);
-                    _treeView.Reload();
-                }
-
-                if (GUILayout.Button("Show Bundle Assets"))
-                {
-                    BundleBuilder.Scan(data, data.previewPlatform);
-                    _treeView.ShowBundleReport();
-                }
+                // if (GUILayout.Button("Collapse All"))
+                // {
+                //     _treeView.CollapseAll();
+                // }
+                //
+                // if (GUILayout.Button("Expand All"))
+                // {
+                //     _treeView._ExpandAll();
+                // }
+                //
+                // GUILayout.Space(20f);
+                // if (GUILayout.Button("Refresh"))
+                // {
+                //     BundleBuilder.Scan(data, data.previewPlatform);
+                //     _treeView.Reload();
+                // }
+                // if (GUILayout.Button("Details"))
+                // {
+                //     BundleBuilder.Scan(data, data.previewPlatform);
+                //     _treeView.ShowBundleReport();
+                // }
 
                 GUILayout.Space(20f);
                 EditorGUILayout.LabelField("Targets", GUILayout.Width(46f));
