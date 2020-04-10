@@ -7,6 +7,8 @@
 out/
 Assets/StreamingAssets/bundles/
 Assets/StreamingAssets/bundles.meta
+Assets/StreamingAssets/packages/
+Assets/StreamingAssets/packages.meta
 Assets/AssetStoreTools*
 
 # Visual Studio cache directory
