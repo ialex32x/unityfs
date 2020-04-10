@@ -7,8 +7,14 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
-    public partial class BundleBuilderData 
+    public partial class BundleBuilderData
     {
+        public class PackedObject
+        {
+            public PackagePlatforms platforms;
+            public Object asset;
+        }
+
         [Serializable]
         public class BundleSplit
         {
@@ -18,23 +24,30 @@ namespace UnityFS.Editor
             public List<BundleSplitRule> rules = new List<BundleSplitRule>();
 
             // scan 过程收集将要打入此 split 的所有资源的列表
-            private List<Object> _assets = new List<Object>();
+            private HashSet<Object> _assetHashSet = new HashSet<Object>();
+            private List<PackedObject> _assets = new List<PackedObject>();
 
             public List<BundleSlice> slices = new List<BundleSlice>();
 
-            public bool AddObject(Object asset)
+            public bool AddObject(Object asset, PackagePlatforms platforms)
             {
-                _assets.Add(asset);
+                _assetHashSet.Add(asset);
+                _assets.Add(new PackedObject()
+                {
+                    asset = asset,
+                    platforms = platforms,
+                });
                 return true;
             }
 
             public bool ContainsObject(Object asset)
             {
-                return _assets.Contains(asset);
+                return _assetHashSet.Contains(asset);
             }
 
             public void Cleanup()
             {
+                _assetHashSet.Clear();
                 _assets.Clear();
                 foreach (var slice in slices)
                 {
@@ -42,14 +55,12 @@ namespace UnityFS.Editor
                 }
             }
 
-            public bool Slice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName)
+            public bool Slice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName, PackagePlatforms buildPlatform)
             {
                 var dirty = false;
                 foreach (var asset in _assets)
                 {
-                    var assetPath = AssetDatabase.GetAssetPath(asset);
-                    var guid = AssetDatabase.AssetPathToGUID(assetPath);
-                    if (AdjustBundleSlice(data, bundleInfo, bundleName, guid))
+                    if (AdjustBundleSlice(data, bundleInfo, bundleName, asset, buildPlatform))
                     {
                         dirty = true;
                     }
@@ -57,9 +68,9 @@ namespace UnityFS.Editor
 
                 return dirty;
             }
-            
+
             private const string encodingBase = "23456789abcdefghijklmnopqrstuvwxyzABCDEFGHJMNPQRTVWY";
-            
+
             private static string encode(long rawValue)
             {
                 var result = "";
@@ -69,6 +80,7 @@ namespace UnityFS.Editor
                     result += encodingBase[(int) part];
                     rawValue = (rawValue - part) / encodingBase.Length;
                 } while (rawValue > 0);
+
                 return result;
             }
 
@@ -88,6 +100,7 @@ namespace UnityFS.Editor
                     part1 = bundleName;
                     part2 = "";
                 }
+
                 if (!string.IsNullOrEmpty(name))
                 {
                     if (part1.Length > 0)
@@ -111,13 +124,13 @@ namespace UnityFS.Editor
             }
 
             // 返回最后一个符合 StreamingAssets 性质的 slice 包
-            private BundleSlice GetLastSlice(bool streamingAssets)
+            private BundleSlice GetLastSlice(bool streamingAssets, PackagePlatforms platforms)
             {
                 var count = this.slices.Count;
                 for (var i = count - 1; i >= 0; i--)
                 {
                     var slice = slices[i];
-                    if (slice.streamingAssets == streamingAssets)
+                    if (slice.streamingAssets == streamingAssets && slice.platform == platforms)
                     {
                         return slice;
                     }
@@ -127,23 +140,30 @@ namespace UnityFS.Editor
             }
 
             // 将指定资源放入合适的分包中, 产生变化时返回 true
-            private bool AdjustBundleSlice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName, string guid)
+            // buildPlatform: 当前正在打包的平台
+            private bool AdjustBundleSlice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo,
+                string bundleName, PackedObject packedObject, PackagePlatforms buildPlatform)
             {
+                var assetPath = AssetDatabase.GetAssetPath(packedObject.asset);
+                var guid = AssetDatabase.AssetPathToGUID(assetPath);
                 var streamingAssets = data.IsStreamingAssets(guid, bundleInfo);
+                var slicePlatform = packedObject.platforms != 0 && packedObject.platforms != PackagePlatforms.Active
+                    ? buildPlatform
+                    : PackagePlatforms.Active;
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];
-                    if (oldSlice.streamingAssets == streamingAssets && oldSlice.AddHistory(guid))
+                    if (oldSlice.streamingAssets == streamingAssets && oldSlice.platform == slicePlatform  && oldSlice.AddHistory(guid))
                     {
                         return false;
                     }
                 }
 
-                var lastSlice = GetLastSlice(streamingAssets);
+                var lastSlice = GetLastSlice(streamingAssets, slicePlatform);
                 if (lastSlice == null || !lastSlice.AddNew(guid))
                 {
                     var sliceName = GetBundleSliceName(bundleName).ToLower();
-                    var newSlice = new BundleSlice(sliceName, sliceObjects, streamingAssets);
+                    var newSlice = new BundleSlice(sliceName, sliceObjects, streamingAssets, slicePlatform);
                     this.slices.Add(newSlice);
                     newSlice.AddNew(guid);
                 }

@@ -31,12 +31,12 @@ namespace UnityFS.Editor
                 return guid;
             }
 
-            public bool Slice(BundleBuilderData data)
+            public bool Slice(BundleBuilderData data, PackagePlatforms buildPlatform)
             {
                 var dirty = false;
                 foreach (var split in splits)
                 {
-                    if (split.Slice(data, this, name))
+                    if (split.Slice(data, this, name, buildPlatform))
                     {
                         dirty = true;
                     }

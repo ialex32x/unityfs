@@ -262,23 +262,22 @@ namespace UnityFS.Editor
                                         }
                                         EditorGUILayout.LabelField(sliceName);
                                         var intent = 40f;
-                                        // EditorGUILayout.BeginHorizontal();
-                                        // GUILayout.Space(intent);
+                                        EditorGUILayout.BeginHorizontal();
+                                        GUILayout.Space(intent);
+                                        EditorGUILayout.BeginVertical();
                                         // var nStreamingAssets =
-                                        //     EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
+                                        EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
                                         // if (nStreamingAssets != slice.streamingAssets)
                                         // {
                                         //     slice.streamingAssets = nStreamingAssets;
                                         //     _data.MarkAsDirty();
                                         // }
-                                        // EditorGUILayout.EndHorizontal();
-                                        // GUILayout.Space(6f);
+                                        EditorGUILayout.EnumPopup("Platform", slice.platform == 0 ? PackagePlatforms.Active : slice.platform);
 
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
                                             var assetGuid = slice.assetGuids[assetIndex];
                                             EditorGUILayout.BeginHorizontal();
-                                            GUILayout.Space(intent);
                                             BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid);
                                             if (GUILayout.Button("?", GUILayout.Width(20f)))
                                             {
@@ -286,6 +285,8 @@ namespace UnityFS.Editor
                                             }
                                             EditorGUILayout.EndHorizontal();
                                         }
+                                        EditorGUILayout.EndVertical();
+                                        EditorGUILayout.EndHorizontal();
                                         GUI.color = _GUIColor;
                                     }
                                 }

@@ -56,11 +56,11 @@ namespace UnityFS.Editor
             {
                 if (targetAsset.enabled && targetAsset.IsBuildPlatform(buildPlatform))
                 {
-                    Scan(data, bundle, targetAsset.target);
+                    Scan(data, bundle, targetAsset.target, targetAsset.platforms);
                 }
             }
 
-            if (bundle.Slice(data))
+            if (bundle.Slice(data, buildPlatform))
             {
                 data.MarkAsDirty();
             }
@@ -68,7 +68,7 @@ namespace UnityFS.Editor
             return true;
         }
 
-        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset)
+        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset, PackagePlatforms platforms)
         {
             if (asset == null)
             {
@@ -81,7 +81,7 @@ namespace UnityFS.Editor
                 // 是一个目录
                 foreach (var directory in Directory.GetDirectories(targetPath))
                 {
-                    Scan(data, bundle, AssetDatabase.LoadMainAssetAtPath(directory));
+                    Scan(data, bundle, AssetDatabase.LoadMainAssetAtPath(directory), platforms);
                 }
 
                 foreach (var file in Directory.GetFiles(targetPath))
@@ -101,17 +101,17 @@ namespace UnityFS.Editor
 
                     var normFileName = file.Replace('\\', '/');
                     var fileAsset = AssetDatabase.LoadMainAssetAtPath(normFileName);
-                    CollectAsset(data, bundle, fileAsset, normFileName);
+                    CollectAsset(data, bundle, fileAsset, normFileName, platforms);
                 }
             }
             else
             {
-                CollectAsset(data, bundle, asset, targetPath);
+                CollectAsset(data, bundle, asset, targetPath, platforms);
             }
         }
 
-        private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle,
-            AssetListData asset)
+        private static bool CollectAssetList(BundleBuilderData data, BundleBuilderData.BundleInfo bundle,
+            AssetListData asset, PackagePlatforms platforms)
         {
             for (var index = 0; index < asset.timestamps.Count; index++)
             {
@@ -128,7 +128,7 @@ namespace UnityFS.Editor
                     }
 
                     var mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                    CollectAsset(data, bundle, mainAsset, assetPath);
+                    CollectAsset(data, bundle, mainAsset, assetPath, platforms);
                 }
             }
 
@@ -137,7 +137,7 @@ namespace UnityFS.Editor
 
         // 最终资源
         private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset,
-            string assetPath)
+            string assetPath, PackagePlatforms platforms)
         {
             if (asset == null)
             {
@@ -147,7 +147,7 @@ namespace UnityFS.Editor
             var listData = asset as AssetListData;
             if (listData != null)
             {
-                return CollectAsset(data, bundle, listData);
+                return CollectAssetList(data, bundle, listData, platforms);
             }
 
             for (var splitIndex = 0; splitIndex < bundle.splits.Count; splitIndex++)
@@ -183,7 +183,7 @@ namespace UnityFS.Editor
 
                 if (ruleMatch)
                 {
-                    if (!ContainsAsset(data, asset) && split.AddObject(asset))
+                    if (!ContainsAsset(data, asset) && split.AddObject(asset, platforms))
                     {
                         data.OnAssetCollect(asset, assetPath);
                     }
