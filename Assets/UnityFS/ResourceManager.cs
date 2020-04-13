@@ -42,6 +42,11 @@ namespace UnityFS
             get { return _assetProvider?.tag; }
         }
 
+        public static int build
+        {
+            get { return _assetProvider != null ? _assetProvider.build : -1; }
+        }
+
         public static IList<string> urls
         {
             get { return _urls; }

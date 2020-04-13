@@ -11,6 +11,8 @@ namespace UnityFS
         event Action completed;
         
         string tag { get; }
+        
+        int build { get; }
 
         IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete);
         

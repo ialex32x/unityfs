@@ -49,6 +49,8 @@ namespace UnityFS
 
         public string tag => _manifestObject?.tag;
 
+        public int build => _manifestObject != null ? _manifestObject.build : -1;
+
         public event Action completed
         {
             add
@@ -565,14 +567,6 @@ namespace UnityFS
                 var bundleInfo = GetBundleInfo(bundleName);
                 if (bundleInfo != null)
                 {
-                    var bundleType = bundleInfo.type;
-                    if (bundleType == Manifest.BundleType.FileSystem)
-                    {
-                        // var fileEntry = lookup file entry by assetPath in filesystem bundle (info);
-                        // return IsFileAvailable(fileEntry);
-                        throw new NotImplementedException();
-                    }
-
                     return IsBundleAvailable(bundleInfo);
                 }
             }

@@ -15,6 +15,8 @@ namespace UnityFS
 
         public string tag => null;
 
+        public int build => 0;
+
         // 仅调试用, 模拟文件列表 (不带过滤)
         protected class UAssetDatabaseFileListAsset : UAsset
         {

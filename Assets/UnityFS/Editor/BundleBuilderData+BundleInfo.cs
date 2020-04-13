@@ -16,6 +16,7 @@ namespace UnityFS.Editor
             public int buildOrder = 1000;
             public string name; // bundle filename
             public string note;
+            public string tag;
             public Manifest.BundleType type;
             public Manifest.BundleLoad load;
             public bool enabled = true;

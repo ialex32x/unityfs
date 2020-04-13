@@ -37,11 +37,11 @@ namespace UnityFS
         public enum BundleType
         {
             AssetBundle = 0, // 打资源 ab 包
-            ZipArchive = 1, // 打 zip 包
+            ZipArchive = 1,  // 打 zip 包
 
             // SceneBundle,     // 打场景 ab 包
             FileList = 2, // 仅生成文件清单
-            FileSystem = 3, // 零散资源直接文件存储
+            RawFile = 3,  // 原文件 (功能未实现) 
         }
 
         // 资源包清单
@@ -60,10 +60,13 @@ namespace UnityFS
             public int size; // 文件大小
             public string checksum; // 文件校验值
             public string comment;
+            public string tag;
             public string[] dependencies; // 依赖的 bundle
             public List<string> assets = new List<string>(); // asset path (virtual path)
         }
 
+        public int build; // 资源版本 (资源打包次数)
+        public int timestamp; // epoch time
         public string tag;
         public List<BundleInfo> bundles = new List<BundleInfo>(); // bundle 清单
     }

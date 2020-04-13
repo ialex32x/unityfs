@@ -151,6 +151,7 @@ namespace UnityFS.Editor
                 {
                     EditorGUI.BeginChangeCheck();
                     bundle.note = EditorGUILayout.TextField("Info", bundle.note);
+                    bundle.tag = EditorGUILayout.TextField("Tag", bundle.tag);
                     bundle.streamingAssets = EditorGUILayout.Toggle("StreamingAssets", bundle.streamingAssets);
                     bundle.load = (Manifest.BundleLoad) EditorGUILayout.EnumPopup("Load", bundle.load);
                     bundle.type = (Manifest.BundleType) EditorGUILayout.EnumPopup("Type", bundle.type);

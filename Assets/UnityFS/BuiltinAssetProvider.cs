@@ -11,6 +11,8 @@ namespace UnityFS
     {
         public string tag => null;
         
+        public int build => 0;
+        
         protected class UBuiltinAsset : UAsset
         {
             public UBuiltinAsset(string assetPath, Type type)

@@ -51,6 +51,7 @@ namespace UnityFS.Editor
         }
 
         public int id;
+        public int build; // 版本 (打包次数)
         public string encryptionKey;
         public List<BundleInfo> bundles = new List<BundleInfo>();
         [SerializeField]
@@ -157,6 +158,12 @@ namespace UnityFS.Editor
         }
     }
 
+    public class ZipArchiveBuild
+    {
+        public string name;
+        public List<string> assetPaths = new List<string>();
+    }
+
     public class ZipArchiveManifestEntry
     {
         public string name;
@@ -166,12 +173,6 @@ namespace UnityFS.Editor
     public class ZipArchiveManifest
     {
         public List<ZipArchiveManifestEntry> archives = new List<ZipArchiveManifestEntry>();
-    }
-
-    public class ZipArchiveBuild
-    {
-        public string name;
-        public List<string> assetPaths = new List<string>();
     }
 
     public class FileListManifestEntry
@@ -189,6 +190,16 @@ namespace UnityFS.Editor
     {
         public List<FileListManifestFileInfo> fileEntrys = new List<FileListManifestFileInfo>();
         public List<FileListManifestEntry> fileLists = new List<FileListManifestEntry>();
+    }
+
+    public class RawFileBuild
+    {
+        public string name;
+        public string[] assetNames;
+    }
+
+    public class RawFileManifest
+    {
     }
 
     public class SceneBundleBuild

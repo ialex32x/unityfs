@@ -403,6 +403,9 @@ namespace UnityFS.Editor
                 data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
                 data.priorityMax = EditorGUILayout.IntField("Priority Max", data.priorityMax);
                 data.searchMax =  EditorGUILayout.IntField("Search Max", data.searchMax);
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUILayout.IntField("Build", data.build);
+                EditorGUI.EndDisabledGroup();
                 if (EditorGUI.EndChangeCheck())
                 {
                     data.MarkAsDirty();
