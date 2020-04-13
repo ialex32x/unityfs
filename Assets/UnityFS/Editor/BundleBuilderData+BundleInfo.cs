@@ -31,6 +31,10 @@ namespace UnityFS.Editor
                 return guid;
             }
 
+            public BundleInfo()
+            {
+            }
+
             public bool Slice(BundleBuilderData data)
             {
                 var dirty = false;
