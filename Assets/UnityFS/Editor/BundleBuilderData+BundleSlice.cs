@@ -39,6 +39,11 @@ namespace UnityFS.Editor
                 this.platform = platform;
             }
 
+            public bool Lookup(string assetGuid)
+            {
+                return assetGuids.Contains(assetGuid);
+            }
+
             // 是否为指定平台打包
             public bool IsBuild(PackagePlatform buildPlatform)
             {

@@ -36,6 +36,25 @@ namespace UnityFS.Editor
             {
             }
 
+            public bool Lookup(string assetGuid, out BundleSplit bundleSplit, out BundleSlice bundleSlice)
+            {
+                for (int i = 0, size = splits.Count; i < size; i++)
+                {
+                    var split = splits[i];
+                    var slice = split.Lookup(assetGuid);
+                    if (slice != null)
+                    {
+                        bundleSplit = split;
+                        bundleSlice = slice;
+                        return true;
+                    }
+                }
+
+                bundleSplit = null;
+                bundleSlice = null;
+                return false;
+            }
+
             public bool Slice(BundleBuilderData data)
             {
                 var dirty = false;

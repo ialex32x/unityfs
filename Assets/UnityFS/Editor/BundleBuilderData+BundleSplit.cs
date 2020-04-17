@@ -61,6 +61,21 @@ namespace UnityFS.Editor
                 }
             }
 
+            // 查找指定资源所在 slice, 不存在时返回 null
+            public BundleSlice Lookup(string assetGuid)
+            {
+                for (var i = 0; i < slices.Count; i++)
+                {
+                    var slice = slices[i];
+                    if (slice.Lookup(assetGuid))
+                    {
+                        return slice;
+                    }
+                }
+
+                return null;
+            }
+
             public bool Slice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo, string bundleName)
             {
                 var dirty = false;

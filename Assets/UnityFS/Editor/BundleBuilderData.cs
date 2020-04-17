@@ -80,6 +80,24 @@ namespace UnityFS.Editor
             return data;
         }
 
+        public bool Lookup(string assetGuid, out BundleInfo bundleInfo, out BundleSplit bundleSplit, out BundleSlice bundleSlice)
+        {
+            for (int i = 0, size = bundles.Count; i < size; i++)
+            {
+                var bundle = bundles[i];
+                if (bundle.Lookup(assetGuid, out bundleSplit, out bundleSlice))
+                {
+                    bundleInfo = bundle;
+                    return true;
+                }
+            }
+
+            bundleInfo = null;
+            bundleSplit = null;
+            bundleSlice = null;
+            return false;
+        }
+
         public AssetAttributes AddAssetAttributes(string guid)
         {
             AssetAttributes attrs;

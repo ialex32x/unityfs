@@ -224,11 +224,11 @@ namespace UnityFS.Editor
 
         public static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid)
         {
-            return DrawSingleAssetAttributes(data, assetGuid, null, false);
+            return DrawSingleAssetAttributes(data, assetGuid, null, false, false);
         }
 
         private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid,
-            BundleBuilderWindow builder, bool batchMode)
+            BundleBuilderWindow builder, bool batchMode, bool rLookup)
         {
             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
             var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
@@ -245,6 +245,20 @@ namespace UnityFS.Editor
                 GUILayout.MaxWidth(220f));
             EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
             EditorGUILayout.TextField(assetPath);
+            if (rLookup)
+            {
+                BundleBuilderData.BundleInfo rBundleInfo;
+                BundleBuilderData.BundleSplit rBundleSplit;
+                BundleBuilderData.BundleSlice rBundleSlice;
+                var exists = data.Lookup(assetGuid, out rBundleInfo, out rBundleSplit, out rBundleSlice);
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUILayout.TextField(exists ? rBundleSlice.name : "<null>");
+                EditorGUI.EndDisabledGroup();
+                if (GUILayout.Button(">", GUILayout.Width(20f)))
+                {
+                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new []{ rBundleInfo }));
+                }
+            }
 
             if (batchMode)
             {
@@ -357,7 +371,7 @@ namespace UnityFS.Editor
                         GUI.color = Color.green;
                     }
 
-                    DrawSingleAssetAttributes(data, assetGuid, this, marked);
+                    DrawSingleAssetAttributes(data, assetGuid, this, marked, true);
                     GUI.color = _GUIColor;
                     EditorGUILayout.EndHorizontal();
 
