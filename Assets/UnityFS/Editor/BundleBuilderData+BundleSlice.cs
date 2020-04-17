@@ -45,6 +45,13 @@ namespace UnityFS.Editor
                 return this.platform == PackagePlatform.Any || this.platform == buildPlatform;
             }
 
+            public void Reset()
+            {
+                histroy.Clear();
+                assetGuids.Clear();
+                Cleanup();
+            }
+
             public void Cleanup()
             {
                 assetGuids.Clear();

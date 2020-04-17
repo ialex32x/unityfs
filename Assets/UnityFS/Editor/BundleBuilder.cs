@@ -8,6 +8,7 @@ using System.Security.Permissions;
 using System.Text;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.GZip;
+using ICSharpCode.SharpZipLib.Zip.Compression;
 using NUnit.Framework;
 using UnityEditor.WindowsStandalone;
 
@@ -874,6 +875,7 @@ namespace UnityFS.Editor
             {
                 using (var outputStream = new GZipOutputStream(zStream))
                 {
+                    outputStream.SetLevel(Deflater.BEST_COMPRESSION);
                     outputStream.Write(bytes, 0, bytes.Length);
                     outputStream.Flush();
                 }

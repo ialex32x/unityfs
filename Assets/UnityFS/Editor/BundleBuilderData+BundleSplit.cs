@@ -45,6 +45,12 @@ namespace UnityFS.Editor
                 return _assetHashSet.Contains(asset);
             }
 
+            public void Reset()
+            {
+                slices.Clear();
+                Cleanup();
+            }
+
             public void Cleanup()
             {
                 _assetHashSet.Clear();

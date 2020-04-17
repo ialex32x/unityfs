@@ -239,12 +239,13 @@ namespace UnityFS.Editor
                             }
 
                             InspectRules(split.rules);
-                            Block("Slices", () =>
+                            
+                            var validIndex = 0;
+                            for (var sliceIndex = 0; sliceIndex < sliceCount; sliceIndex++)
                             {
-                                var validIndex = 0;
-                                for (var sliceIndex = 0; sliceIndex < sliceCount; sliceIndex++)
+                                var slice = split.slices[sliceIndex];
+                                Block("Slices", () =>
                                 {
-                                    var slice = split.slices[sliceIndex];
                                     var assetCount = slice.assetGuids.Count;
                                     if (assetCount > 0)
                                     {
@@ -261,6 +262,7 @@ namespace UnityFS.Editor
                                         {
                                             GUI.color = Color.green;
                                         }
+
                                         EditorGUILayout.LabelField(sliceName);
                                         var intent = 40f;
                                         EditorGUILayout.BeginHorizontal();
@@ -286,14 +288,56 @@ namespace UnityFS.Editor
                                             {
                                                 BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
                                             }
+
                                             EditorGUILayout.EndHorizontal();
                                         }
+
                                         EditorGUILayout.EndVertical();
                                         EditorGUILayout.EndHorizontal();
                                         GUI.color = _GUIColor;
                                     }
-                                }
-                            });
+                                }, () =>
+                                {
+                                    GUI.color = Color.magenta;
+                                    var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(20f));
+                                    rect.y -= 2f;
+                                    rect.height += 1f;
+                                    if (GUI.Button(rect, Text("reconstruct.split.slice", "❃", "重构分包切分")))
+                                    {
+                                        if (EditorUtility.DisplayDialog("重构", $"确定重构分包切分?", "确定", "取消"))
+                                        {
+                                            Defer(() =>
+                                            {
+                                                slice.Reset();
+                                                BundleBuilder.Scan(_data);
+                                                _data.MarkAsDirty();
+                                            });
+                                        }
+                                    }
+
+                                    GUI.color = _GUIColor;
+                                }, () =>
+                                {
+                                    GUI.color = Color.red;
+                                    var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(20f));
+                                    rect.y -= 2f;
+                                    rect.height += 1f;
+                                    if (GUI.Button(rect, Text("delete.split.slice", "X", "删除分包切分")))
+                                    {
+                                        if (EditorUtility.DisplayDialog("删除", $"确定删除分包切分?", "确定", "取消"))
+                                        {
+                                            Defer(() =>
+                                            {
+                                                split.slices.Remove(slice);
+                                                BundleBuilder.Scan(_data);
+                                                _data.MarkAsDirty();
+                                            });
+                                        }
+                                    }
+
+                                    GUI.color = _GUIColor;
+                                });
+                            }
                         }, () =>
                         {
                             GUI.color = Color.yellow;
@@ -333,6 +377,26 @@ namespace UnityFS.Editor
                             }
 
                             EditorGUI.EndDisabledGroup();
+                            GUI.color = _GUIColor;
+                        }, () =>
+                        {
+                            GUI.color = Color.magenta;
+                            var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(20f));
+                            rect.y -= 2f;
+                            rect.height += 1f;
+                            if (GUI.Button(rect, Text("reconstruct.split", "❃", "重构分包")))
+                            {
+                                if (EditorUtility.DisplayDialog("重构", $"确定重构分包?", "确定", "取消"))
+                                {
+                                    Defer(() =>
+                                    {
+                                        split.Reset();
+                                        BundleBuilder.Scan(_data);
+                                        _data.MarkAsDirty();
+                                    });
+                                }
+                            }
+
                             GUI.color = _GUIColor;
                         }, () =>
                         {
