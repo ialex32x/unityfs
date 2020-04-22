@@ -16,6 +16,7 @@ namespace UnityFS.Editor
             public int capacity;
             public bool streamingAssets; // 是否进入 StreamingAssets
             public PackagePlatform platform; // 打包资源的平台性质
+            public List<string> histroy = new List<string>();
 
             // 最终进入打包的所有资源对象
             private List<string> _assetGuids;
@@ -29,7 +30,6 @@ namespace UnityFS.Editor
                 }
             }
 
-            public List<string> histroy = new List<string>();
 
             public BundleSlice(string name, int capacity, bool streamingAssets, PackagePlatform platform)
             {

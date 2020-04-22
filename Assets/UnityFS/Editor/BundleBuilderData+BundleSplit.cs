@@ -98,7 +98,7 @@ namespace UnityFS.Editor
                 do
                 {
                     var part = rawValue % encodingBase.Length;
-                    result += encodingBase[(int) part];
+                    result += encodingBase[(int)part];
                     rawValue = (rawValue - part) / encodingBase.Length;
                 } while (rawValue > 0);
 
@@ -151,9 +151,19 @@ namespace UnityFS.Editor
                 for (var i = count - 1; i >= 0; i--)
                 {
                     var slice = slices[i];
-                    if (slice.streamingAssets == streamingAssets && slice.platform == platform)
+                    if (slice.platform == platform)
                     {
-                        return slice;
+                        if (slice.streamingAssets == streamingAssets)
+                        {
+                            return slice;
+                        }
+                        
+                        // 如果 slice 为空, 那么 StreamingAssets 可调整
+                        if (slice.assetGuids.Count == 0 && slice.histroy.Count == 0)
+                        {
+                            slice.streamingAssets = streamingAssets;
+                            return slice;
+                        }
                     }
                 }
 
@@ -172,7 +182,7 @@ namespace UnityFS.Editor
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];
-                    if (oldSlice.streamingAssets == streamingAssets && oldSlice.platform == slicePlatform  && oldSlice.AddHistory(guid))
+                    if (oldSlice.streamingAssets == streamingAssets && oldSlice.platform == slicePlatform && oldSlice.AddHistory(guid))
                     {
                         return false;
                     }
