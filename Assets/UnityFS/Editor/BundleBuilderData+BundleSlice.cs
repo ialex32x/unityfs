@@ -7,7 +7,7 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
-    public partial class BundleBuilderData 
+    public partial class BundleBuilderData
     {
         [Serializable]
         public class BundleSlice
@@ -63,12 +63,24 @@ namespace UnityFS.Editor
             }
 
             // 如果是历史资源, 将加入; 否则返回 false
-            public bool AddHistory(string guid)
+            public bool AddHistory(string guid, bool streamingAssets, PackagePlatform platform)
             {
                 if (histroy.Contains(guid))
                 {
-                    assetGuids.Add(guid);
-                    return true;
+                    if (this.streamingAssets == streamingAssets && this.platform == platform)
+                    {
+                        assetGuids.Add(guid);
+                        return true;
+                    }
+
+                    // 此处的判定规则影响包的性质改变, 进而影响分包切分布局, 导致额外的包变更
+                    if (assetGuids.Count == 0 && histroy.Count == 1)
+                    {
+                        this.streamingAssets = streamingAssets;
+                        this.platform = platform;
+                        assetGuids.Add(guid);
+                        return true;
+                    }
                 }
 
                 return false;

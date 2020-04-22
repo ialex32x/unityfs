@@ -151,19 +151,17 @@ namespace UnityFS.Editor
                 for (var i = count - 1; i >= 0; i--)
                 {
                     var slice = slices[i];
-                    if (slice.platform == platform)
+                    if (slice.platform == platform && slice.streamingAssets == streamingAssets)
                     {
-                        if (slice.streamingAssets == streamingAssets)
-                        {
-                            return slice;
-                        }
-                        
-                        // 如果 slice 为空, 那么 StreamingAssets 可调整
-                        if (slice.assetGuids.Count == 0 && slice.histroy.Count == 0)
-                        {
-                            slice.streamingAssets = streamingAssets;
-                            return slice;
-                        }
+                        return slice;
+                    }
+
+                    // 如果 slice 为空, 那么 StreamingAssets 可调整
+                    if (slice.assetGuids.Count == 0 && slice.histroy.Count == 0)
+                    {
+                        slice.streamingAssets = streamingAssets;
+                        slice.platform = platform;
+                        return slice;
                     }
                 }
 
@@ -182,7 +180,7 @@ namespace UnityFS.Editor
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];
-                    if (oldSlice.streamingAssets == streamingAssets && oldSlice.platform == slicePlatform && oldSlice.AddHistory(guid))
+                    if (oldSlice.AddHistory(guid, streamingAssets, slicePlatform))
                     {
                         return false;
                     }
