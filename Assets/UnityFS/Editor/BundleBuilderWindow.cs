@@ -404,7 +404,7 @@ namespace UnityFS.Editor
                     data.MarkAsDirty();
                 }
             });
-            Block("Path", () =>
+            Block("Misc.", () =>
             {
                 EditorGUI.BeginChangeCheck();
                 data.assetListData =
@@ -417,6 +417,8 @@ namespace UnityFS.Editor
                 data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
                 data.priorityMax = EditorGUILayout.IntField("Priority Max", data.priorityMax);
                 data.searchMax =  EditorGUILayout.IntField("Search Max", data.searchMax);
+                data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", data.disableTypeTree);
+                data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", data.lz4Compression);
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.IntField("Build", data.build);
                 EditorGUI.EndDisabledGroup();

@@ -56,9 +56,9 @@ namespace UnityFS.Editor
 
         public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatform platform)
         {
-            BuildSinglePlatformPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platform);
+            BuildSinglePlatformPackages(new PackageSharedBuildInfo() { data = data, outputPath = outputPath }, platform);
         }
-        
+
         public static BuildTarget ToBuildTarget(PackagePlatform platform)
         {
             switch (platform)
@@ -69,7 +69,7 @@ namespace UnityFS.Editor
                 case PackagePlatform.Windows64: return BuildTarget.StandaloneWindows64;
                 case PackagePlatform.MacOS: return BuildTarget.StandaloneOSX;
             }
-        
+
             throw new NotSupportedException();
         }
 
@@ -370,8 +370,17 @@ namespace UnityFS.Editor
         public static AssetBundleManifest BuildAssetBundles(PackageBuildInfo buildInfo,
             AssetBundleBuild[] assetBundleBuilds)
         {
+            var options = BuildAssetBundleOptions.None;
+            if (buildInfo.data.disableTypeTree)
+            {
+                options |= BuildAssetBundleOptions.DisableWriteTypeTree;
+            }
+            if (buildInfo.data.lz4Compression)
+            {
+                options |= BuildAssetBundleOptions.ChunkBasedCompression;
+            }
             return BuildPipeline.BuildAssetBundles(buildInfo.assetBundlePath, assetBundleBuilds,
-                BuildAssetBundleOptions.None,
+                options,
                 buildInfo.buildTarget);
         }
 
@@ -411,7 +420,7 @@ namespace UnityFS.Editor
         {
             var fi = new FileInfo(assetPath);
             var name = ZipEntry.CleanName(assetPath);
-            var entry = new ZipEntry(name) {DateTime = fi.LastWriteTimeUtc, Size = fi.Length};
+            var entry = new ZipEntry(name) { DateTime = fi.LastWriteTimeUtc, Size = fi.Length };
 
             // entry.Comment = "";
             zip.PutNextEntry(entry);
@@ -438,7 +447,7 @@ namespace UnityFS.Editor
         {
             var data = buildInfo.data;
             var list = new List<RawFileBuild>();
-            
+
             foreach (var bundle in data.bundles)
             {
                 if (bundle.type != Manifest.BundleType.RawFile)
@@ -642,7 +651,7 @@ namespace UnityFS.Editor
                 {
                     name = entryName,
                     checksum = checksum.hex,
-                    size = (int) fileInfo.Length,
+                    size = (int)fileInfo.Length,
                 };
             }
         }
@@ -737,7 +746,7 @@ namespace UnityFS.Editor
             var data = buildInfo.data;
             var manifest = new Manifest();
             manifest.build = buildInfo.data.build;
-            manifest.timestamp = (int) (DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds; 
+            manifest.timestamp = (int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
             manifest.tag = buildInfo.sharedBuildInfo.tag;
             var embeddedManifest = new EmbeddedManifest();
             if (assetBundleManifest != null)
