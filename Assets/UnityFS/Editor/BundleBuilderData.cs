@@ -68,6 +68,8 @@ namespace UnityFS.Editor
         [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();
 
         [NonSerialized] public string[] allCollectedAssetsPath = new string[0];
+        
+        public SList skipExts = new SList(".xlsx", ".xlsm", ".xls", ".docx", ".doc", ".cs");
 
         public static BundleBuilderData Load()
         {

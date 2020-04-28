@@ -337,4 +337,14 @@ MonoBehaviour:
   packagePath: out/packages
   priorityMax: 10000
   searchMax: 200
+  disableTypeTree: 0
+  lz4Compression: 1
   assetListData: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
+  skipExts:
+    _values:
+    - .xlsx
+    - .xlsm
+    - .xls
+    - .docx
+    - .doc
+    - .cs

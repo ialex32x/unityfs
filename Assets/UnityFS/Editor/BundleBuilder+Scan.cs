@@ -92,7 +92,8 @@ namespace UnityFS.Editor
 
                     if (bundle.type == Manifest.BundleType.AssetBundle)
                     {
-                        if (PathUtils.UnrecognizedAsset(file))
+                        var fi = new FileInfo(file);
+                        if (data.skipExts.Contains(fi.Extension.ToLower()))
                         {
                             continue;
                         }

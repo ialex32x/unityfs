@@ -256,7 +256,7 @@ namespace UnityFS.Editor
                 EditorGUI.EndDisabledGroup();
                 if (GUILayout.Button(">", GUILayout.Width(20f)))
                 {
-                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new []{ rBundleInfo }));
+                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new[] {rBundleInfo}));
                 }
             }
 
@@ -393,6 +393,8 @@ namespace UnityFS.Editor
             EditorGUILayout.Space();
         }
 
+        private string _newExts;
+
         private void OnDrawSettings()
         {
             Block("Encryption", () =>
@@ -403,6 +405,51 @@ namespace UnityFS.Editor
                 {
                     data.MarkAsDirty();
                 }
+            });
+            Block("Skip File Ext.", () =>
+            {
+                var count = data.skipExts.Count;
+                for (var i = 0; i < count; i++)
+                {
+                    var ext = data.skipExts[i];
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.TextField(ext);
+                    GUI.color = Color.red;
+                    if (GUILayout.Button("X", GUILayout.Width(20f)))
+                    {
+                        var extV = ext;
+                        Defer(() =>
+                        {
+                            data.skipExts.Remove(extV);
+                            data.MarkAsDirty();
+                        });
+                    }
+
+                    GUI.color = _GUIColor;
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                _newExts = EditorGUILayout.TextField(_newExts);
+                if (GUILayout.Button("Add"))
+                {
+                    if (!string.IsNullOrEmpty(_newExts))
+                    {
+                        var exts = _newExts.Replace("\"", "").Replace(" ", "").Split(',');
+                        _newExts = string.Empty;
+                        Defer(() =>
+                        {
+                            foreach (var next in exts)
+                            {
+                                data.skipExts.Add(next);
+                            }
+
+                            data.MarkAsDirty();
+                        });
+                    }
+                }
+
+                EditorGUILayout.EndHorizontal();
             });
             Block("Misc.", () =>
             {
@@ -416,7 +463,7 @@ namespace UnityFS.Editor
                 // 最终包输出目录
                 data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
                 data.priorityMax = EditorGUILayout.IntField("Priority Max", data.priorityMax);
-                data.searchMax =  EditorGUILayout.IntField("Search Max", data.searchMax);
+                data.searchMax = EditorGUILayout.IntField("Search Max", data.searchMax);
                 data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", data.disableTypeTree);
                 data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", data.lz4Compression);
                 EditorGUI.BeginDisabledGroup(true);

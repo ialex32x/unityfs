@@ -5,16 +5,16 @@ namespace UnityFS.Editor
 {
     public static class PathUtils
     {
-        private static HashSet<string> UnsupportedExts = new HashSet<string>(new string[]
-        {
-            ".xlsx", ".xlsm", ".xls", ".docx", ".doc"
-        });
-
-        public static bool UnrecognizedAsset(string file)
-        {
-            var fi = new FileInfo(file);
-            return UnsupportedExts.Contains(fi.Extension.ToLower());
-        }
+        // private static HashSet<string> UnsupportedExts = new HashSet<string>(new string[]
+        // {
+        //     ".xlsx", ".xlsm", ".xls", ".docx", ".doc", ".cs"
+        // });
+        //
+        // public static bool UnrecognizedAsset(string file)
+        // {
+        //     var fi = new FileInfo(file);
+        //     return UnsupportedExts.Contains(fi.Extension.ToLower());
+        // }
 
         public static string ReplaceFileExt(string fileName, string oldSuffix, string newSuffix)
         {
