@@ -138,11 +138,14 @@ namespace UnityFS.Editor
                         Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
 
                     //TODO: streamingassets copy
-                    foreach (var entry in fileListManifest.fileEntrys)
+                    if (fileListManifest != null) 
                     {
-                        if (entry.streamingAssets && CopyRawFile(buildInfo.streamingAssetsPath, entry.assetPath))
+                        foreach (var entry in fileListManifest.fileEntrys)
                         {
-                            Debug.LogWarningFormat("copy xxx {0}", entry.assetPath);
+                            if (entry.streamingAssets && CopyRawFile(buildInfo.streamingAssetsPath, entry.assetPath))
+                            {
+                                Debug.LogWarningFormat("copy xxx {0}", entry.assetPath);
+                            }
                         }
                     }
                 }
