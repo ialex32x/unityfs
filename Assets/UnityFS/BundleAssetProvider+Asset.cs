@@ -123,7 +123,7 @@ namespace UnityFS
             }
 
             public UFileListBundleAsset(UFileListBundle bundle, string assetPath)
-                : base(assetPath)
+                : base(assetPath, null)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -271,7 +271,7 @@ namespace UnityFS
             protected UZipArchiveBundle _bundle;
 
             public UZipArchiveBundleAsset(UZipArchiveBundle bundle, string assetPath)
-                : base(assetPath)
+                : base(assetPath, null)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -409,7 +409,7 @@ namespace UnityFS
                     return new UAssetBundleConcreteAsset(this, assetPath, type);
                 }
 
-                return new UAssetBundleAsset(this, assetPath);
+                return new UAssetBundleAsset(this, assetPath, type);
             }
         }
 
@@ -418,8 +418,8 @@ namespace UnityFS
         {
             protected UAssetBundleBundle _bundle;
 
-            public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath)
-                : base(assetPath)
+            public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath, Type type)
+                : base(assetPath, type)
             {
                 _bundle = bundle;
                 _bundle.AddRef();
@@ -433,6 +433,10 @@ namespace UnityFS
 
             public override byte[] ReadAllBytes()
             {
+                if (_type != null && _type != typeof(TextAsset))
+                {
+                    throw new InvalidCastException(string.Format("{0} != TextAsset", _type));
+                }
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
                 {
@@ -482,12 +486,9 @@ namespace UnityFS
         // 从 AssetBundle 资源包载入 (会调用 assetbundle.LoadAsset 载入实际资源)
         protected class UAssetBundleConcreteAsset : UAssetBundleAsset
         {
-            private Type _type;
-
             public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type)
-                : base(bundle, assetPath)
+                : base(bundle, assetPath, type)
             {
-                _type = type;
             }
 
             protected override void OnBundleLoaded(UBundle bundle)

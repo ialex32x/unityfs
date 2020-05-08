@@ -9,8 +9,8 @@ namespace UnityFS
     // 代表无法加载的资源
     public class UFailureAsset : UAsset
     {
-        public UFailureAsset(string assetPath)
-        : base(assetPath)
+        public UFailureAsset(string assetPath, Type type)
+        : base(assetPath, type)
         {
             Complete();
         }

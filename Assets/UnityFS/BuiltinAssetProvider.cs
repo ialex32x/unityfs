@@ -16,7 +16,7 @@ namespace UnityFS
         protected class UBuiltinAsset : UAsset
         {
             public UBuiltinAsset(string assetPath, Type type)
-            : base(assetPath)
+            : base(assetPath, type)
             {
                 var resPath = assetPath;
                 var prefix = "Assets/";

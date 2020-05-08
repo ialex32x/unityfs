@@ -642,7 +642,7 @@ namespace UnityFS
                 // 不是 Unity 资源包, 不能实例化 AssetBundleUAsset
             }
 
-            var invalid = new UFailureAsset(assetPath);
+            var invalid = new UFailureAsset(assetPath, type);
             _assets[TransformAssetPath(assetPath)] = new WeakReference(invalid);
             return invalid;
         }

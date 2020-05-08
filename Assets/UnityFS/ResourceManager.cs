@@ -231,6 +231,11 @@ namespace UnityFS
             return GetAssetProvider().GetAsset(assetPath, null);
         }
 
+        public static UAsset LoadAsset<T>(string assetPath)
+        {
+            return GetAssetProvider().GetAsset(assetPath, typeof(T));
+        }
+
         public static UAsset LoadAsset(string assetPath, Type type)
         {
             return GetAssetProvider().GetAsset(assetPath, type);
@@ -239,6 +244,13 @@ namespace UnityFS
         public static UAsset LoadAsset(string assetPath, Action<UAsset> callback)
         {
             var asset = GetAssetProvider().GetAsset(assetPath, null);
+            asset.completed += callback;
+            return asset;
+        }
+
+        public static UAsset LoadAsset<T>(string assetPath, Action<UAsset> callback)
+        {
+            var asset = GetAssetProvider().GetAsset(assetPath, typeof(T));
             asset.completed += callback;
             return asset;
         }

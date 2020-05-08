@@ -10,6 +10,7 @@ namespace UnityFS
     public abstract class UAsset : IDisposable
     {
         protected string _assetPath;
+        protected Type _type;
         protected Object _object;
 
         protected bool _disposed;
@@ -72,6 +73,16 @@ namespace UnityFS
             return _object;
         }
 
+        public T GetObject<T>()
+            where T : Object
+        {
+            if (_type != null && typeof(T) != _type)
+            {
+                throw new InvalidCastException(string.Format("{0} != {1}: {2}", _type, typeof(T), _assetPath));
+            }
+            return GetObject() as T;
+        }
+
         protected virtual bool IsValid()
         {
             return true;
@@ -87,9 +98,10 @@ namespace UnityFS
 
         public virtual object GetValue() { return null; }
 
-        public UAsset(string assetPath)
+        public UAsset(string assetPath, Type type)
         {
             _assetPath = assetPath;
+            _type = type;
         }
 
         public void Dispose()

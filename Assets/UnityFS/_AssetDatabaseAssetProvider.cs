@@ -23,7 +23,7 @@ namespace UnityFS
             private FileListManifest _fileListManifest;
 
             public UAssetDatabaseFileListAsset(string assetPath)
-            : base(assetPath)
+            : base(assetPath, null)
             {
                 _fileListManifest = new FileListManifest();
                 WalkDirectory(assetPath);
@@ -92,12 +92,9 @@ namespace UnityFS
 
         protected class UAssetDatabaseAsset : UAsset
         {
-            private Type _type;
-
             public UAssetDatabaseAsset(string assetPath, Type type, float delay)
-            : base(assetPath)
+            : base(assetPath, type)
             {
-                _type = type;
                 if (delay > 0f)
                 {
                     JobScheduler.DispatchMainAfter(() =>
@@ -188,7 +185,7 @@ namespace UnityFS
             }
             else
             {
-                asset = new UFailureAsset(assetPath);
+                asset = new UFailureAsset(assetPath, type);
             }
             _assets[assetPath] = new WeakReference(asset);
             return asset;
