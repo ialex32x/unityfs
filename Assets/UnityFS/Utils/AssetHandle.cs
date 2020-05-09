@@ -35,7 +35,7 @@ namespace UnityFS.Utils
         public static AssetHandle CreateInstance(UAsset asset, float ttl)
         {
             var gameObject = Object.Instantiate(asset.GetObject()) as GameObject;
-            return UnityFS.Utils.AssetHandle.Attach(gameObject, asset, 5.0f);
+            return UnityFS.Utils.AssetHandle.Attach(gameObject, asset, ttl);
         }
 
         void OnDestroy()
