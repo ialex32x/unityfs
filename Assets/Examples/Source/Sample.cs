@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Text;
 using UnityFS;
 
 namespace Examples
@@ -110,6 +111,14 @@ namespace Examples
             {
                 // 可以在这里由脚本接管后续启动流程
                 // ScriptEngine.RunScript(fs.ReadAllBytes("Assets/Examples/Scripts/main.lua"));
+                
+                // 具体游戏实现中可以自己实现一个多层文件加载, 提供给脚本系统或者配置读取模块
+                // 这样如果前层 FileSystem 中存在文件, 则优先加载
+                // 例如对于已经打包后的配置, 在不重新打包的情况下优先读取目录中直接存在的文件, 可以用于非编辑器环境下临时调试修改等
+                var cfs = new CompositeFileSystem();
+                cfs.AddFileSystems(new OrdinaryFileSystem(), fs);
+                var readmeBytes = cfs.ReadAllBytes("README.md");
+                Debug.Log(readmeBytes != null ? Encoding.UTF8.GetString(readmeBytes) : "readme.md not exists");
 
                 // 其他接口示意:
 

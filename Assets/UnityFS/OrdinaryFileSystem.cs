@@ -10,6 +10,10 @@ namespace UnityFS
     {
         private string _rootPath;
 
+        public OrdinaryFileSystem() : this(null)
+        {
+        }
+
         public OrdinaryFileSystem(string rootPath)
         {
             _rootPath = rootPath;
