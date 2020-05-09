@@ -470,8 +470,11 @@ namespace UnityFS.Editor
                             for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
                             {
                                 var assetGuid = bundleSlice.assetGuids[assetIndex];
-                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                                assetNames.Add(assetPath);
+                                if (data.IsPackAsset(assetGuid))
+                                {
+                                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                    assetNames.Add(assetPath);
+                                }
                             }
 
                             if (assetNames.Count != 0)
@@ -531,8 +534,11 @@ namespace UnityFS.Editor
                             for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
                             {
                                 var assetGuid = bundleSlice.assetGuids[assetIndex];
-                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                                assetNames.Add(assetPath);
+                                if (data.IsPackAsset(assetGuid))
+                                {
+                                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                    assetNames.Add(assetPath);
+                                }
                             }
 
                             if (assetNames.Count != 0)
@@ -578,8 +584,11 @@ namespace UnityFS.Editor
                             for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
                             {
                                 var assetGuid = bundleSlice.assetGuids[assetIndex];
-                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                                assetNames.Add(assetPath);
+                                if (data.IsPackAsset(assetGuid))
+                                {
+                                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                    assetNames.Add(assetPath);
+                                }
                             }
 
                             if (assetNames.Count != 0)

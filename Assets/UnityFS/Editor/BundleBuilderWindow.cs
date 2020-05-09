@@ -240,7 +240,7 @@ namespace UnityFS.Editor
             }
 
             var nAssetPacker =
-                (AssetPacker) EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(80f));
+                (AssetPacker) EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
             var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax,
                 GUILayout.MaxWidth(220f));
             EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
@@ -339,7 +339,12 @@ namespace UnityFS.Editor
             Block(string.Format("Results ({0}/{1})", _selectedInResults, _searchResults.Count), () =>
             {
                 _selectedInResults = 0;
+                EditorGUILayout.BeginHorizontal();
                 var nbatchedSelectMarks = EditorGUILayout.Toggle(_batchedSelectMarks, GUILayout.Width(20f));
+                EditorGUILayout.LabelField("Asset Packer", GUILayout.Width(110f));
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.Space();
+                
                 if (nbatchedSelectMarks != _batchedSelectMarks)
                 {
                     _batchedSelectMarks = nbatchedSelectMarks;

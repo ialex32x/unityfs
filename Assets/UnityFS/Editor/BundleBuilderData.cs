@@ -158,6 +158,12 @@ namespace UnityFS.Editor
             }
         }
 
+        public bool IsPackAsset(string guid)
+        {
+            var assetAttributes = GetAssetAttributes(guid);
+            return assetAttributes == null || assetAttributes.packer != AssetPacker.DontPack;
+        }
+
         // 确定一个资源是否需要进入 StreamingAssets
         public bool IsStreamingAssets(string guid, BundleBuilderData.BundleInfo bundleInfo)
         {
@@ -176,7 +182,7 @@ namespace UnityFS.Editor
                 return bundleInfo.streamingAssets;
             }
 
-            return assetAttributes.packer == AssetPacker.Always;
+            return assetAttributes.packer == AssetPacker.AlwaysSA;
         }
     }
 
