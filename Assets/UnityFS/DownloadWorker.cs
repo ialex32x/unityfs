@@ -18,6 +18,7 @@ namespace UnityFS
         {
             public int bytesPerSecond = 128 * 1024; // 下载限速 128KB/S
             public bool emergency; // 是否紧急 (创建此任务时)
+            public string url; // (可选) 指定地址, 如果没有指定, 则使用 manager.urls + name 得到
             
             public int retry; // 重试次数 (<=0 时无限重试)
             public int tried; // 已重试次数
@@ -139,19 +140,24 @@ namespace UnityFS
 
         private string GetUrl(JobInfo jobInfo)
         {
-            var url = _urls[jobInfo.tried % _urls.Count];
-
-            if (url.EndsWith("/"))
+            if (string.IsNullOrEmpty(jobInfo.url))
             {
-                url += jobInfo.name;
-            }
-            else
-            {
-                url += "/" + jobInfo.name;
+                var url = _urls[jobInfo.tried % _urls.Count];
+
+                if (url.EndsWith("/"))
+                {
+                    url += jobInfo.name;
+                }
+                else
+                {
+                    url += "/" + jobInfo.name;
+                }
+
+                url += "?checksum=" + (jobInfo.checksum ?? DateTime.Now.Ticks.ToString());
+                return url;
             }
 
-            url += "?checksum=" + (jobInfo.checksum ?? DateTime.Now.Ticks.ToString());
-            return url;
+            return jobInfo.url;
         }
 
         private void _Run()
