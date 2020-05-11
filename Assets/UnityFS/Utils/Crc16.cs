@@ -2,11 +2,11 @@ using System.IO;
 
 namespace UnityFS.Utils
 {
-    public class Crc16
+    public class Crc16 : IDataChecker
     {
         private const ushort polynomial = 0xA001;
         private static readonly ushort[] table = new ushort[256];
-        private byte[] buffer = new byte[256];
+        private byte[] _buffer = new byte[256];
 
         private ushort _checksum = 0;
 
@@ -18,7 +18,7 @@ namespace UnityFS.Utils
         {
         }
 
-        public void Clear()
+        public void Reset()
         {
             _checksum = 0;
         }
@@ -28,26 +28,25 @@ namespace UnityFS.Utils
             return value.ToString("x").PadLeft(4, '0');
         }
 
-        public ushort Update(Stream stream)
+        public void Update(Stream stream)
         {
-            var count = buffer.Length;
-            var read = stream.Read(buffer, 0, count);
+            var count = _buffer.Length;
+            var read = stream.Read(_buffer, 0, count);
             while (read > 0)
             {
-                _checksum = ComputeChecksum(buffer, 0, read, _checksum);
-                read = stream.Read(buffer, 0, count);
+                _checksum = ComputeChecksum(_buffer, 0, read, _checksum);
+                read = stream.Read(_buffer, 0, count);
             }
-            return _checksum;
         }
 
-        public ushort Update(byte[] bytes)
+        public void Update(byte[] bytes)
         {
-            return _checksum = ComputeChecksum(bytes, 0, bytes.Length, _checksum);
+            _checksum = ComputeChecksum(bytes, 0, bytes.Length, _checksum);
         }
 
-        public ushort Update(byte[] bytes, int offset, int count)
+        public void Update(byte[] bytes, int offset, int count)
         {
-            return _checksum = ComputeChecksum(bytes, offset, count, _checksum);
+            _checksum = ComputeChecksum(bytes, offset, count, _checksum);
         }
 
         public static ushort ComputeChecksum(byte[] bytes)

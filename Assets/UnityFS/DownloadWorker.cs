@@ -4,6 +4,7 @@ using System.Net;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using UnityFS.Utils;
 
 namespace UnityFS
 {
@@ -19,6 +20,7 @@ namespace UnityFS
             public int bytesPerSecond = 128 * 1024; // 下载限速 128KB/S
             public bool emergency; // 是否紧急 (创建此任务时)
             public string url; // (可选) 指定地址, 如果没有指定, 则使用 manager.urls + name 得到
+            public string dataChecker; // (可选) crc16, md5. 不指定时使用 crc16
             
             public int retry; // 重试次数 (<=0 时无限重试)
             public int tried; // 已重试次数
@@ -58,7 +60,6 @@ namespace UnityFS
         private bool _destroy;
         private byte[] _buffer;
         private int _timeout = 10 * 1000; // http 请求超时时间 (毫秒)
-        private Utils.Crc16 _crc = new Utils.Crc16();
         private LinkedList<JobInfo> _jobInfos = new LinkedList<JobInfo>();
         private Thread _thread;
         private AutoResetEvent _event = new AutoResetEvent(false);
@@ -197,6 +198,15 @@ namespace UnityFS
             }
         }
 
+        private IDataChecker GetDataChecker(JobInfo jobInfo)
+        {
+            if (jobInfo.dataChecker == "md5")
+            {
+                return new MD5Hash();
+            }
+            return new Crc16();
+        }
+
         private void ProcessJob(JobInfo jobInfo)
         {
             Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.comment);
@@ -207,6 +217,7 @@ namespace UnityFS
                 _fileStream = null;
             }
 
+            var dataChecker = GetDataChecker(jobInfo);
             while (true)
             {
                 string error = null;
@@ -214,7 +225,7 @@ namespace UnityFS
                 var success = true;
                 var wsize = jobInfo.size;
                 var wchecksum = jobInfo.checksum;
-                _crc.Clear();
+                dataChecker.Reset();
                 if (_fileStream == null)
                 {
                     try
@@ -231,9 +242,9 @@ namespace UnityFS
                             }
                             else if (partialSize <= jobInfo.size) // 续传
                             {
-                                _crc.Update(_fileStream);
+                                dataChecker.Update(_fileStream);
                                 Debug.LogFormat("partial check {0} && {1} ({2})", partialSize, jobInfo.size,
-                                    _crc.hex);
+                                    dataChecker.hex);
                             }
                         }
                         else // 创建下载文件
@@ -308,7 +319,7 @@ namespace UnityFS
                                         }
                                         recvAll += recv;
                                         _fileStream.Write(_buffer, 0, recv);
-                                        _crc.Update(_buffer, 0, recv);
+                                        dataChecker.Update(_buffer, 0, recv);
                                         jobInfo.bytes = (int) (recvAll + partialSize);
                                         // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                                     }
@@ -343,18 +354,18 @@ namespace UnityFS
                     }
                 }
 
-                if (success && _crc.hex != jobInfo.checksum)
+                if (success && dataChecker.hex != jobInfo.checksum)
                 {
                     if (!string.IsNullOrEmpty(jobInfo.checksum))
                     {
-                        error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, _crc.hex,
+                        error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, dataChecker.hex,
                             jobInfo.checksum);
                         Debug.LogError(error);
                         success = false;
                     }
                     else
                     {
-                        wchecksum = _crc.hex;
+                        wchecksum = dataChecker.hex;
                     }
                 }
 
