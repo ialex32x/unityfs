@@ -242,7 +242,7 @@ namespace UnityFS.Utils
                         var json = File.ReadAllText(metaPath);
                         var metadata = JsonUtility.FromJson<Metadata>(json);
                         // quick but unsafe
-                        if (metadata != null && metadata.checksum == checksum && metadata.size == size)
+                        if (metadata != null && metadata.checksum == checksum && (size == 0 || metadata.size == size))
                         {
                             return true;
                         }
