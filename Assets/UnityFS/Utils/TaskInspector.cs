@@ -46,12 +46,13 @@ namespace UnityFS.Utils
             {
                 if (task.isRunning)
                 {
-                    DrawText(x, y, line, string.Format("{0} {1} {2:00.00}%", task.name, task.size, task.progress * 100f), Color.green);
-
+                    DrawText(x, y, line,
+                        string.Format("{0} {1} {2:00.00}%", task.name, task.comment, task.progress * 100f),
+                        task.isDone ? Color.red : Color.green);
                 }
                 else
                 {
-                    DrawText(x, y, line, string.Format("{0} {1}", task.name, task.size), Color.white);
+                    DrawText(x, y, line, string.Format("{0} {1}", task.name, task.comment), Color.white);
                 }
                 y += line;
             });

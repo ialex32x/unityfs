@@ -18,6 +18,7 @@ namespace UnityFS
         int size { get; }
         int priority { get; }
         string name { get; }
+        string comment { get; }
         string path { get; }
     }
 }
