@@ -430,7 +430,7 @@ namespace UnityFS
         }
 
         // 尝试获取包对象 (不会自动创建并加载)
-        public UBundle TryGetBundle(Manifest.BundleInfo bundleInfo)
+        private UBundle TryGetBundle(Manifest.BundleInfo bundleInfo)
         {
             if (_closed)
             {
@@ -453,7 +453,7 @@ namespace UnityFS
             return bundleName != null && _bundles.TryGetValue(bundleName, out bundle) ? bundle : null;
         }
 
-        public UBundle GetBundle(Manifest.BundleInfo bundleInfo)
+        private UBundle GetBundle(Manifest.BundleInfo bundleInfo)
         {
             if (_closed)
             {
