@@ -190,13 +190,22 @@ namespace UnityFS
             {
                 _activeJobs--;                
             }
-            jobInfo.callback?.Invoke();
-            ResourceManager.GetListener().OnTaskComplete(jobInfo);
+            try
+            {
+                jobInfo.callback?.Invoke();
+                ResourceManager.GetListener().OnTaskComplete(jobInfo);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarningFormat("下载完成任务回调通知异常 {0}", exception);
+            }
+
             var bundle = TryGetBundle(jobInfo.name);
             if (bundle != null)
             {
                 if (!LoadBundleFile(bundle))
                 {
+                    Debug.LogErrorFormat("下载完成但文件载入失败 {0}", bundle.name);
                     bundle.Load(null);
                 }
             }
@@ -240,7 +249,14 @@ namespace UnityFS
                         _idleWorker.AddJob(task);
                     }
 
-                    ResourceManager.GetListener().OnTaskStart(task);
+                    try
+                    {
+                        ResourceManager.GetListener().OnTaskStart(task);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogWarningFormat("Schedule() OnTaskStart exception\n{0}", exception);
+                    }
                 }
             }
         }

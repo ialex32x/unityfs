@@ -95,7 +95,14 @@ namespace UnityFS
                     _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
                     {
                         SetManifest(manifest, fileEntry);
-                        ResourceManager.GetListener().OnSetManifest();
+                        try
+                        {
+                            ResourceManager.GetListener().OnSetManifest();
+                        }
+                        catch (Exception exception)
+                        {
+                            Debug.LogWarningFormat("OnSetManifest exception\n{0}", exception);
+                        }
                     });
                 });
         }
@@ -288,13 +295,20 @@ namespace UnityFS
 
         private bool LoadBundleFile(UBundle bundle)
         {
-            var fullPath = Path.Combine(_localPathRoot, bundle.name);
-            var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
-            if (fileStream != null)
+            try
             {
-                // Stream 生命周期转由 UAssetBundleBundle 管理
-                bundle.Load(Utils.Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password));
-                return true;
+                var fullPath = Path.Combine(_localPathRoot, bundle.name);
+                var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
+                if (fileStream != null)
+                {
+                    // Stream 生命周期转由 UAssetBundleBundle 管理
+                    bundle.Load(Utils.Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password));
+                    return true;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogErrorFormat("LoadBundleFile({0}) exception\n{1}", bundle.name, exception);
             }
 
             return false;
@@ -327,11 +341,12 @@ namespace UnityFS
             if (!_closed)
             {
                 _closed = true;
-                JobScheduler.DispatchCoroutine(_OnClosing());
+                // JobScheduler.DispatchCoroutine(_OnClosing());
+                _OnClosing();
             }
         }
 
-        private IEnumerator _OnClosing()
+        private void _OnClosing()
         {
             // 终止所有任务
             _jobs.Clear();
@@ -393,8 +408,6 @@ namespace UnityFS
 
                 _bundles.Clear();
             }
-
-            yield return null;
         }
 
         // 获取包信息

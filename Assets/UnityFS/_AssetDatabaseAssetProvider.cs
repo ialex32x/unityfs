@@ -237,7 +237,14 @@ namespace UnityFS
 
         public void Open(ResourceManagerArgs args)
         {
-            ResourceManager.GetListener().OnSetManifest();
+            try
+            {
+                ResourceManager.GetListener().OnSetManifest();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarningFormat("OnSetManifest exception\n{0}", exception);
+            }
         }
 
         public void Close()
