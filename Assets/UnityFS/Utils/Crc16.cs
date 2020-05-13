@@ -28,6 +28,12 @@ namespace UnityFS.Utils
             return value.ToString("x").PadLeft(4, '0');
         }
 
+        public void ComputeHashFull(Stream stream)
+        {
+            Reset();
+            Update(stream);
+        }
+
         public void Update(Stream stream)
         {
             var count = _buffer.Length;

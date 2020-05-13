@@ -5,34 +5,36 @@ namespace UnityFS.Utils
 {
     public class MD5Hash : IDataChecker
     {
-        private System.Security.Cryptography.MD5 _md5;
+        private string _hash;
 
         public string hex
         {
             get
             {
-                return GetString(_md5.Hash);
+                return _hash;
             }
         }
 
         public MD5Hash()
         {
-            _md5 = System.Security.Cryptography.MD5.Create();
         }
         
+        public void ComputeHashFull(Stream stream)
+        {
+            var md5 = System.Security.Cryptography.MD5.Create();
+            _hash = GetString(md5.ComputeHash(stream));
+        }
+
         public void Reset()
         {
-            _md5.Initialize();
         }
 
         public void Update(Stream stream)
         {
-            _md5.ComputeHash(stream);
         }
         
         public void Update(byte[] bytes, int offset, int count)
         {
-            _md5.ComputeHash(bytes, offset, count);
         }
         
         public static string GetString(byte[] bytes)

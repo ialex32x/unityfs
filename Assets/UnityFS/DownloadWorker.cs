@@ -243,8 +243,8 @@ namespace UnityFS
                             else if (partialSize <= jobInfo.size) // 续传
                             {
                                 dataChecker.Update(_fileStream);
-                                Debug.LogFormat("partial check {0} && {1} ({2})", partialSize, jobInfo.size,
-                                    dataChecker.hex);
+                                // Debug.LogFormat("partial check {0} && {1} ({2})", partialSize, jobInfo.size,
+                                //     dataChecker.hex);
                             }
                         }
                         else // 创建下载文件
@@ -354,18 +354,28 @@ namespace UnityFS
                     }
                 }
 
-                if (success && dataChecker.hex != jobInfo.checksum)
+                if (success)
                 {
-                    if (!string.IsNullOrEmpty(jobInfo.checksum))
+                    // dirty code, md5 目前不能分段计算
+                    if (dataChecker.hex == null)
                     {
-                        error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, dataChecker.hex,
-                            jobInfo.checksum);
-                        Debug.LogError(error);
-                        success = false;
+                        _fileStream.Seek(0, SeekOrigin.Begin);
+                        dataChecker.ComputeHashFull(_fileStream);
                     }
-                    else
+
+                    if (dataChecker.hex != jobInfo.checksum)
                     {
-                        wchecksum = dataChecker.hex;
+                        if (!string.IsNullOrEmpty(jobInfo.checksum))
+                        {
+                            error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, dataChecker.hex,
+                                jobInfo.checksum);
+                            Debug.LogError(error);
+                            success = false;
+                        }
+                        else
+                        {
+                            wchecksum = dataChecker.hex;
+                        }
                     }
                 }
 

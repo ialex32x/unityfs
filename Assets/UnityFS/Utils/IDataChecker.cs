@@ -8,5 +8,7 @@ namespace UnityFS.Utils
         void Reset();
         void Update(Stream stream);
         void Update(byte[] bytes, int offset, int count);
+
+        void ComputeHashFull(Stream stream);
     }
 }
