@@ -39,9 +39,13 @@ namespace UnityFS
 
         public DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
         {
-            if (!IsBundleAvailable(bundleInfo))
+            var list = _manifestObject?.bundles;
+            if (list != null && list.Contains(bundleInfo))
             {
-                return _DownloadBundleFile(bundleInfo, null, false);
+                if (!IsBundleAvailable(bundleInfo))
+                {
+                    return _DownloadBundleFile(bundleInfo, null, false);
+                }
             }
 
             return null;
