@@ -24,9 +24,7 @@ namespace UnityFS.Editor
 
         private int _tabIndex;
         private string[] _tabs = new[] {"Packages", "Assets", "Settings"};
-        private bool dirty;
-        private BundleBuilderData.BundleInfo selected;
-        private BundleBuilderData data;
+        private BundleBuilderData _data;
         private PackagePlatform _platform;
 
         [MenuItem("UnityFS/Builder")]
@@ -61,8 +59,8 @@ namespace UnityFS.Editor
         {
             base.OnEnable();
             Selection.selectionChanged += OnSelectionChanged;
-            data = BundleBuilder.GetData();
-            BundleBuilder.Scan(data);
+            _data = BundleBuilder.GetData();
+            BundleBuilder.Scan(_data);
             titleContent = new GUIContent("Bundle Builder");
             _searchKeyword = EditorPrefs.GetString(KeyForSearchKey);
             _showDefinedOnly = EditorPrefs.GetInt(KeyForShowDefinedOnly) == 1;
@@ -81,7 +79,7 @@ namespace UnityFS.Editor
             _headerState = headerState;
 
             _treeView = new BundleBuilderTreeView(_treeViewState, header);
-            _treeView.SetData(data);
+            _treeView.SetData(_data);
         }
 
         private void OnSelectionChanged()
@@ -141,7 +139,7 @@ namespace UnityFS.Editor
 
         private void UpdateSearchResults()
         {
-            UpdateSearchResults(_searchKeyword, _showDefinedOnly, _showSelectionOnly, data.searchMax);
+            UpdateSearchResults(_searchKeyword, _showDefinedOnly, _showSelectionOnly, _data.searchMax);
         }
 
         // showDefinedOnly: 只显示已定义
@@ -163,9 +161,9 @@ namespace UnityFS.Editor
                 }
             }
 
-            for (var i = 0; i < data.allCollectedAssetsPath.Length; i++)
+            for (var i = 0; i < _data.allCollectedAssetsPath.Length; i++)
             {
-                var assetPath = data.allCollectedAssetsPath[i];
+                var assetPath = _data.allCollectedAssetsPath[i];
                 if (showSelectionOnly && !selectionSet.Contains(assetPath))
                 {
                     continue;
@@ -175,7 +173,7 @@ namespace UnityFS.Editor
                     assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
-                    var attrs = data.GetAssetAttributes(assetGuid);
+                    var attrs = _data.GetAssetAttributes(assetGuid);
                     if (attrs != null || !showDefinedOnly)
                     {
                         _searchResults.Add(assetPath);
@@ -196,7 +194,7 @@ namespace UnityFS.Editor
                 if (_searchResults.Contains(searchMark))
                 {
                     var markGuid = AssetDatabase.AssetPathToGUID(searchMark);
-                    var markAttrs = data.GetAssetAttributes(markGuid);
+                    var markAttrs = _data.GetAssetAttributes(markGuid);
                     var bNew = markAttrs == null;
 
                     callback(bNew ? _newAttrs : markAttrs);
@@ -204,7 +202,7 @@ namespace UnityFS.Editor
                     {
                         if (_newAttrs.priority != 0 || _newAttrs.packer != AssetPacker.Auto)
                         {
-                            var newAttributes = data.AddAssetAttributes(markGuid);
+                            var newAttributes = _data.AddAssetAttributes(markGuid);
                             newAttributes.priority = _newAttrs.priority;
                             newAttributes.packer = _newAttrs.packer;
                             _newAttrs.priority = 0;
@@ -215,7 +213,7 @@ namespace UnityFS.Editor
                     {
                         if (markAttrs.priority == 0 && markAttrs.packer == AssetPacker.Auto)
                         {
-                            data.RemoveAssetAttributes(markGuid);
+                            _data.RemoveAssetAttributes(markGuid);
                         }
                     }
                 }
@@ -376,7 +374,7 @@ namespace UnityFS.Editor
                         GUI.color = Color.green;
                     }
 
-                    DrawSingleAssetAttributes(data, assetGuid, this, marked, true);
+                    DrawSingleAssetAttributes(_data, assetGuid, this, marked, true);
                     GUI.color = _GUIColor;
                     EditorGUILayout.EndHorizontal();
 
@@ -405,18 +403,18 @@ namespace UnityFS.Editor
             Block("Encryption", () =>
             {
                 EditorGUI.BeginChangeCheck();
-                data.encryptionKey = EditorGUILayout.TextField("Password", data.encryptionKey);
+                _data.encryptionKey = EditorGUILayout.TextField("Password", _data.encryptionKey);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    data.MarkAsDirty();
+                    _data.MarkAsDirty();
                 }
             });
             Block("Skip File Ext.", () =>
             {
-                var count = data.skipExts.Count;
+                var count = _data.skipExts.Count;
                 for (var i = 0; i < count; i++)
                 {
-                    var ext = data.skipExts[i];
+                    var ext = _data.skipExts[i];
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.TextField(ext);
                     GUI.color = Color.red;
@@ -425,8 +423,8 @@ namespace UnityFS.Editor
                         var extV = ext;
                         Defer(() =>
                         {
-                            data.skipExts.Remove(extV);
-                            data.MarkAsDirty();
+                            _data.skipExts.Remove(extV);
+                            _data.MarkAsDirty();
                         });
                     }
 
@@ -446,10 +444,10 @@ namespace UnityFS.Editor
                         {
                             foreach (var next in exts)
                             {
-                                data.skipExts.Add(next);
+                                _data.skipExts.Add(next);
                             }
 
-                            data.MarkAsDirty();
+                            _data.MarkAsDirty();
                         });
                     }
                 }
@@ -459,24 +457,24 @@ namespace UnityFS.Editor
             Block("Misc.", () =>
             {
                 EditorGUI.BeginChangeCheck();
-                data.assetListData =
-                    (AssetListData) EditorGUILayout.ObjectField("资源访问分析", data.assetListData, typeof(AssetListData),
+                _data.assetListData =
+                    (AssetListData) EditorGUILayout.ObjectField("资源访问分析", _data.assetListData, typeof(AssetListData),
                         false);
                 // 中间输出目录
-                data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", data.assetBundlePath);
-                data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", data.zipArchivePath);
+                _data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", _data.assetBundlePath);
+                _data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", _data.zipArchivePath);
                 // 最终包输出目录
-                data.packagePath = EditorGUILayout.TextField("Package Path", data.packagePath);
-                data.priorityMax = EditorGUILayout.IntField("Priority Max", data.priorityMax);
-                data.searchMax = EditorGUILayout.IntField("Search Max", data.searchMax);
-                data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", data.disableTypeTree);
-                data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", data.lz4Compression);
+                _data.packagePath = EditorGUILayout.TextField("Package Path", _data.packagePath);
+                _data.priorityMax = EditorGUILayout.IntField("Priority Max", _data.priorityMax);
+                _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
+                _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
+                _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
                 EditorGUI.BeginDisabledGroup(true);
-                EditorGUILayout.IntField("Build", data.build);
+                EditorGUILayout.IntField("Build", _data.build);
                 EditorGUI.EndDisabledGroup();
                 if (EditorGUI.EndChangeCheck())
                 {
-                    data.MarkAsDirty();
+                    _data.MarkAsDirty();
                 }
             });
         }
@@ -497,10 +495,10 @@ namespace UnityFS.Editor
             {
                 if (GUILayout.Button("Add Bundle"))
                 {
-                    data.bundles.Add(new BundleBuilderData.BundleInfo()
+                    _data.bundles.Add(new BundleBuilderData.BundleInfo()
                     {
-                        id = ++data.id,
-                        name = $"bundle_{data.id}{BundleBuilderData.FileExt}",
+                        id = ++_data.id,
+                        name = $"bundle_{_data.id}{BundleBuilderData.FileExt}",
                     });
                     _treeView.Reload();
                 }
@@ -551,22 +549,16 @@ namespace UnityFS.Editor
 
                 if (GUILayout.Button("Build Packages"))
                 {
-                    BundleBuilder.BuildPackages(data, "", _platform);
+                    BundleBuilder.BuildPackages(_data, "", _platform);
                 }
             }
 
             GUILayout.EndArea();
-
-            if (dirty)
-            {
-                data.MarkAsDirty();
-                dirty = false;
-            }
         }
 
         private void Reload()
         {
-            BundleBuilder.Scan(data);
+            BundleBuilder.Scan(_data);
             _treeView.Reload();
         }
     }

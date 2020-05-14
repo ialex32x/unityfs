@@ -19,39 +19,34 @@ namespace UnityFS.Editor
 
     public partial class BundleBuilder
     {
-        private static BundleBuilderData _data;
-
         public static BundleBuilderData GetData()
         {
-            if (_data == null)
+            var data = BundleBuilderData.Load();
+            var dirty = false;
+            foreach (var bundle in data.bundles)
             {
-                _data = BundleBuilderData.Load();
-                var dirty = false;
-                foreach (var bundle in _data.bundles)
+                if (bundle.id == 0)
                 {
-                    if (bundle.id == 0)
-                    {
-                        bundle.id = ++_data.id;
-                        dirty = true;
-                    }
-
-                    foreach (var target in bundle.targets)
-                    {
-                        if (target.id == 0)
-                        {
-                            target.id = ++_data.id;
-                            dirty = true;
-                        }
-                    }
+                    bundle.id = ++data.id;
+                    dirty = true;
                 }
 
-                if (dirty)
+                foreach (var target in bundle.targets)
                 {
-                    _data.MarkAsDirty();
+                    if (target.id == 0)
+                    {
+                        target.id = ++data.id;
+                        dirty = true;
+                    }
                 }
             }
 
-            return _data;
+            if (dirty)
+            {
+                data.MarkAsDirty();
+            }
+
+            return data;
         }
 
         public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatform platform)
