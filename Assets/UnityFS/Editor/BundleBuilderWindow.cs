@@ -469,7 +469,9 @@ namespace UnityFS.Editor
                 _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
+                #if UNITY_2018_1_OR_NEWER
                 _data.extractShaderVariantCollections = EditorGUILayout.Toggle("Extract Shader Collections", _data.extractShaderVariantCollections);
+                #endif
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.IntField("Build", _data.build);
                 EditorGUI.EndDisabledGroup();

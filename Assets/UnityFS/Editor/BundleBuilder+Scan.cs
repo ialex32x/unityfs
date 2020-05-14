@@ -192,6 +192,7 @@ namespace UnityFS.Editor
         private static void CheckShaderVariants(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object shaderVariants,
             string assetPath, PackagePlatform platform)
         {
+            #if UNITY_2018_1_OR_NEWER
             var shaderVariantCollection = shaderVariants as ShaderVariantCollection;
             if (shaderVariantCollection != null)
             {
@@ -206,6 +207,7 @@ namespace UnityFS.Editor
                     }
                 }
             }
+            #endif
         }
 
         public static bool ContainsAsset(BundleBuilderData data, Object assetObject)
