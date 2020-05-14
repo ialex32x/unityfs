@@ -176,6 +176,10 @@ namespace UnityFS.Editor
                     if (!ContainsAsset(data, asset) && split.AddObject(asset, platform))
                     {
                         data.OnAssetCollect(asset, assetPath);
+                        if (data.extractShaderVariantCollections)
+                        {
+                            CheckShaderVariants(data, bundle, asset, assetPath, platform);
+                        }
                     }
                     
                     return true;
@@ -183,6 +187,25 @@ namespace UnityFS.Editor
             }
 
             return false;
+        }
+
+        private static void CheckShaderVariants(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object shaderVariants,
+            string assetPath, PackagePlatform platform)
+        {
+            var shaderVariantCollection = shaderVariants as ShaderVariantCollection;
+            if (shaderVariantCollection != null)
+            {
+                var shaderInfos = ShaderUtil.GetAllShaderInfo();
+                foreach (var shaderInfo in shaderInfos)
+                {
+                    var shader = Shader.Find(shaderInfo.name);
+                    var shaderPath = AssetDatabase.GetAssetPath(shader);
+                    if (shaderPath.StartsWith("Assets/"))
+                    {
+                        CollectAsset(data, bundle, shader, shaderPath, platform);
+                    }
+                }
+            }
         }
 
         public static bool ContainsAsset(BundleBuilderData data, Object assetObject)

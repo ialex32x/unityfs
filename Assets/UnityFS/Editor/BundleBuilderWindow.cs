@@ -469,6 +469,7 @@ namespace UnityFS.Editor
                 _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
+                _data.extractShaderVariantCollections = EditorGUILayout.Toggle("Extract Shader Collections", _data.extractShaderVariantCollections);
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.IntField("Build", _data.build);
                 EditorGUI.EndDisabledGroup();
@@ -532,6 +533,7 @@ namespace UnityFS.Editor
                 {
                     Reload();
                 }
+
                 // if (GUILayout.Button("Details"))
                 // {
                 //     BundleBuilder.Scan(data, data.previewPlatform);

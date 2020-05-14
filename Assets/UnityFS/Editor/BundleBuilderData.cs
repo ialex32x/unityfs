@@ -63,6 +63,7 @@ namespace UnityFS.Editor
         public int searchMax = 200;
         public bool disableTypeTree = false;
         public bool lz4Compression = true;
+        public bool extractShaderVariantCollections = true; // 自动展开 shaderVariantCollections 中包含的 shader
         public AssetListData assetListData;
 
         [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();

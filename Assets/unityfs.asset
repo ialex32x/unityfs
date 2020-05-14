@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: unityfs
   m_EditorClassIdentifier: 
-  id: 28
-  build: 0
+  id: 30
+  build: 3
   encryptionKey: test
   bundles:
   - id: 1
@@ -138,6 +138,7 @@ MonoBehaviour:
         platform: 0
         histroy:
         - a9acb3cd117fed445a2a6c70671571c9
+        - f881d420c2dde77468fb13be84f58ce2
   - id: 3
     buildOrder: 1000
     name: test2.pkg
@@ -290,6 +291,33 @@ MonoBehaviour:
         histroy:
         - db7d162e08a882244a4eddc108898b11
         - 471ba1dad829d6b45a75be93afc2cef9
+  - id: 29
+    buildOrder: 1000
+    name: bundle_29.pkg
+    note: shader
+    tag: 
+    type: 0
+    load: 1
+    enabled: 1
+    streamingAssets: 0
+    priority: 117
+    targets:
+    - id: 30
+      enabled: 1
+      target: {fileID: 20000000, guid: dcb7a7a5a34f7ac46bcac47f69b07576, type: 2}
+      platform: 0
+    splits:
+    - encrypted: 0
+      name: 
+      sliceObjects: 0
+      rules: []
+      slices:
+      - name: bundle_29_2paxaaqcen6_q6zrf3.pkg
+        capacity: 0
+        streamingAssets: 0
+        platform: 0
+        histroy:
+        - dcb7a7a5a34f7ac46bcac47f69b07576
   assetAttributesMap:
     _keys:
     - df4858d82a3ad344d88e9ce52e8cbaa0
@@ -305,6 +333,7 @@ MonoBehaviour:
     - 26d5d477691d5a64290cb20bade47e1a
     - 2bd99bdd627371a4ab6980f7fa960b3e
     - 423169b27afc2744d9f06d44346b777e
+    - f881d420c2dde77468fb13be84f58ce2
     _values:
     - priority: 4892
       packer: 1
@@ -332,6 +361,8 @@ MonoBehaviour:
       packer: 1
     - priority: 0
       packer: 2
+    - priority: 0
+      packer: 3
   assetBundlePath: out/bundles
   zipArchivePath: out/zipArchives
   packagePath: out/packages
