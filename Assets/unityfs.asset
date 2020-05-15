@@ -318,6 +318,7 @@ MonoBehaviour:
         platform: 0
         histroy:
         - dcb7a7a5a34f7ac46bcac47f69b07576
+        - d4f313eebb079324197c5b717e1b092f
   assetAttributesMap:
     _keys:
     - df4858d82a3ad344d88e9ce52e8cbaa0
@@ -370,6 +371,7 @@ MonoBehaviour:
   searchMax: 200
   disableTypeTree: 0
   lz4Compression: 1
+  extractShaderVariantCollections: 1
   assetListData: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
   skipExts:
     _values:
