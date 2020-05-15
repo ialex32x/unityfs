@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -11,6 +10,8 @@ namespace UnityFS
     {
         private static int _mainThreadId;
         private static JobScheduler _mb;
+        private static Utils.RingBuffer<Action> _actions = new Utils.RingBuffer<Action>(20);
+        private static LinkedList<Action> _backlist = new LinkedList<Action>();
 
         public static void Initialize()
         {
@@ -21,25 +22,24 @@ namespace UnityFS
                 go.hideFlags = HideFlags.HideInHierarchy;
                 DontDestroyOnLoad(go);
                 _mb = go.AddComponent<JobScheduler>();
-                _mb.StartCoroutine(_Update());
+                // _mb.StartCoroutine(_Update());
             }
         }
 
-        private static List<Action> _actions = new List<Action>();
-
-        private static IEnumerator _Update()
+        private void Update()
         {
-            while (true)
+            var action = _actions.Dequeue();
+            while (action != null)
             {
-                lock (_actions)
+                try
                 {
-                    for (int i = 0, size = _actions.Count; i < size; i++)
-                    {
-                        _actions[i]();
-                    }
-                    _actions.Clear();
+                    action();
                 }
-                yield return null;
+                catch (Exception exception)
+                {
+                    Debug.LogErrorFormat("JobScheduler.Update: {0}", exception);
+                }
+                action = _actions.Dequeue();
             }
         }
 
@@ -77,9 +77,28 @@ namespace UnityFS
                 action();
                 return;
             }
-            lock (_actions)
+
+            // 需保证同时只有一个线程执行 enqueue
+            lock (_backlist)
             {
-                _actions.Add(action);
+                if (_backlist.Count == 0)
+                {
+                    if (!_actions.Enqueue(action))
+                    {
+                        _backlist.AddLast(action);
+                    }
+                    return;
+                }
+                _backlist.AddLast(action);
+                while (_backlist.Count != 0)
+                {
+                    var last = _backlist.First.Value;
+                    if (!_actions.Enqueue(last))
+                    {
+                        return;
+                    }
+                    _backlist.RemoveFirst();
+                }
             }
         }
 

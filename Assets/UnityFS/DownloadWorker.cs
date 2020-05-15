@@ -167,7 +167,11 @@ namespace UnityFS
             {
                 try
                 {
-                    ProcessJob(GetJob());
+                    var job = GetJob();
+                    if (job != null)
+                    {
+                        ProcessJob(job);
+                    }
                 }
                 catch (ThreadAbortException)
                 {
@@ -189,12 +193,21 @@ namespace UnityFS
 
         private JobInfo GetJob()
         {
-            _event.WaitOne();
+            if (_jobInfos.Count == 0)
+            {
+                _event.WaitOne();
+            }
+
             lock (_jobInfos)
             {
-                var first = _jobInfos.First.Value;
-                _jobInfos.RemoveFirst();
-                return first;
+                if (_jobInfos.Count != 0)
+                {
+                    var first = _jobInfos.First.Value;
+                    _jobInfos.RemoveFirst();
+                    return first;
+                }
+
+                return null;
             }
         }
 
