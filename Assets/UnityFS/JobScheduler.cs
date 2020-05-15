@@ -10,7 +10,6 @@ namespace UnityFS
     {
         private static int _mainThreadId;
         private static JobScheduler _mb;
-        private static Utils.RingBuffer<Action> _actions = new Utils.RingBuffer<Action>(20);
         private static LinkedList<Action> _backlist = new LinkedList<Action>();
 
         public static void Initialize()
@@ -28,18 +27,26 @@ namespace UnityFS
 
         private void Update()
         {
-            var action = _actions.Dequeue();
-            while (action != null)
+            if (_backlist.Count != 0)
             {
-                try
+                List<Action> list = null;
+                lock (_backlist)
                 {
-                    action();
+                    if (_backlist.Count != 0)
+                    {
+                        list = new List<Action>(_backlist);
+                        _backlist.Clear();
+                    }
                 }
-                catch (Exception exception)
+
+                if (list != null)
                 {
-                    Debug.LogErrorFormat("JobScheduler.Update: {0}", exception);
+                    for (int i = 0, count = list.Count; i < count; i++)
+                    {
+                        var action = list[i];
+                        action();
+                    }
                 }
-                action = _actions.Dequeue();
             }
         }
 
@@ -78,27 +85,9 @@ namespace UnityFS
                 return;
             }
 
-            // 需保证同时只有一个线程执行 enqueue
             lock (_backlist)
             {
-                if (_backlist.Count == 0)
-                {
-                    if (!_actions.Enqueue(action))
-                    {
-                        _backlist.AddLast(action);
-                    }
-                    return;
-                }
                 _backlist.AddLast(action);
-                while (_backlist.Count != 0)
-                {
-                    var last = _backlist.First.Value;
-                    if (!_actions.Enqueue(last))
-                    {
-                        return;
-                    }
-                    _backlist.RemoveFirst();
-                }
             }
         }
 
