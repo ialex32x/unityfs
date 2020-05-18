@@ -311,27 +311,30 @@ namespace UnityFS.Editor
                 build.fileLists.Add(entry);
                 var filename = Path.Combine(buildInfo.packagePath, bundle.name);
                 var manifest = new UnityFS.FileListManifest();
-                foreach (var split in bundle.splits)
+                foreach (var bundleSplit in bundle.splits)
                 {
-                    foreach (var slice in split.slices)
+                    foreach (var bundleSlice in bundleSplit.slices)
                     {
-                        foreach (var assetGuid in slice.assetGuids)
+                        if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
-                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                            var fileEntry = GenFileEntry(assetPath, assetPath);
-                            manifest.files.Add(fileEntry);
-                            if (CopyRawFile(buildInfo.packagePath, assetPath))
+                            foreach (var assetGuid in bundleSlice.assetGuids)
                             {
-                                var fileListManifestFileInfo = new FileListManifestFileInfo()
+                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                var fileEntry = GenFileEntry(assetPath, assetPath);
+                                manifest.files.Add(fileEntry);
+                                if (CopyRawFile(buildInfo.packagePath, assetPath))
                                 {
-                                    assetPath = assetPath,
-                                    streamingAssets = bundle.streamingAssets
-                                };
-                                build.fileEntrys.Add(fileListManifestFileInfo);
-                            }
+                                    var fileListManifestFileInfo = new FileListManifestFileInfo()
+                                    {
+                                        assetPath = assetPath,
+                                        streamingAssets = bundle.streamingAssets
+                                    };
+                                    build.fileEntrys.Add(fileListManifestFileInfo);
+                                }
 
-                            // FileUtil.CopyFileOrDirectory(assetPath, outPath);
-                            // Debug.LogFormat("gen {0} from {1}", outFilePath, assetPath);
+                                // FileUtil.CopyFileOrDirectory(assetPath, outPath);
+                                // Debug.LogFormat("gen {0} from {1}", outFilePath, assetPath);
+                            }
                         }
                     }
                 }
