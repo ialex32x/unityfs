@@ -225,6 +225,28 @@ namespace UnityFS.Editor
             return DrawSingleAssetAttributes(data, assetGuid, null, false, false);
         }
 
+        private static string GetFileSizeString(string assetPath)
+        {
+            var fileInfo = new FileInfo(assetPath);
+            if (fileInfo.Exists)
+            {
+                var size = fileInfo.Length;
+                if (size > 1024 * 1024)
+                {
+                    return string.Format("{0:.0} MB", size / (1024.0 * 1024.0));
+                }
+
+                if (size > 1024)
+                {
+                    return string.Format("{0:.0} KB", size / 1024.0);
+                }
+
+                return string.Format("{0} B", size);
+            }
+
+            return "N/A";
+        }
+
         private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid,
             BundleBuilderWindow builder, bool batchMode, bool rLookup)
         {
@@ -243,6 +265,9 @@ namespace UnityFS.Editor
                 GUILayout.MaxWidth(220f));
             EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
             EditorGUILayout.TextField(assetPath);
+            var fileInfoWidth = 60f;
+            
+            EditorGUILayout.LabelField(GetFileSizeString(assetPath), _rightAlignStyle, GUILayout.MaxWidth(fileInfoWidth));
             if (rLookup)
             {
                 BundleBuilderData.BundleInfo rBundleInfo;

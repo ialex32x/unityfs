@@ -14,6 +14,7 @@ namespace UnityFS.Editor
         protected static GUIStyle _foldoutArea = new GUIStyle();
         protected static GUIStyle _blockStyle = new GUIStyle();
         protected static GUIStyle _foldoutStyle = new GUIStyle();
+        protected static GUIStyle _rightAlignStyle = new GUIStyle();
         protected Dictionary<string, GUIContent> _titles = new Dictionary<string, GUIContent>();
         protected List<Action> _defers = new List<Action>();
         protected Color _GUIColor;
@@ -26,6 +27,7 @@ namespace UnityFS.Editor
 
         protected virtual void OnEnable()
         {
+            _rightAlignStyle.alignment = TextAnchor.MiddleRight;
             _blockStyle.normal.background = MakeTex(100, 100, new Color32(56, 56, 56, 0));
             _foldoutStyle.alignment = TextAnchor.MiddleLeft;
         }
@@ -37,6 +39,7 @@ namespace UnityFS.Editor
 
         private void OnGUI()
         {
+            _rightAlignStyle.normal.textColor = GUI.skin.label.normal.textColor;
             _foldoutStyle.normal.textColor = GUI.skin.button.normal.textColor;
             _GUIColor = GUI.color;
             OnGUIDraw();
