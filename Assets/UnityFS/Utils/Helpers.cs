@@ -123,9 +123,30 @@ namespace UnityFS.Utils
 
             ReadRemoteFile(ResourceManager.urls, Manifest.ChecksumFileName, content =>
             {
-                var fileEntry = JsonUtility.FromJson<FileEntry>(content);
-                GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
-                return true;
+                try
+                {
+                    if (string.IsNullOrEmpty(content))
+                    {
+                        Debug.LogWarning("checksum 无内容");
+                    }
+                    else
+                    {
+                        var fileEntry = JsonUtility.FromJson<FileEntry>(content);
+                        if (fileEntry != null)
+                        {
+                            GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
+                            return true;
+                        }
+
+                        Debug.LogWarningFormat("checksum 无法解析 {0}", content);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogErrorFormat("checksum 解析异常 {0}\n{1}", content, exception);
+                }
+
+                return false;
             });
         }
 
