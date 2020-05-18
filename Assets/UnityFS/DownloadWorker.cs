@@ -155,10 +155,27 @@ namespace UnityFS
                 }
 
                 url += "?checksum=" + (jobInfo.checksum ?? DateTime.Now.Ticks.ToString());
+                if (jobInfo.tried > 0)
+                {
+                    url += "&retry=" + DateTime.Now.Ticks;
+                }
                 return url;
             }
 
-            return jobInfo.url;
+            var c_url = jobInfo.url;
+            if (jobInfo.tried > 0)
+            {
+                if (c_url.Contains("?"))
+                {
+                    c_url += "&retry=" + DateTime.Now.Ticks;
+                }
+                else
+                {
+                    c_url += "?retry=" + DateTime.Now.Ticks;
+                }
+            }
+
+            return c_url;
         }
 
         private void _Run()
@@ -238,6 +255,7 @@ namespace UnityFS
                 var success = true;
                 var wsize = jobInfo.size;
                 var wchecksum = jobInfo.checksum;
+                var url = GetUrl(jobInfo);
                 dataChecker.Reset();
                 if (_fileStream == null)
                 {
@@ -285,7 +303,6 @@ namespace UnityFS
 
                 if (success && (jobInfo.size <= 0 || partialSize < jobInfo.size))
                 {
-                    var url = GetUrl(jobInfo);
                     try
                     {
                         var uri = new Uri(url);
@@ -445,7 +462,7 @@ namespace UnityFS
                 }
 
                 Thread.Sleep(2000);
-                Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", jobInfo.name, error);
+                Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", url, error);
             }
         }
 
