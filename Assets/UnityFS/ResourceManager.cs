@@ -169,6 +169,7 @@ namespace UnityFS
             {
                 _assetProvider.Close();
             }
+            JobScheduler.Clear();
         }
 
         public static UScene LoadScene(string assetPath)

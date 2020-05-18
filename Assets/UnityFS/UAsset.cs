@@ -23,7 +23,7 @@ namespace UnityFS
             {
                 if (_disposed)
                 {
-                    Debug.LogError($"uasset already disposed ({_assetPath})");
+                    Debug.LogError($"event.completed: uasset already disposed ({_assetPath})");
                 }
                 if (_loaded)
                 {
@@ -67,7 +67,7 @@ namespace UnityFS
         {
             if (_disposed)
             {
-                Debug.LogError($"uasset already disposed ({_assetPath})");
+                Debug.LogError($"GetObject(): uasset already disposed ({_assetPath})");
                 return null;
             }
             return _object;

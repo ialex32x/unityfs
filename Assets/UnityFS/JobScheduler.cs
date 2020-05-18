@@ -23,6 +23,10 @@ namespace UnityFS
                 _mb = go.AddComponent<JobScheduler>();
                 // _mb.StartCoroutine(_Update());
             }
+            else
+            {
+                Clear();
+            }
         }
 
         private void Update()
@@ -88,6 +92,19 @@ namespace UnityFS
             lock (_backlist)
             {
                 _backlist.AddLast(action);
+            }
+        }
+
+        public static void Clear()
+        {
+            lock (_backlist)
+            {
+                _backlist.Clear();
+            }
+
+            if (_mb != null)
+            {
+                _mb.StopAllCoroutines();
             }
         }
 
