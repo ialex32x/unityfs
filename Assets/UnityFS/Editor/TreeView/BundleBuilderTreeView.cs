@@ -149,12 +149,19 @@ namespace UnityFS.Editor
             }
         }
 
+        private List<BundleBuilderData.BundleInfo> GetSortedBundleInfos(List<BundleBuilderData.BundleInfo> bundleInfos)
+        {
+            var list = new List<BundleBuilderData.BundleInfo>(bundleInfos);
+            list.Sort((a, b) => a.buildOrder - b.buildOrder);
+            return list;
+        }
+
         protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
         {
             var rows = new List<TreeViewItem>();
             if (_data != null)
             {
-                foreach (var bundle in _data.bundles)
+                foreach (var bundle in GetSortedBundleInfos(_data.bundles))
                 {
                     var bundleName = string.IsNullOrEmpty(bundle.name) ? "(noname)" : bundle.name;
                     var bundleTV = new BundleBuilderTreeViewBundle(bundle.id, 0, bundleName, bundle);
