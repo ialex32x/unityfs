@@ -64,6 +64,7 @@ namespace UnityFS.Editor
         public bool disableTypeTree = false;
         public bool lz4Compression = true;
         public bool extractShaderVariantCollections = true; // 自动展开 shaderVariantCollections 中包含的 shader
+        public bool streamingAssetsAnyway = false; // 无视 bundleInfo/bundleSlice 的设置, 默认认为进入 StreamingAssets
         public AssetListData assetListData;
 
         [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();

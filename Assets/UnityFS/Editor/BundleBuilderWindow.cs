@@ -492,6 +492,7 @@ namespace UnityFS.Editor
                 _data.packagePath = EditorGUILayout.TextField("Package Path", _data.packagePath);
                 _data.priorityMax = EditorGUILayout.IntField("Priority Max", _data.priorityMax);
                 _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
+                _data.streamingAssetsAnyway = EditorGUILayout.Toggle("StreamingAssets Anyway", _data.streamingAssetsAnyway);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
                 #if UNITY_2018_1_OR_NEWER

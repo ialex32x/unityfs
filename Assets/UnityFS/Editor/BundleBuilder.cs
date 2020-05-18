@@ -793,7 +793,7 @@ namespace UnityFS.Editor
                         bundle.dependencies = assetBundleManifest.GetAllDependencies(assetBundle);
                         buildInfo.CreateEntry(bundle);
                         manifest.bundles.Add(bundle);
-                        if (bundleSlice.streamingAssets)
+                        if (bundleSlice.streamingAssets || data.streamingAssetsAnyway)
                         {
                             embeddedManifest.bundles.Add(fileEntry);
                         }
@@ -830,7 +830,7 @@ namespace UnityFS.Editor
                         }
 
                         manifest.bundles.Add(bundle);
-                        if (bundleSlice.streamingAssets)
+                        if (bundleSlice.streamingAssets || data.streamingAssetsAnyway)
                         {
                             embeddedManifest.bundles.Add(fileEntry);
                         }
@@ -865,7 +865,7 @@ namespace UnityFS.Editor
                     }
 
                     manifest.bundles.Add(bundle);
-                    if (bundleInfo.streamingAssets)
+                    if (bundleInfo.streamingAssets || data.streamingAssetsAnyway)
                     {
                         embeddedManifest.bundles.Add(fileEntry);
                     }
