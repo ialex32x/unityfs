@@ -327,7 +327,7 @@ namespace UnityFS.Editor
                                     var fileListManifestFileInfo = new FileListManifestFileInfo()
                                     {
                                         assetPath = assetPath,
-                                        streamingAssets = bundle.streamingAssets
+                                        streamingAssets = bundleSlice.streamingAssets
                                     };
                                     build.fileEntrys.Add(fileListManifestFileInfo);
                                 }
