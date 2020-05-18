@@ -222,13 +222,25 @@ namespace UnityFS.Editor
                 {
                     var menu = new GenericMenu();
                     menu.AddItem(new GUIContent("查看资源报告"), false, OnContextMenuInspect);
-                    // menu.AddItem(new GUIContent("Not Implemented 2"), false, OnContextMenuTest);
+                    menu.AddSeparator("");
+                    menu.AddItem(new GUIContent("全部展开"), false, OnContextMenuExpand);
+                    menu.AddItem(new GUIContent("全部折叠"), false, OnContextMenuCollapse);
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent("删除"), false, OnContextMenuDelete);
                     menu.ShowAsContext();
                     evt.Use();
                 }
             }
+        }
+
+        private void OnContextMenuExpand()
+        {
+            _ExpandAll();
+        }
+
+        private void OnContextMenuCollapse()
+        {
+            CollapseAll();
         }
 
         private void OnContextMenuInspect()
