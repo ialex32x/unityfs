@@ -195,31 +195,6 @@ namespace UnityFS.Editor
                     }
                 }
             });
-
-            // for (var i = 0; i < _data.allCollectedAssetsPath.Length; i++)
-            // {
-            //     var assetPath = _data.allCollectedAssetsPath[i];
-            //     if (showSelectionOnly && !selectionSet.Contains(assetPath))
-            //     {
-            //         continue;
-            //     }
-
-            //     if (string.IsNullOrEmpty(keyword) ||
-            //         assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
-            //     {
-            //         var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
-            //         var attrs = _data.GetAssetAttributes(assetGuid);
-            //         if (attrs != null || !showDefinedOnly)
-            //         {
-            //             _searchResults.Add(assetPath);
-            //         }
-
-            //         if (_searchResults.Count >= searchCount)
-            //         {
-            //             break;
-            //         }
-            //     }
-            // }
         }
 
         private void ApplyAllMarks(Action<AssetAttributes> callback)
@@ -450,10 +425,9 @@ namespace UnityFS.Editor
                         GUI.color = Color.green;
                     }
 
-                    BundleBuilderData.BundleInfo rBundleInfo;
-                    BundleBuilderData.BundleSplit rBundleSplit;
-                    BundleBuilderData.BundleSlice rBundleSlice;
-                    _data.Lookup(assetGuid, out rBundleInfo, out rBundleSplit, out rBundleSlice);
+                    var rBundleInfo = result.bundleInfo;
+                    var rBundleSplit = result.bundleSplit;
+                    var rBundleSlice = result.bundleSlice;
                     DrawSingleAssetAttributes(_data, assetGuid, this, marked, () => GotoBundleSlice(_data, rBundleInfo, rBundleSlice));
                     GUI.color = _GUIColor;
                     EditorGUILayout.EndHorizontal();
