@@ -16,6 +16,7 @@ namespace UnityFS.Editor
         public const string KeyForPackagePlatforms = ".BundleBuilderWindow.Platforms";
         public const string KeyForTabIndex = ".BundleBuilderWindow.TabIndex";
         public const string KeyForSearchKey = "BundleBuilderWindow._searchKeyword";
+        public const string KeyForSearchSliceKey = "BundleBuilderWindow._searchSliceKeyword";
         public const string KeyForShowDefinedOnly = "BundleBuilderWindow.showDefinedOnly";
         public const string KeyForShowSelectionOnly = "BundleBuilderWindow.showSelectionOnly";
         public const string KeyForShowStreamingAssetsOnly = "BundleBuilderWindow.showStreamingAssetsOnly";
@@ -24,7 +25,7 @@ namespace UnityFS.Editor
         BundleBuilderTreeView _treeView;
 
         private int _tabIndex;
-        private string[] _tabs = new[] {"Packages", "Assets", "Settings"};
+        private string[] _tabs = new[] { "Packages", "Assets", "Settings" };
         private BundleBuilderData _data;
         private PackagePlatform _platform;
 
@@ -64,12 +65,13 @@ namespace UnityFS.Editor
             BundleBuilder.Scan(_data);
             titleContent = new GUIContent("Bundle Builder");
             _searchKeyword = EditorPrefs.GetString(KeyForSearchKey);
+            _searchSliceKeyword = EditorPrefs.GetString(KeyForSearchSliceKey);
             _showDefinedOnly = EditorPrefs.GetInt(KeyForShowDefinedOnly) == 1;
             _showSelectionOnly = EditorPrefs.GetInt(KeyForShowSelectionOnly) == 1;
             _showStreamingAssetsOnly = EditorPrefs.GetInt(KeyForShowStreamingAssetsOnly) == 1;
             UpdateSearchResults();
             _tabIndex = EditorPrefs.GetInt(KeyForTabIndex);
-            _platform = (PackagePlatform) EditorPrefs.GetInt(KeyForPackagePlatforms, (int) PackagePlatform.Any);
+            _platform = (PackagePlatform)EditorPrefs.GetInt(KeyForPackagePlatforms, (int)PackagePlatform.Any);
             // bool firstInit = _headerState == null;
             var headerState = BundleBuilderTreeView.CreateDefaultMultiColumnHeaderState(this.position.width);
             if (MultiColumnHeaderState.CanOverwriteSerializedFields(_headerState, headerState))
@@ -98,9 +100,11 @@ namespace UnityFS.Editor
             var window = GetWindow<BundleBuilderWindow>();
             window._tabIndex = 1;
             window._searchKeyword = AssetDatabase.GUIDToAssetPath(guid);
+            window._searchSliceKeyword = "";
             window._showDefinedOnly = false;
             window._showSelectionOnly = false;
             EditorPrefs.SetString(KeyForSearchKey, window._searchKeyword);
+            EditorPrefs.SetString(KeyForSearchSliceKey, window._searchSliceKeyword);
             EditorPrefs.SetInt(KeyForShowDefinedOnly, window._showDefinedOnly ? 1 : 0);
             EditorPrefs.SetInt(KeyForShowSelectionOnly, window._showSelectionOnly ? 1 : 0);
             window.UpdateSearchResults();
@@ -133,21 +137,24 @@ namespace UnityFS.Editor
         private bool _showStreamingAssetsOnly; // 仅列出 StreamingAssets 资源
         private bool _showDefinedOnly; // 仅列出非默认的 (有修改)
         private bool _showSelectionOnly; // 仅列出 Project 窗口中选中的
-        private string _searchKeyword;
+        private string _searchKeyword;  // 仅列出符合指定关键字的资源
+        private string _searchSliceKeyword; // 仅列出符合指定关键字的包中的资源 
         private bool _batchedSelectMarks;
         public static AssetAttributes _newAttrs = new AssetAttributes();
         private HashSet<SearchResult> _searchMarks = new HashSet<SearchResult>();
         private List<SearchResult> _searchResults = new List<SearchResult>();
 
-        private void UpdateSearchResults()
-        {
-            UpdateSearchResults(_searchKeyword, _showDefinedOnly, _showSelectionOnly, _showStreamingAssetsOnly, _data.searchMax);
-        }
-
         // showDefinedOnly: 只显示已定义
         // searchCount: 结果数量限制
-        private void UpdateSearchResults(string keyword, bool showDefinedOnly, bool showSelectionOnly, bool showStreamingAssetsOnly, int searchCount)
+        private void UpdateSearchResults()
         {
+            var keyword = _searchKeyword;
+            var sliceKeyword = _searchSliceKeyword;
+            var showDefinedOnly = _showDefinedOnly;
+            var showSelectionOnly = _showSelectionOnly;
+            var showStreamingAssetsOnly = _showStreamingAssetsOnly;
+            var searchCount = _data.searchMax;
+
             _searchResults.Clear();
             var selectionSet = new HashSet<string>();
             if (showSelectionOnly)
@@ -163,7 +170,7 @@ namespace UnityFS.Editor
                 }
             }
 
-            _data.ForEachAsset((bundleInfo, bundleSplit, bundleSlice, assetGuid) => 
+            _data.ForEachAsset((bundleInfo, bundleSplit, bundleSlice, assetGuid) =>
             {
                 if (_searchResults.Count < searchCount)
                 {
@@ -175,19 +182,23 @@ namespace UnityFS.Editor
                             if (string.IsNullOrEmpty(keyword) ||
                                 assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                var attrs = _data.GetAssetAttributes(assetGuid);
-                                if (attrs != null || !showDefinedOnly)
+                                if (string.IsNullOrEmpty(sliceKeyword) ||
+                                    bundleSlice.name.IndexOf(sliceKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
                                 {
-                                    var result = new SearchResult()
+                                    var attrs = _data.GetAssetAttributes(assetGuid);
+                                    if (attrs != null || !showDefinedOnly)
                                     {
-                                        bundleInfo = bundleInfo, 
-                                        bundleSplit = bundleSplit, 
-                                        bundleSlice = bundleSlice, 
-                                        assetPath = assetPath, 
-                                        assetGuid = assetGuid,
-                                    };
+                                        var result = new SearchResult()
+                                        {
+                                            bundleInfo = bundleInfo,
+                                            bundleSplit = bundleSplit,
+                                            bundleSlice = bundleSlice,
+                                            assetPath = assetPath,
+                                            assetGuid = assetGuid,
+                                        };
 
-                                    _searchResults.Add(result);
+                                        _searchResults.Add(result);
+                                    }
                                 }
                             }
                         }
@@ -255,8 +266,8 @@ namespace UnityFS.Editor
             return "N/A";
         }
 
-        private static void GotoBundleSlice(BundleBuilderData data, 
-                                            BundleBuilderData.BundleInfo rBundleInfo, 
+        private static void GotoBundleSlice(BundleBuilderData data,
+                                            BundleBuilderData.BundleInfo rBundleInfo,
                                             BundleBuilderData.BundleSlice rBundleSlice)
         {
             var exists = rBundleSlice != null;
@@ -267,7 +278,7 @@ namespace UnityFS.Editor
                 EditorGUI.EndDisabledGroup();
                 if (GUILayout.Button(">", GUILayout.Width(20f)))
                 {
-                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new[] {rBundleInfo}));
+                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new[] { rBundleInfo }));
                 }
             }
             else
@@ -290,13 +301,13 @@ namespace UnityFS.Editor
             }
 
             var nAssetPacker =
-                (AssetPacker) EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
+                (AssetPacker)EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
             var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax,
                 GUILayout.MaxWidth(220f));
             EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
             EditorGUILayout.TextField(assetPath);
             var fileInfoWidth = 60f;
-            
+
             EditorGUILayout.LabelField(GetFileSizeString(assetPath), _rightAlignStyle, GUILayout.MaxWidth(fileInfoWidth));
             additionalOp?.Invoke();
 
@@ -358,6 +369,14 @@ namespace UnityFS.Editor
                     UpdateSearchResults();
                 }
 
+                var nSearchSliceKeyword = EditorGUILayout.TextField("Bundle Slice Keyword", _searchSliceKeyword);
+                if (nSearchSliceKeyword != _searchSliceKeyword)
+                {
+                    _searchSliceKeyword = nSearchSliceKeyword;
+                    EditorPrefs.SetString(KeyForSearchSliceKey, _searchSliceKeyword);
+                    UpdateSearchResults();
+                }
+
                 var nShowDefinedOnly = EditorGUILayout.Toggle("Show Defined Only", _showDefinedOnly);
                 if (nShowDefinedOnly != _showDefinedOnly)
                 {
@@ -391,7 +410,7 @@ namespace UnityFS.Editor
                 EditorGUILayout.LabelField("Asset Packer", GUILayout.Width(110f));
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.Space();
-                
+
                 if (nBatchedSelectMarks != _batchedSelectMarks)
                 {
                     _batchedSelectMarks = nBatchedSelectMarks;
@@ -507,7 +526,7 @@ namespace UnityFS.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 _data.assetListData =
-                    (AssetListData) EditorGUILayout.ObjectField("资源访问分析", _data.assetListData, typeof(AssetListData),
+                    (AssetListData)EditorGUILayout.ObjectField("资源访问分析", _data.assetListData, typeof(AssetListData),
                         false);
                 // 中间输出目录
                 _data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", _data.assetBundlePath);
@@ -519,9 +538,9 @@ namespace UnityFS.Editor
                 _data.streamingAssetsAnyway = EditorGUILayout.Toggle("StreamingAssets Anyway", _data.streamingAssetsAnyway);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
-                #if UNITY_2018_1_OR_NEWER
+#if UNITY_2018_1_OR_NEWER
                 _data.extractShaderVariantCollections = EditorGUILayout.Toggle("Extract Shader Collections", _data.extractShaderVariantCollections);
-                #endif
+#endif
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.IntField("Build", _data.build);
                 EditorGUI.EndDisabledGroup();
@@ -578,11 +597,11 @@ namespace UnityFS.Editor
 
                 GUILayout.Space(20f);
                 EditorGUILayout.LabelField("Targets", GUILayout.Width(46f));
-                var platforms = (PackagePlatform) EditorGUILayout.EnumPopup(_platform, GUILayout.Width(90f));
+                var platforms = (PackagePlatform)EditorGUILayout.EnumPopup(_platform, GUILayout.Width(90f));
                 if (platforms != _platform)
                 {
                     _platform = platforms;
-                    EditorPrefs.SetInt(KeyForPackagePlatforms, (int) _platform);
+                    EditorPrefs.SetInt(KeyForPackagePlatforms, (int)_platform);
                 }
 
                 if (GUILayout.Button("Build Packages"))
