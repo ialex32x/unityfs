@@ -136,7 +136,6 @@ namespace UnityFS.Editor
         private string _searchKeyword;
         private bool _batchedSelectMarks;
         public static AssetAttributes _newAttrs = new AssetAttributes();
-        private int _selectedInResults;
         private HashSet<SearchResult> _searchMarks = new HashSet<SearchResult>();
         private List<SearchResult> _searchResults = new List<SearchResult>();
 
@@ -385,18 +384,17 @@ namespace UnityFS.Editor
             });
 
             EditorGUILayout.Space();
-            Block(string.Format("Results ({0}/{1})", _selectedInResults, _searchResults.Count), () =>
+            Block(string.Format("Results ({0}/{1})", _searchMarks.Count, _searchResults.Count), () =>
             {
-                _selectedInResults = 0;
                 EditorGUILayout.BeginHorizontal();
-                var nbatchedSelectMarks = EditorGUILayout.Toggle(_batchedSelectMarks, GUILayout.Width(20f));
+                var nBatchedSelectMarks = EditorGUILayout.Toggle(_batchedSelectMarks, GUILayout.Width(20f));
                 EditorGUILayout.LabelField("Asset Packer", GUILayout.Width(110f));
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.Space();
                 
-                if (nbatchedSelectMarks != _batchedSelectMarks)
+                if (nBatchedSelectMarks != _batchedSelectMarks)
                 {
-                    _batchedSelectMarks = nbatchedSelectMarks;
+                    _batchedSelectMarks = nBatchedSelectMarks;
                     _searchMarks.Clear();
                     if (_batchedSelectMarks)
                     {
@@ -409,7 +407,6 @@ namespace UnityFS.Editor
 
                 _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
 
-                _batchedSelectMarks = false;
                 for (var i = 0; i < _searchResults.Count; i++)
                 {
                     var result = _searchResults[i];
@@ -420,8 +417,6 @@ namespace UnityFS.Editor
                     var nMarked = EditorGUILayout.Toggle(marked, GUILayout.Width(20f));
                     if (marked) // 批量修改模式
                     {
-                        _selectedInResults++;
-                        _batchedSelectMarks = true;
                         GUI.color = Color.green;
                     }
 

@@ -90,7 +90,7 @@ namespace UnityFS.Editor
         {
             for (int i = 0, size = bundles.Count; i < size; i++)
             {
-                var bundle = bundles[0];
+                var bundle = bundles[i];
                 bundle.ForEachAsset((split, slice, assetGuid) => visitor(bundle, split, slice, assetGuid));
             }
         }

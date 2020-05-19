@@ -65,7 +65,7 @@ namespace UnityFS.Editor
             {
                 for (int i = 0, size = slices.Count; i < size; i++)
                 {
-                    var slice = slices[0];
+                    var slice = slices[i];
                     slice.ForEachAsset(assetGuid => visitor(slice, assetGuid));
                 }
             }
