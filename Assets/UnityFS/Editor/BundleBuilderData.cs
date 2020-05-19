@@ -70,7 +70,7 @@ namespace UnityFS.Editor
         [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();
 
         [NonSerialized] public string[] allCollectedAssetsPath = new string[0];
-        
+
         public SList skipExts = new SList(".xlsx", ".xlsm", ".xls", ".docx", ".doc", ".cs");
 
         public static BundleBuilderData Load()
@@ -84,6 +84,15 @@ namespace UnityFS.Editor
             }
 
             return data;
+        }
+
+        public void ForEachAsset(Action<BundleInfo, BundleSplit, BundleSlice, string> visitor)
+        {
+            for (int i = 0, size = bundles.Count; i < size; i++)
+            {
+                var bundle = bundles[0];
+                bundle.ForEachAsset((split, slice, assetGuid) => visitor(bundle, split, slice, assetGuid));
+            }
         }
 
         public bool Lookup(string assetGuid, out BundleInfo bundleInfo, out BundleSplit bundleSplit, out BundleSlice bundleSlice)
@@ -110,7 +119,7 @@ namespace UnityFS.Editor
             if (!assetAttributesMap.TryGetValue(guid, out attrs))
             {
                 attrs = assetAttributesMap[guid] = new AssetAttributes();
-                MarkAsDirty();   
+                MarkAsDirty();
             }
             return attrs;
         }
@@ -170,7 +179,7 @@ namespace UnityFS.Editor
         public bool IsStreamingAssets(string guid, BundleBuilderData.BundleInfo bundleInfo)
         {
             var assetAttributes = GetAssetAttributes(guid);
-            
+
             // 配置为自动分配 StreamingAssets
             if (assetAttributes == null || assetAttributes.packer == AssetPacker.Auto)
             {

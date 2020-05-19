@@ -61,6 +61,15 @@ namespace UnityFS.Editor
                 }
             }
 
+            public void ForEachAsset(Action<BundleSlice, string> visitor)
+            {
+                for (int i = 0, size = slices.Count; i < size; i++)
+                {
+                    var slice = slices[0];
+                    slice.ForEachAsset(assetGuid => visitor(slice, assetGuid));
+                }
+            }
+
             // 查找指定资源所在 slice, 不存在时返回 null
             public BundleSlice Lookup(string assetGuid)
             {

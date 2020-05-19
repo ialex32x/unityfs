@@ -7,7 +7,7 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
-    public partial class BundleBuilderData 
+    public partial class BundleBuilderData
     {
         [Serializable]
         public class BundleInfo
@@ -34,6 +34,15 @@ namespace UnityFS.Editor
 
             public BundleInfo()
             {
+            }
+
+            public void ForEachAsset(Action<BundleSplit, BundleSlice, string> visitor)
+            {
+                for (int i = 0, size = splits.Count; i < size; i++)
+                {
+                    var split = splits[i];
+                    split.ForEachAsset((slice, assetGuid) => visitor(split, slice, assetGuid));
+                }
             }
 
             public bool Lookup(string assetGuid, out BundleSplit bundleSplit, out BundleSlice bundleSlice)

@@ -39,6 +39,14 @@ namespace UnityFS.Editor
                 this.platform = platform;
             }
 
+            public void ForEachAsset(Action<string> visitor)
+            {
+                for (int i = 0, size = assetGuids.Count; i < size; i++)
+                {
+                    visitor(assetGuids[i]);
+                }
+            }
+
             public bool Lookup(string assetGuid)
             {
                 return assetGuids.Contains(assetGuid);
