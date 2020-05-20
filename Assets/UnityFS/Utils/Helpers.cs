@@ -462,8 +462,8 @@ namespace UnityFS.Utils
                 var outputFile = Path.Combine(outputPath, file.name);
                 if (!File.Exists(outputFile))
                 {
-                    var streamingFile = GetStreamingAssetsFilePath(file.name);
-                    var uwr = UnityWebRequest.Get(streamingFile);
+                    var streamingAssetsFilePath = GetStreamingAssetsFilePath(file.name);
+                    var uwr = UnityWebRequest.Get(streamingAssetsFilePath);
                     yield return uwr.SendWebRequest();
                     if (uwr.error == null && uwr.responseCode == 200)
                     {
@@ -484,12 +484,14 @@ namespace UnityFS.Utils
                         }
                         catch (Exception exception)
                         {
-                            Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
+                            Debug.LogWarningFormat("CopyStreamingAssets exception: {0}\n{1}",
+                                streamingAssetsFilePath, exception);
                         }
                     }
                     else
                     {
-                        Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
+                        Debug.LogWarningFormat("CopyStreamingAssets request failed {0}: {1} {2}", streamingAssetsFilePath, uwr.responseCode,
+                            uwr.error);
                     }
                 }
             }

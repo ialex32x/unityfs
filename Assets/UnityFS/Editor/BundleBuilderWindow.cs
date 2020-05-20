@@ -270,12 +270,9 @@ namespace UnityFS.Editor
                                             BundleBuilderData.BundleInfo rBundleInfo,
                                             BundleBuilderData.BundleSlice rBundleSlice)
         {
-            var exists = rBundleSlice != null;
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUILayout.TextField(exists ? rBundleSlice.name : "<null>");
             if (rBundleInfo != null)
             {
-                EditorGUI.EndDisabledGroup();
+                EditorGUILayout.TextField(rBundleSlice.name);
                 if (GUILayout.Button(">", GUILayout.Width(20f)))
                 {
                     BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new[] { rBundleInfo }));
@@ -283,6 +280,8 @@ namespace UnityFS.Editor
             }
             else
             {
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUILayout.TextField("<null>");
                 GUILayout.Button(">", GUILayout.Width(20f));
                 EditorGUI.EndDisabledGroup();
             }

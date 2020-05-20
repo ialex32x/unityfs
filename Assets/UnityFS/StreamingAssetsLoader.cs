@@ -79,8 +79,8 @@ namespace UnityFS
             MemoryStream stream = null;
             if (Contains(bundleInfo))
             {
-                var uri = _streamingAssetsPathRoot + bundleInfo.name;
-                var uwr = UnityWebRequest.Get(uri);
+                var streamingAssetsFilePath = _streamingAssetsPathRoot + bundleInfo.name;
+                var uwr = UnityWebRequest.Get(streamingAssetsFilePath);
                 yield return uwr.SendWebRequest();
                 if (uwr.error == null && uwr.responseCode == 200)
                 {
@@ -91,12 +91,14 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        Debug.LogWarning($"StreamingAssetsLoader load failed: {exception}");
+                        Debug.LogWarningFormat("LoadStream exception: {0}\n{1}",
+                            streamingAssetsFilePath, exception);
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"load failed {uwr.error}: {uwr.responseCode}");
+                    Debug.LogWarningFormat("LoadStream request failed {0}: {1} {2}", streamingAssetsFilePath,
+                        uwr.responseCode, uwr.error);
                 }
             }
 
