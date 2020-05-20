@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: unityfs
   m_EditorClassIdentifier: 
-  id: 30
-  build: 3
+  id: 32
+  build: 4
   encryptionKey: test
   bundles:
   - id: 1
@@ -140,7 +140,7 @@ MonoBehaviour:
         - a9acb3cd117fed445a2a6c70671571c9
         - f881d420c2dde77468fb13be84f58ce2
   - id: 3
-    buildOrder: 1000
+    buildOrder: 0
     name: test2.pkg
     note: "\u914D\u7F6E\u6587\u4EF6\u5305"
     tag: 
@@ -222,6 +222,16 @@ MonoBehaviour:
         - 26d5d477691d5a64290cb20bade47e1a
         - e46dad9ccca72ad4587045373fba4ffa
         - ad80bd1399b82cc4ba0c7f4d055ac1ce
+        - bbdea57f4b2d0904aac65d22b0c3092e
+        - 17bbb37abc5feb4458d9da91f2eb4c72
+        - 346337d8ea77fbc43a3ba7ac6a929b2d
+        - d0003454f4b6e7943aca59649d985e25
+        - 9577fb63144332b488d1c8433859ecc8
+        - c61fd958f9e455049afd354b396e1da6
+        - 8876ed2c6a1dea34ebdb8f54e04a0ddd
+        - 94ce73b887c90fb49b507a4155ff0260
+        - bca2247aa0c6e704aa8a818130fceaf7
+        - 88a0ecc9dbb98ff499b5f0df3004e831
   - id: 19
     buildOrder: 1000
     name: bundle_19.pkg
@@ -319,6 +329,42 @@ MonoBehaviour:
         histroy:
         - dcb7a7a5a34f7ac46bcac47f69b07576
         - d4f313eebb079324197c5b717e1b092f
+  - id: 31
+    buildOrder: 1000
+    name: bundle_31.pkg
+    note: "\u56FE\u96C6"
+    tag: 
+    type: 0
+    load: 4
+    enabled: 1
+    streamingAssets: 1
+    priority: 0
+    targets:
+    - id: 32
+      enabled: 1
+      target: {fileID: 102900000, guid: 6639c5434788ed840963587829ea3725, type: 3}
+      platform: 0
+    splits:
+    - encrypted: 0
+      name: 
+      sliceObjects: 0
+      rules: []
+      slices:
+      - name: bundle_31_tflsemvhen6_mp9q37.pkg
+        capacity: 0
+        streamingAssets: 1
+        platform: 0
+        histroy:
+        - bbdea57f4b2d0904aac65d22b0c3092e
+        - 17bbb37abc5feb4458d9da91f2eb4c72
+        - 346337d8ea77fbc43a3ba7ac6a929b2d
+        - d0003454f4b6e7943aca59649d985e25
+        - 9577fb63144332b488d1c8433859ecc8
+        - c61fd958f9e455049afd354b396e1da6
+        - 8876ed2c6a1dea34ebdb8f54e04a0ddd
+        - 94ce73b887c90fb49b507a4155ff0260
+        - bca2247aa0c6e704aa8a818130fceaf7
+        - 88a0ecc9dbb98ff499b5f0df3004e831
   assetAttributesMap:
     _keys:
     - df4858d82a3ad344d88e9ce52e8cbaa0
@@ -372,6 +418,7 @@ MonoBehaviour:
   disableTypeTree: 0
   lz4Compression: 1
   extractShaderVariantCollections: 1
+  streamingAssetsAnyway: 0
   assetListData: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
   skipExts:
     _values:

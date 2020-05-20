@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using UnityEngine.UI;
 using UnityFS;
+using UnityFS.Utils;
 
 namespace Examples
 {
@@ -14,6 +16,7 @@ namespace Examples
         public int bufferSize = 0;
         public string password = "test"; // 危险, 真实环境中从远端获取密码
         public string listDataPath;
+        public Image image;
 
         private UnityFS.Utils.PrefabPools _pools;
 
@@ -132,6 +135,15 @@ namespace Examples
                 UnityFS.ResourceManager.LoadAsset("Assets/Examples/Prefabs/Cube 2.prefab", self => UnityFS.Utils.AssetHandle.CreateInstance(self, 5.0f));
 
                 UnityFS.Utils.PrefabLoader.Load("Assets/Examples/Prefabs/Cube 1.prefab");
+
+                if (image != null)
+                {
+                    ResourceManager.LoadAsset<Sprite>("Assets/Examples/Textures/Atlas/9.png", asset =>
+                    {
+                        AssetHandle.Attach(image.gameObject, asset);
+                        image.sprite = asset.GetObject<Sprite>();
+                    });
+                }
 
                 var handle = _pools.Alloc("Assets/Examples/Prefabs/Cube 9.prefab");
                 StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
