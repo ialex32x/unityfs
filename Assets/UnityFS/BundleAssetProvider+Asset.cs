@@ -513,11 +513,37 @@ namespace UnityFS
 
             private IEnumerator _Load(AssetBundle assetBundle)
             {
-                var request = _type != null
-                    ? assetBundle.LoadAssetAsync(_assetPath, _type)
-                    : assetBundle.LoadAssetAsync(_assetPath);
-                yield return request;
-                OnAssetLoaded(request.asset);
+                var subAssetIndex = _assetPath.IndexOf('@');
+                if (subAssetIndex >= 0)
+                {
+                    var mainAssetPath = _assetPath.Substring(0, subAssetIndex);
+                    var subAssetName = _assetPath.Substring(subAssetIndex + 1);
+                    var request = _type != null
+                        ? assetBundle.LoadAssetWithSubAssetsAsync(mainAssetPath, _type)
+                        : assetBundle.LoadAssetWithSubAssetsAsync(mainAssetPath);
+                    yield return request;
+                    var allAssets = request.allAssets;
+                    Object matchedAsset = null;
+                    for (int i = 0, count = allAssets.Length; i < count; i++)
+                    {
+                        var asset = allAssets[i];
+                        if (asset.name == subAssetName)
+                        {
+                            matchedAsset = asset;
+                            break;
+                        }
+                    }
+
+                    OnAssetLoaded(matchedAsset);
+                }
+                else
+                {
+                    var request = _type != null
+                        ? assetBundle.LoadAssetAsync(_assetPath, _type)
+                        : assetBundle.LoadAssetAsync(_assetPath);
+                    yield return request;
+                    OnAssetLoaded(request.asset);
+                }
             }
 
             private void OnAssetLoaded(Object asset)

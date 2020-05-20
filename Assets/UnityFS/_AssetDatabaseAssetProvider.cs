@@ -116,12 +116,58 @@ namespace UnityFS
                 }
 #if UNITY_EDITOR
                 // Application.LoadLevelAdditiveAsync()
+                if (_type == null)
+                {
+                    var importer = UnityEditor.AssetImporter.GetAtPath(assetPath) as UnityEditor.TextureImporter;
+                    if (importer != null && importer.textureType == UnityEditor.TextureImporterType.Sprite)
+                    {
+                        _object = LoadSprite(assetPath);
+                        Complete();
+                        return;
+                    }
+                }
+                else if (_type == typeof(Sprite))
+                {
+                    _object = LoadSprite(assetPath);
+                    Complete();
+                    return;
+                }
                 _object = _type != null
                     ? UnityEditor.AssetDatabase.LoadAssetAtPath(assetPath, _type)
                     : UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
 #endif
                 Complete();
             }
+            
+            #if UNITY_EDITOR
+            private Sprite LoadSprite(string assetPath)
+            {
+                var subAssetIndex = assetPath.IndexOf('@');
+                if (subAssetIndex >= 0)
+                {
+                    var mainAssetPath = assetPath.Substring(0, subAssetIndex);
+                    var subAssetName = assetPath.Substring(subAssetIndex + 1);
+                    var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(mainAssetPath);
+                    var count = assets.Length;
+                    for (var i = 0; i < count; i++)
+                    {
+                        var asset = assets[i];
+                        if (asset.name == subAssetName)
+                        {
+                            var sprite = asset as Sprite;
+                            if (sprite != null)
+                            {
+                                return sprite;
+                            }
+                        }
+                    }
+
+                    return null;
+                }
+
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            }
+            #endif
 
             protected override bool IsValid()
             {
@@ -179,7 +225,7 @@ namespace UnityFS
             {
                 asset = new UAssetDatabaseFileListAsset(assetPath);
             }
-            else if (File.Exists(assetPath))
+            else if (IsFileExists(assetPath))
             {
                 asset = new UAssetDatabaseAsset(assetPath, type, Random.Range(_asyncSimMin, _asyncSimMax));
             }
@@ -189,6 +235,33 @@ namespace UnityFS
             }
             _assets[assetPath] = new WeakReference(asset);
             return asset;
+        }
+
+        private bool IsFileExists(string assetPath)
+        {
+            var subAssetIndex = assetPath.IndexOf('@');
+            if (subAssetIndex >= 0)
+            {
+                var mainAssetPath = assetPath.Substring(0, subAssetIndex);
+                var subAssetName = assetPath.Substring(subAssetIndex + 1);
+                if (!File.Exists(mainAssetPath))
+                {
+                    return false;
+                }
+#if UNITY_EDITOR
+                var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(mainAssetPath);
+                for (int i = 0, count = assets.Length; i < count; i++)
+                {
+                    var asset = assets[i];
+                    if (asset.name == subAssetName)
+                    {
+                        return true;
+                    }
+                }
+#endif
+                return false;
+            }
+            return File.Exists(assetPath);
         }
 
         public UBundle GetBundle(string bundleName)
@@ -203,12 +276,12 @@ namespace UnityFS
 
         public bool IsAssetAvailable(string assetPath)
         {
-            return File.Exists(assetPath);
+            return IsFileExists(assetPath);
         }
 
         public bool IsAssetExists(string assetPath)
         {
-            return File.Exists(assetPath);
+            return IsFileExists(assetPath);
         }
 
         public string Find(string assetPath)

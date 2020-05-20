@@ -575,7 +575,7 @@ namespace UnityFS
             }
 
             string bundleName;
-            if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
+            if (TryGetBundleNameByAssetPath(transformedAssetPath, out bundleName))
             {
                 var bundleInfo = GetBundleInfo(bundleName);
                 if (bundleInfo != null)
@@ -601,12 +601,22 @@ namespace UnityFS
             }
 
             string bundleName;
-            if (_assetPath2Bundle.TryGetValue(TransformAssetPath(assetPath), out bundleName))
+            if (TryGetBundleNameByAssetPath(TransformAssetPath(assetPath), out bundleName))
             {
                 return bundleName;
             }
 
             return null;
+        }
+
+        private bool TryGetBundleNameByAssetPath(string transformedAssetPath, out string bundleName)
+        {
+            var subAssetIndex = transformedAssetPath.IndexOf('@');
+            if (subAssetIndex >= 0)
+            {
+                transformedAssetPath = transformedAssetPath.Substring(0, subAssetIndex);
+            }
+            return _assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName);
         }
 
         private UAsset GetAsset(string assetPath, bool concrete, Type type)
@@ -630,7 +640,7 @@ namespace UnityFS
             }
 
             string bundleName;
-            if (_assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName))
+            if (TryGetBundleNameByAssetPath(transformedAssetPath, out bundleName))
             {
                 var bundle = this.GetBundle(bundleName);
                 if (bundle != null)

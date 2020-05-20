@@ -134,6 +134,7 @@ namespace UnityFS.Utils
                         var fileEntry = JsonUtility.FromJson<FileEntry>(content);
                         if (fileEntry != null)
                         {
+                            // Debug.LogFormat("checksum {0} {1}", fileEntry.checksum, fileEntry.size);
                             GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
                             return true;
                         }
