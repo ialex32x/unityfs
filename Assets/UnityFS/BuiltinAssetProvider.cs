@@ -168,7 +168,15 @@ namespace UnityFS
 
         public IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
         {
-            onComplete?.Invoke();
+            try
+            {
+                onComplete?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogErrorFormat("EnsureBundles exception\n{0}", exception);
+            }
+
             return new List<DownloadWorker.JobInfo>();
         }
 
