@@ -50,7 +50,7 @@ namespace UnityFS
             if (time < timeSeconds)
             {
                 
-                var subAssetIndex = assetPath.IndexOf('@');
+                var subAssetIndex = assetPath.IndexOf(Manifest.SubAssetSeperator);
                 if (subAssetIndex >= 0)
                 {
                     assetPath = assetPath.Substring(0, subAssetIndex);

@@ -513,7 +513,7 @@ namespace UnityFS
 
             private IEnumerator _Load(AssetBundle assetBundle)
             {
-                var subAssetIndex = _assetPath.IndexOf('@');
+                var subAssetIndex = _assetPath.IndexOf(Manifest.SubAssetSeperator);
                 if (subAssetIndex >= 0)
                 {
                     var mainAssetPath = _assetPath.Substring(0, subAssetIndex);

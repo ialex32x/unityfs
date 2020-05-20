@@ -22,6 +22,7 @@ namespace UnityFS
         public const string EmbeddedManifestFileName = "streamingassets-manifest.json";
         public const string EmbeddedBundlesBasePath = "packages";
         public const string EncryptionSalt = "SALT";
+        public const char SubAssetSeperator = '~';
 
         [Serializable]
         [Flags]

@@ -142,7 +142,7 @@ namespace UnityFS
             #if UNITY_EDITOR
             private Sprite LoadSprite(string assetPath)
             {
-                var subAssetIndex = assetPath.IndexOf('@');
+                var subAssetIndex = assetPath.IndexOf(Manifest.SubAssetSeperator);
                 if (subAssetIndex >= 0)
                 {
                     var mainAssetPath = assetPath.Substring(0, subAssetIndex);
@@ -239,7 +239,7 @@ namespace UnityFS
 
         private bool IsFileExists(string assetPath)
         {
-            var subAssetIndex = assetPath.IndexOf('@');
+            var subAssetIndex = assetPath.IndexOf(Manifest.SubAssetSeperator);
             if (subAssetIndex >= 0)
             {
                 var mainAssetPath = assetPath.Substring(0, subAssetIndex);
