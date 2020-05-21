@@ -486,9 +486,12 @@ namespace UnityFS
         // 从 AssetBundle 资源包载入 (会调用 assetbundle.LoadAsset 载入实际资源)
         protected class UAssetBundleConcreteAsset : UAssetBundleAsset
         {
+            private Object[] _objects;
+
             public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type)
                 : base(bundle, assetPath, type)
             {
+                _objects = _emptyObjects;
             }
 
             protected override void OnBundleLoaded(UBundle bundle)
@@ -511,30 +514,44 @@ namespace UnityFS
                 }
             }
 
-            private IEnumerator _Load(AssetBundle assetBundle)
+            public override Object[] GetObjects()
             {
-                var subAssetIndex = _assetPath.IndexOf(Manifest.SubAssetSeperator);
-                if (subAssetIndex >= 0)
+                return _objects;
+            }
+
+            protected override Object GetObjectWithName(string name)
+            {
+                if (string.IsNullOrEmpty(name))
                 {
-                    var mainAssetPath = _assetPath.Substring(0, subAssetIndex);
-                    var subAssetName = _assetPath.Substring(subAssetIndex + 1);
-                    var request = _type != null
-                        ? assetBundle.LoadAssetWithSubAssetsAsync(mainAssetPath, _type)
-                        : assetBundle.LoadAssetWithSubAssetsAsync(mainAssetPath);
-                    yield return request;
-                    var allAssets = request.allAssets;
-                    Object matchedAsset = null;
-                    for (int i = 0, count = allAssets.Length; i < count; i++)
+                    return _object;
+                }
+                for (int i = 0, count = _objects.Length; i < count; i++)
+                {
+                    var obj = _objects[i];
+                    if (obj.name == name)
                     {
-                        var asset = allAssets[i];
-                        if (asset.name == subAssetName)
+                        if (_type == null || _type == obj.GetType())
                         {
-                            matchedAsset = asset;
-                            break;
+                            return obj;
                         }
                     }
+                }
+                return null;
+            }
 
-                    OnAssetLoaded(matchedAsset);
+            private IEnumerator _Load(AssetBundle assetBundle)
+            {
+                if (_type != null && _type == typeof(Sprite))
+                {
+                    var request = assetBundle.LoadAssetWithSubAssetsAsync(_assetPath);
+                    yield return request;
+
+                    if (!_disposed)
+                    {
+                        _objects = request.allAssets;
+                        _object = _objects != null && _objects.Length > 0 ? _objects[0] : null;
+                        Complete();
+                    }
                 }
                 else
                 {
@@ -542,19 +559,13 @@ namespace UnityFS
                         ? assetBundle.LoadAssetAsync(_assetPath, _type)
                         : assetBundle.LoadAssetAsync(_assetPath);
                     yield return request;
-                    OnAssetLoaded(request.asset);
-                }
-            }
 
-            private void OnAssetLoaded(Object asset)
-            {
-                if (_disposed)
-                {
-                    return;
+                    if (!_disposed)
+                    {
+                        _object = request.asset;
+                        Complete();
+                    }
                 }
-
-                _object = asset;
-                Complete();
             }
         }
     }

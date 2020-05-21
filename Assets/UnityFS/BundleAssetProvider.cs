@@ -611,11 +611,6 @@ namespace UnityFS
 
         private bool TryGetBundleNameByAssetPath(string transformedAssetPath, out string bundleName)
         {
-            var subAssetIndex = transformedAssetPath.IndexOf(Manifest.SubAssetSeperator);
-            if (subAssetIndex >= 0)
-            {
-                transformedAssetPath = transformedAssetPath.Substring(0, subAssetIndex);
-            }
             return _assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName);
         }
 

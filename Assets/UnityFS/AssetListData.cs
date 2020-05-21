@@ -49,12 +49,6 @@ namespace UnityFS
 #if UNITY_EDITOR
             if (time < timeSeconds)
             {
-                
-                var subAssetIndex = assetPath.IndexOf(Manifest.SubAssetSeperator);
-                if (subAssetIndex >= 0)
-                {
-                    assetPath = assetPath.Substring(0, subAssetIndex);
-                }
                 var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
                 if (!string.IsNullOrEmpty(assetGuid))
                 {

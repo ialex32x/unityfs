@@ -9,6 +9,7 @@ namespace UnityFS
     // Unity 资源抽象
     public abstract class UAsset : IDisposable
     {
+        protected static Object[] _emptyObjects = new Object[0];
         protected string _assetPath;
         protected Type _type;
         protected Object _object;
@@ -62,25 +63,35 @@ namespace UnityFS
         {
             get { return _assetPath; }
         }
-
-        public Object GetObject()
+        
+        public Object GetObject(string name = null)
         {
             if (_disposed)
             {
                 Debug.LogError($"GetObject(): uasset already disposed ({_assetPath})");
                 return null;
             }
-            return _object;
+            return GetObjectWithName(name);;
         }
 
-        public T GetObject<T>()
+        public T GetObject<T>(string name = null)
             where T : Object
         {
             if (_type != null && typeof(T) != _type)
             {
                 throw new InvalidCastException(string.Format("{0} != {1}: {2}", _type, typeof(T), _assetPath));
             }
-            return GetObject() as T;
+            return GetObject(name) as T;
+        }
+
+        protected virtual Object GetObjectWithName(string name)
+        {
+            return _object;
+        }
+
+        public virtual Object[] GetObjects()
+        {
+            return _emptyObjects;
         }
 
         protected virtual bool IsValid()

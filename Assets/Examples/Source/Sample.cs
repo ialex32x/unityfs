@@ -141,7 +141,7 @@ namespace Examples
                     ResourceManager.LoadAsset<Sprite>("Assets/Examples/Textures/Atlas/9.png", asset =>
                     {
                         AssetHandle.Attach(image.gameObject, asset);
-                        image.sprite = asset.GetObject<Sprite>();
+                        image.sprite = asset.GetObject<Sprite>("9");
                     });
                 }
 

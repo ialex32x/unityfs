@@ -92,6 +92,8 @@ namespace UnityFS
 
         protected class UAssetDatabaseAsset : UAsset
         {
+            private Object[] _objects;
+
             public UAssetDatabaseAsset(string assetPath, Type type, float delay)
             : base(assetPath, type)
             {
@@ -121,53 +123,56 @@ namespace UnityFS
                     var importer = UnityEditor.AssetImporter.GetAtPath(assetPath) as UnityEditor.TextureImporter;
                     if (importer != null && importer.textureType == UnityEditor.TextureImporterType.Sprite)
                     {
-                        _object = LoadSprite(assetPath);
+                        LoadAllAssetsAtPath(assetPath);
                         Complete();
                         return;
                     }
                 }
                 else if (_type == typeof(Sprite))
                 {
-                    _object = LoadSprite(assetPath);
+                    LoadAllAssetsAtPath(assetPath);
                     Complete();
                     return;
                 }
+
                 _object = _type != null
                     ? UnityEditor.AssetDatabase.LoadAssetAtPath(assetPath, _type)
                     : UnityEditor.AssetDatabase.LoadMainAssetAtPath(assetPath);
 #endif
                 Complete();
             }
-            
-            #if UNITY_EDITOR
-            private Sprite LoadSprite(string assetPath)
+
+#if UNITY_EDITOR
+            private void LoadAllAssetsAtPath(string assetPath)
             {
-                var subAssetIndex = assetPath.IndexOf(Manifest.SubAssetSeperator);
-                if (subAssetIndex >= 0)
-                {
-                    var mainAssetPath = assetPath.Substring(0, subAssetIndex);
-                    var subAssetName = assetPath.Substring(subAssetIndex + 1);
-                    var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(mainAssetPath);
-                    var count = assets.Length;
-                    for (var i = 0; i < count; i++)
-                    {
-                        var asset = assets[i];
-                        if (asset.name == subAssetName)
-                        {
-                            var sprite = asset as Sprite;
-                            if (sprite != null)
-                            {
-                                return sprite;
-                            }
-                        }
-                    }
-
-                    return null;
-                }
-
-                return UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+                _objects = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
+                _object = _objects != null && _objects.Length > 0 ? _objects[0] : null;
+                Debug.Log(_object);
             }
-            #endif
+#endif
+
+            public override Object[] GetObjects()
+            {
+                return _objects;
+            }
+
+            protected override Object GetObjectWithName(string name)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    return _object;
+                }
+                for (int i = 0, count = _objects.Length; i < count; i++)
+                {
+                    var obj = _objects[i];
+                    
+                    if (obj.name == name)
+                    {
+                        return obj;
+                    }
+                }
+                return null;
+            }
 
             protected override bool IsValid()
             {
@@ -239,28 +244,6 @@ namespace UnityFS
 
         private bool IsFileExists(string assetPath)
         {
-            var subAssetIndex = assetPath.IndexOf(Manifest.SubAssetSeperator);
-            if (subAssetIndex >= 0)
-            {
-                var mainAssetPath = assetPath.Substring(0, subAssetIndex);
-                var subAssetName = assetPath.Substring(subAssetIndex + 1);
-                if (!File.Exists(mainAssetPath))
-                {
-                    return false;
-                }
-#if UNITY_EDITOR
-                var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(mainAssetPath);
-                for (int i = 0, count = assets.Length; i < count; i++)
-                {
-                    var asset = assets[i];
-                    if (asset.name == subAssetName)
-                    {
-                        return true;
-                    }
-                }
-#endif
-                return false;
-            }
             return File.Exists(assetPath);
         }
 
@@ -329,7 +312,7 @@ namespace UnityFS
             onComplete?.Invoke();
             return new List<DownloadWorker.JobInfo>();
         }
-        
+
         public DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
         {
             return null;
