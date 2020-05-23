@@ -31,7 +31,7 @@ namespace UnityFS
 
         IFileSystem GetFileSystem(string bundleName);
         UBundle GetBundle(string bundleName);
-        UAsset GetAsset(string assetPath, Type type);
+        UAsset GetAsset(string assetPath, Type type, EAssetHints hints);
 
         // 资源是否立即可用 (本地有效)
         bool IsAssetAvailable(string assetPath);

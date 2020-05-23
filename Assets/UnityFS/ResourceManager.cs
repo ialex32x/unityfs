@@ -229,36 +229,36 @@ namespace UnityFS
 
         public static UAsset LoadAsset(string assetPath)
         {
-            return GetAssetProvider().GetAsset(assetPath, null);
+            return GetAssetProvider().GetAsset(assetPath, null, EAssetHints.None);
         }
 
         public static UAsset LoadAsset<T>(string assetPath)
         {
-            return GetAssetProvider().GetAsset(assetPath, typeof(T));
+            return GetAssetProvider().GetAsset(assetPath, typeof(T), EAssetHints.None);
         }
 
         public static UAsset LoadAsset(string assetPath, Type type)
         {
-            return GetAssetProvider().GetAsset(assetPath, type);
+            return GetAssetProvider().GetAsset(assetPath, type, EAssetHints.None);
         }
 
         public static UAsset LoadAsset(string assetPath, Action<UAsset> callback)
         {
-            var asset = GetAssetProvider().GetAsset(assetPath, null);
+            var asset = GetAssetProvider().GetAsset(assetPath, null, EAssetHints.None);
             asset.completed += callback;
             return asset;
         }
 
         public static UAsset LoadAsset<T>(string assetPath, Action<UAsset> callback)
         {
-            var asset = GetAssetProvider().GetAsset(assetPath, typeof(T));
+            var asset = GetAssetProvider().GetAsset(assetPath, typeof(T), EAssetHints.None);
             asset.completed += callback;
             return asset;
         }
 
         public static UAsset LoadAsset(string assetPath, Type type, Action<UAsset> callback)
         {
-            var asset = GetAssetProvider().GetAsset(assetPath, type);
+            var asset = GetAssetProvider().GetAsset(assetPath, type, EAssetHints.None);
             asset.completed += callback;
             return asset;
         }

@@ -180,6 +180,6 @@ namespace UnityFS
             }
         }
 
-        public abstract UAsset CreateAsset(string assetPath, Type type, bool concrete);
+        public abstract UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints);
     }
 }

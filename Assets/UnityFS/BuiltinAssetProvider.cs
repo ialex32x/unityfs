@@ -10,12 +10,12 @@ namespace UnityFS
     public class BuiltinAssetProvider : IAssetProvider
     {
         public string tag => null;
-        
+
         public int build => 0;
-        
+
         protected class UBuiltinAsset : UAsset
         {
-            public UBuiltinAsset(string assetPath, Type type)
+            public UBuiltinAsset(string assetPath, Type type, EAssetHints hints)
             : base(assetPath, type)
             {
                 var resPath = assetPath;
@@ -24,8 +24,17 @@ namespace UnityFS
                 {
                     resPath = resPath.Substring(prefix.Length);
                 }
-                var request = type != null ? Resources.LoadAsync(resPath, type) : Resources.LoadAsync(resPath);
-                request.completed += OnResourceLoaded;
+
+                if ((hints & EAssetHints.Synchronized) != 0)
+                {
+                    _object = type != null ? Resources.Load(resPath, type) : Resources.Load(resPath);
+                    Complete();
+                }
+                else
+                {
+                    var request = type != null ? Resources.LoadAsync(resPath, type) : Resources.LoadAsync(resPath);
+                    request.completed += OnResourceLoaded;
+                }
             }
 
             public override byte[] ReadAllBytes()
@@ -87,7 +96,7 @@ namespace UnityFS
             }
         }
 
-        public UAsset GetAsset(string assetPath, Type type)
+        public UAsset GetAsset(string assetPath, Type type, EAssetHints hints)
         {
             WeakReference assetRef;
             UAsset asset = null;
@@ -101,7 +110,7 @@ namespace UnityFS
                 }
             }
             ResourceManager.GetAnalyzer()?.OnAssetOpen(assetPath);
-            asset = new UBuiltinAsset(assetPath, type);
+            asset = new UBuiltinAsset(assetPath, type, hints);
             _assets[assetPath] = new WeakReference(asset);
             return asset;
         }
@@ -142,12 +151,12 @@ namespace UnityFS
 
         public UScene LoadScene(string assetPath)
         {
-            return new UEditorScene(GetAsset(assetPath, null)).Load();
+            return new UEditorScene(GetAsset(assetPath, null, EAssetHints.None)).Load();
         }
 
         public UScene LoadSceneAdditive(string assetPath)
         {
-            return new UEditorScene(GetAsset(assetPath, null)).LoadAdditive();
+            return new UEditorScene(GetAsset(assetPath, null, EAssetHints.None)).LoadAdditive();
         }
 
         public void Open(ResourceManagerArgs args)

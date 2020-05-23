@@ -320,17 +320,17 @@ namespace UnityFS
             // Debug.LogFormat("bundle unloaded: {0}", bundle.name);
         }
 
-        private void _AddDependencies(UBundle bundle, string[] dependencies)
+        private void _AddDependencies(UBundle bundle, EAssetHints hints, string[] dependencies)
         {
             if (dependencies != null)
             {
                 for (int i = 0, size = dependencies.Length; i < size; i++)
                 {
                     var depBundleInfo = dependencies[i];
-                    var depBundle = GetBundle(depBundleInfo);
+                    var depBundle = GetBundle(depBundleInfo, hints);
                     if (bundle.AddDependency(depBundle))
                     {
-                        _AddDependencies(bundle, depBundle.bundleInfo.dependencies);
+                        _AddDependencies(bundle, hints, depBundle.bundleInfo.dependencies);
                     }
                 }
             }
@@ -425,8 +425,13 @@ namespace UnityFS
         // 获取包对象 (会直接进入加载队列)
         public UBundle GetBundle(string bundleName)
         {
+            return GetBundle(bundleName, EAssetHints.None);
+        }
+
+        public UBundle GetBundle(string bundleName, EAssetHints hints)
+        {
             var bundleInfo = GetBundleInfo(bundleName);
-            return GetBundle(bundleInfo);
+            return GetBundle(bundleInfo, hints);
         }
 
         // 尝试获取包对象 (不会自动创建并加载)
@@ -453,7 +458,8 @@ namespace UnityFS
             return bundleName != null && _bundles.TryGetValue(bundleName, out bundle) ? bundle : null;
         }
 
-        private UBundle GetBundle(Manifest.BundleInfo bundleInfo)
+        //TODO: hints
+        private UBundle GetBundle(Manifest.BundleInfo bundleInfo, EAssetHints hints)
         {
             if (_closed)
             {
@@ -469,7 +475,7 @@ namespace UnityFS
                     switch (bundleInfo.type)
                     {
                         case Manifest.BundleType.AssetBundle:
-                            bundle = new UAssetBundleBundle(this, bundleInfo);
+                            bundle = new UAssetBundleBundle(this, bundleInfo, hints);
                             break;
                         case Manifest.BundleType.ZipArchive:
                             bundle = new UZipArchiveBundle(this, bundleInfo);
@@ -482,7 +488,7 @@ namespace UnityFS
                     if (bundle != null)
                     {
                         _bundles.Add(bundleName, bundle);
-                        _AddDependencies(bundle, bundle.bundleInfo.dependencies);
+                        _AddDependencies(bundle, hints, bundle.bundleInfo.dependencies);
                         // 第一次访问 UBundle 时进入此处逻辑, 但这之前可能已经使用 EnsureBundles 等方式发起文件下载
                         // 优先检查是否已经存在下载中的任务, 如果已经存在下载任务, 任务完成时将自动调用 UBundle.Load(stream)
                         var bundleJob = _FindDownloadJob(bundle.name);
@@ -502,12 +508,12 @@ namespace UnityFS
 
         public UScene LoadScene(string assetPath)
         {
-            return new UScene(GetAsset(assetPath, false, null)).Load();
+            return new UScene(GetAsset(assetPath, false, null, EAssetHints.None)).Load();
         }
 
         public UScene LoadSceneAdditive(string assetPath)
         {
-            return new UScene(GetAsset(assetPath, false, null)).LoadAdditive();
+            return new UScene(GetAsset(assetPath, false, null, EAssetHints.None)).LoadAdditive();
         }
 
         public IFileSystem GetFileSystem(string bundleName)
@@ -555,9 +561,9 @@ namespace UnityFS
             return invalid;
         }
 
-        public UAsset GetAsset(string assetPath, Type type)
+        public UAsset GetAsset(string assetPath, Type type, EAssetHints hints)
         {
-            return GetAsset(assetPath, true, type);
+            return GetAsset(assetPath, true, type, hints);
         }
 
         // 检查资源是否本地直接可用
@@ -614,7 +620,8 @@ namespace UnityFS
             return _assetPath2Bundle.TryGetValue(transformedAssetPath, out bundleName);
         }
 
-        private UAsset GetAsset(string assetPath, bool concrete, Type type)
+        //TODO: hints
+        private UAsset GetAsset(string assetPath, bool concrete, Type type, EAssetHints hints)
         {
             if (_closed)
             {
@@ -637,14 +644,14 @@ namespace UnityFS
             string bundleName;
             if (TryGetBundleNameByAssetPath(transformedAssetPath, out bundleName))
             {
-                var bundle = this.GetBundle(bundleName);
+                var bundle = this.GetBundle(bundleName, hints);
                 if (bundle != null)
                 {
                     try
                     {
                         bundle.AddRef();
                         ResourceManager.GetAnalyzer()?.OnAssetOpen(assetPath);
-                        asset = bundle.CreateAsset(assetPath, type, concrete);
+                        asset = bundle.CreateAsset(assetPath, type, concrete, hints);
                         if (asset != null)
                         {
                             _assets[TransformAssetPath(assetPath)] = new WeakReference(asset);

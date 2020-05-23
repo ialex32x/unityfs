@@ -107,7 +107,7 @@ namespace UnityFS
                 }
             }
 
-            public override UAsset CreateAsset(string assetPath, Type type, bool concrete)
+            public override UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints)
             {
                 return new UFileListBundleAsset(this, assetPath);
             }
@@ -259,7 +259,7 @@ namespace UnityFS
                 }
             }
 
-            public override UAsset CreateAsset(string assetPath, Type type, bool concrete)
+            public override UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints)
             {
                 return new UZipArchiveBundleAsset(this, assetPath);
             }
@@ -327,7 +327,7 @@ namespace UnityFS
             private AssetBundle _assetBundle;
             private BundleAssetProvider _provider;
 
-            public UAssetBundleBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo)
+            public UAssetBundleBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo, EAssetHints hints)
                 : base(bundleInfo)
             {
                 _provider = provider;
@@ -402,11 +402,11 @@ namespace UnityFS
                 }
             }
 
-            public override UAsset CreateAsset(string assetPath, Type type, bool concrete)
+            public override UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints)
             {
                 if (concrete)
                 {
-                    return new UAssetBundleConcreteAsset(this, assetPath, type);
+                    return new UAssetBundleConcreteAsset(this, assetPath, type, hints);
                 }
 
                 return new UAssetBundleAsset(this, assetPath, type);
@@ -488,7 +488,8 @@ namespace UnityFS
         {
             private Object[] _objects;
 
-            public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type)
+            //TODO: hints
+            public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type, EAssetHints hints)
                 : base(bundle, assetPath, type)
             {
                 _objects = _emptyObjects;

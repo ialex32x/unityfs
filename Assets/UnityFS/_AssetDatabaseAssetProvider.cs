@@ -94,10 +94,10 @@ namespace UnityFS
         {
             private Object[] _objects;
 
-            public UAssetDatabaseAsset(string assetPath, Type type, float delay)
+            public UAssetDatabaseAsset(string assetPath, Type type, EAssetHints hints, float delay)
             : base(assetPath, type)
             {
-                if (delay > 0f)
+                if ((hints & EAssetHints.Synchronized) == 0 && delay > 0f)
                 {
                     JobScheduler.DispatchMainAfter(() =>
                     {
@@ -212,7 +212,7 @@ namespace UnityFS
             _asyncSimMax = asyncSimMax;
         }
 
-        public UAsset GetAsset(string assetPath, Type type)
+        public UAsset GetAsset(string assetPath, Type type, EAssetHints hints)
         {
             WeakReference assetRef;
             UAsset asset = null;
@@ -232,7 +232,7 @@ namespace UnityFS
             }
             else if (IsFileExists(assetPath))
             {
-                asset = new UAssetDatabaseAsset(assetPath, type, Random.Range(_asyncSimMin, _asyncSimMax));
+                asset = new UAssetDatabaseAsset(assetPath, type, hints, Random.Range(_asyncSimMin, _asyncSimMax));
             }
             else
             {
@@ -283,12 +283,12 @@ namespace UnityFS
 
         public UScene LoadScene(string assetPath)
         {
-            return new UEditorScene(GetAsset(assetPath, null)).Load();
+            return new UEditorScene(GetAsset(assetPath, null, EAssetHints.None)).Load();
         }
 
         public UScene LoadSceneAdditive(string assetPath)
         {
-            return new UEditorScene(GetAsset(assetPath, null)).LoadAdditive();
+            return new UEditorScene(GetAsset(assetPath, null, EAssetHints.None)).LoadAdditive();
         }
 
         public void Open(ResourceManagerArgs args)
