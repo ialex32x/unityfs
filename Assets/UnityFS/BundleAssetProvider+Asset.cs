@@ -323,6 +323,7 @@ namespace UnityFS
         // AssetBundle 资源包
         protected class UAssetBundleBundle : UBundle
         {
+            private EAssetHints _hints;
             private Stream _stream; // manage the stream lifecycle (dispose after assetbundle.unload)
             private AssetBundle _assetBundle;
             private BundleAssetProvider _provider;
@@ -330,6 +331,7 @@ namespace UnityFS
             public UAssetBundleBundle(BundleAssetProvider provider, Manifest.BundleInfo bundleInfo, EAssetHints hints)
                 : base(bundleInfo)
             {
+                _hints = hints;
                 _provider = provider;
             }
 
@@ -367,7 +369,14 @@ namespace UnityFS
                 if (_stream == null && _provider != null)
                 {
                     _stream = stream;
-                    _provider._LoadBundle(_Load());
+                    if ((_hints & EAssetHints.Synchronized) == 0)
+                    {
+                        _provider._LoadBundle(_LoadAsync());
+                    }
+                    else
+                    {
+                        _LoadSync();
+                    }
                 }
             }
 
@@ -376,7 +385,13 @@ namespace UnityFS
                 _provider._LoadAsset(e);
             }
 
-            private IEnumerator _Load()
+            private void _LoadSync()
+            {
+                var assetBundle = AssetBundle.LoadFromStream(_stream);
+                OnAssetBundleLoaded(assetBundle);
+            }
+
+            private IEnumerator _LoadAsync()
             {
                 AddRef();
                 yield return null;
@@ -409,18 +424,20 @@ namespace UnityFS
                     return new UAssetBundleConcreteAsset(this, assetPath, type, hints);
                 }
 
-                return new UAssetBundleAsset(this, assetPath, type);
+                return new UAssetBundleAsset(this, assetPath, type, hints);
             }
         }
 
         // 从 AssetBundle 资源包载入 (不实际调用 assetbundle.LoadAsset)
         protected class UAssetBundleAsset : UAsset
         {
+            protected EAssetHints _hints;
             protected UAssetBundleBundle _bundle;
 
-            public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath, Type type)
+            public UAssetBundleAsset(UAssetBundleBundle bundle, string assetPath, Type type, EAssetHints hints)
                 : base(assetPath, type)
             {
+                _hints = hints;
                 _bundle = bundle;
                 _bundle.AddRef();
                 _bundle.completed += OnBundleLoaded;
@@ -486,13 +503,11 @@ namespace UnityFS
         // 从 AssetBundle 资源包载入 (会调用 assetbundle.LoadAsset 载入实际资源)
         protected class UAssetBundleConcreteAsset : UAssetBundleAsset
         {
-            private Object[] _objects;
+            private Object[] _objects = _emptyObjects;
 
-            //TODO: hints
             public UAssetBundleConcreteAsset(UAssetBundleBundle bundle, string assetPath, Type type, EAssetHints hints)
-                : base(bundle, assetPath, type)
+                : base(bundle, assetPath, type, hints)
             {
-                _objects = _emptyObjects;
             }
 
             protected override void OnBundleLoaded(UBundle bundle)
@@ -507,7 +522,14 @@ namespace UnityFS
                 var assetBundle = _bundle.GetAssetBundle();
                 if (assetBundle != null)
                 {
-                    _bundle._LoadAsset(_Load(assetBundle));
+                    if ((_hints & EAssetHints.Synchronized) == 0)
+                    {
+                        _bundle._LoadAsset(_LoadAsync(assetBundle));
+                    }
+                    else
+                    {
+                        _LoadSync(assetBundle);
+                    }
                 }
                 else
                 {
@@ -540,7 +562,30 @@ namespace UnityFS
                 return null;
             }
 
-            private IEnumerator _Load(AssetBundle assetBundle)
+            private void _LoadSync(AssetBundle assetBundle)
+            {
+                if (_type != null && _type == typeof(Sprite))
+                {
+                    if (!_disposed)
+                    {
+                        _objects = assetBundle.LoadAssetWithSubAssets(_assetPath);
+                        _object = _objects != null && _objects.Length > 0 ? _objects[0] : null;
+                        Complete();
+                    }
+                }
+                else
+                {
+                    if (!_disposed)
+                    {
+                        _object = _type != null
+                            ? assetBundle.LoadAsset(_assetPath, _type)
+                            : assetBundle.LoadAsset(_assetPath);
+                        Complete();
+                    }
+                }
+            }
+
+            private IEnumerator _LoadAsync(AssetBundle assetBundle)
             {
                 if (_type != null && _type == typeof(Sprite))
                 {

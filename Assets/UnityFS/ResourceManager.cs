@@ -232,21 +232,28 @@ namespace UnityFS
             return GetAssetProvider().GetAsset(assetPath, null, EAssetHints.None);
         }
 
-        public static UAsset LoadAsset<T>(string assetPath)
-        {
-            return GetAssetProvider().GetAsset(assetPath, typeof(T), EAssetHints.None);
-        }
-
-        public static UAsset LoadAsset(string assetPath, Type type)
-        {
-            return GetAssetProvider().GetAsset(assetPath, type, EAssetHints.None);
-        }
-
         public static UAsset LoadAsset(string assetPath, Action<UAsset> callback)
         {
             var asset = GetAssetProvider().GetAsset(assetPath, null, EAssetHints.None);
             asset.completed += callback;
             return asset;
+        }
+
+        public static UAsset TryLoadAssetSync(string assetPath)
+        {
+            return GetAssetProvider().GetAsset(assetPath, null, EAssetHints.Synchronized);
+        }
+
+        public static UAsset TryLoadAssetSync(string assetPath, Action<UAsset> callback)
+        {
+            var asset = GetAssetProvider().GetAsset(assetPath, null, EAssetHints.Synchronized);
+            asset.completed += callback;
+            return asset;
+        }
+
+        public static UAsset LoadAsset<T>(string assetPath)
+        {
+            return GetAssetProvider().GetAsset(assetPath, typeof(T), EAssetHints.None);
         }
 
         public static UAsset LoadAsset<T>(string assetPath, Action<UAsset> callback)
@@ -256,9 +263,38 @@ namespace UnityFS
             return asset;
         }
 
+        public static UAsset TryLoadAssetSync<T>(string assetPath)
+        {
+            return GetAssetProvider().GetAsset(assetPath, typeof(T), EAssetHints.Synchronized);
+        }
+
+        public static UAsset TryLoadAssetSync<T>(string assetPath, Action<UAsset> callback)
+        {
+            var asset = GetAssetProvider().GetAsset(assetPath, typeof(T), EAssetHints.Synchronized);
+            asset.completed += callback;
+            return asset;
+        }
+
+        public static UAsset LoadAsset(string assetPath, Type type)
+        {
+            return GetAssetProvider().GetAsset(assetPath, type, EAssetHints.None);
+        }
+
         public static UAsset LoadAsset(string assetPath, Type type, Action<UAsset> callback)
         {
             var asset = GetAssetProvider().GetAsset(assetPath, type, EAssetHints.None);
+            asset.completed += callback;
+            return asset;
+        }
+
+        public static UAsset TryLoadAssetSync(string assetPath, Type type)
+        {
+            return GetAssetProvider().GetAsset(assetPath, type, EAssetHints.Synchronized);
+        }
+
+        public static UAsset TryLoadAssetSync(string assetPath, Type type, Action<UAsset> callback)
+        {
+            var asset = GetAssetProvider().GetAsset(assetPath, type, EAssetHints.Synchronized);
             asset.completed += callback;
             return asset;
         }
