@@ -345,9 +345,24 @@ namespace UnityFS.Utils
 
         public static Stream GetDecryptStream(Stream fin, FileEntry fileEntry, string password)
         {
+            return GetDecryptStream(fin, fileEntry.name, fileEntry.size, fileEntry.rsize, password);
+        }
+
+        public static Stream GetDecryptStream(Stream fin, Manifest.BundleInfo bundleInfo, string password)
+        {
+            if (bundleInfo.encrypted)
+            {
+                return GetDecryptStream(fin, bundleInfo.name, bundleInfo.size, bundleInfo.rsize, password);
+            }
+
+            return fin;
+        }
+
+        public static Stream GetDecryptStream(Stream fin, string name, int size, int rsize, string password)
+        {
             //TODO: 内存问题
-            var buffer = new byte[fileEntry.size];
-            var phrase = password + fileEntry.name;
+            var buffer = new byte[size];
+            var phrase = password + name;
             var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase));
             var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + Manifest.EncryptionSalt));
             using (var algo = Rijndael.Create())
@@ -361,35 +376,8 @@ namespace UnityFS.Utils
             }
 
             fin.Close();
-            var seekableStream = new MemoryStream(buffer, 0, fileEntry.rsize, false);
+            var seekableStream = new MemoryStream(buffer, 0, rsize, false);
             return seekableStream;
-        }
-
-        public static Stream GetDecryptStream(Stream fin, Manifest.BundleInfo bundleInfo, string password)
-        {
-            if (bundleInfo.encrypted)
-            {
-                //TODO: 内存问题
-                var buffer = new byte[bundleInfo.size];
-                var phrase = password + bundleInfo.name;
-                var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase));
-                var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + Manifest.EncryptionSalt));
-                using (var algo = Rijndael.Create())
-                {
-                    algo.Padding = PaddingMode.Zeros;
-                    var decryptor = algo.CreateDecryptor(key, iv);
-                    using (var cstream = new CryptoStream(fin, decryptor, CryptoStreamMode.Read))
-                    {
-                        cstream.Read(buffer, 0, buffer.Length);
-                    }
-                }
-
-                fin.Close();
-                var seekableStream = new MemoryStream(buffer, 0, bundleInfo.rsize, false);
-                return seekableStream;
-            }
-
-            return fin;
         }
 
         public static string GetStreamingAssetsPath(string innerPath)
