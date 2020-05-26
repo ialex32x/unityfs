@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: unityfs
   m_EditorClassIdentifier: 
   id: 32
-  build: 4
+  build: 7
   encryptionKey: test
+  chunkSize: 4096
   bundles:
   - id: 1
     buildOrder: 1000
@@ -41,7 +42,7 @@ MonoBehaviour:
       target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
       platform: 0
     splits:
-    - encrypted: 0
+    - encrypted: 1
       name: cube
       sliceObjects: 1
       rules:
@@ -110,7 +111,7 @@ MonoBehaviour:
         platform: 0
         histroy:
         - ce7ab5d846e45ac4ca42d89d2dd9bbde
-    - encrypted: 0
+    - encrypted: 1
       name: mat
       sliceObjects: 0
       rules:
@@ -119,7 +120,7 @@ MonoBehaviour:
         keyword: .mat
         exclude: 0
       slices: []
-    - encrypted: 0
+    - encrypted: 1
       name: 
       sliceObjects: 0
       rules:
@@ -174,7 +175,7 @@ MonoBehaviour:
         platform: 0
         histroy:
         - b35ac340fd756464da622a10bd306629
-    - encrypted: 0
+    - encrypted: 1
       name: 
       sliceObjects: 0
       rules: []
@@ -269,7 +270,7 @@ MonoBehaviour:
         - 3753d2e5af63eac439ba9b0f36641e6d
       - name: bundle_19_4m5n8gqmdn6_kfqji6.pkg
         capacity: 0
-        streamingAssets: 1
+        streamingAssets: 0
         platform: 0
         histroy:
         - b35be9c075bfa7d4990280e18b1ac7fb

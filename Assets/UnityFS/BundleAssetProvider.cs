@@ -27,7 +27,7 @@ namespace UnityFS
         private Dictionary<string, WeakReference> _fileSystems = new Dictionary<string, WeakReference>();
         private Dictionary<string, UBundle> _bundles = new Dictionary<string, UBundle>();
         private Func<string, string> _assetPathTransformer;
-        private FileEntry _manifestFileEntry; // 清单自身信息
+        private ManifestEntry _manifestFileEntry; // 清单自身信息
         private Manifest _manifestObject; // 当前清单 
         private int _activeJobs = 0;
         private int _bytesPerSecond;
@@ -89,7 +89,7 @@ namespace UnityFS
         {
             _password = args.password;
             Helpers.GetManifest(_localPathRoot, _worker,  args.manifestChecksum, args.manifestSize, args.manifestRSize,
-                _password, (manifest, fileEntry) =>
+                _password, args.manifestChunkSize, (manifest, fileEntry) =>
                 {
                     _streamingAssets = new StreamingAssetsLoader();
                     _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
@@ -180,7 +180,7 @@ namespace UnityFS
             return _assetPathTransformer != null ? _assetPathTransformer.Invoke(assetPath) : assetPath;
         }
 
-        private void SetManifest(Manifest manifest, FileEntry fileEntry)
+        private void SetManifest(Manifest manifest, ManifestEntry fileEntry)
         {
             _manifestFileEntry = fileEntry;
             _manifestObject = manifest;
@@ -210,10 +210,10 @@ namespace UnityFS
             {
                 if (!string.IsNullOrEmpty(content))
                 {
-                    var fileEntry = JsonUtility.FromJson<FileEntry>(content);
+                    var fileEntry = JsonUtility.FromJson<ManifestEntry>(content);
                     if (fileEntry != null)
                     {
-                        var eq = Helpers.IsFileEntryEquals(_manifestFileEntry, fileEntry);
+                        var eq = Helpers.IsManifestEntryEquals(_manifestFileEntry, fileEntry);
 
                         callback(eq ? EValidationResult.Latest : EValidationResult.Update);
                         return true;
@@ -255,10 +255,10 @@ namespace UnityFS
                     try
                     {
                         var handler = uwr.downloadHandler;
-                        var fileEntry = JsonUtility.FromJson<FileEntry>(handler.text);
+                        var fileEntry = JsonUtility.FromJson<ManifestEntry>(handler.text);
                         if (fileEntry != null)
                         {
-                            var eq = Helpers.IsFileEntryEquals(_manifestFileEntry, fileEntry);
+                            var eq = Helpers.IsManifestEntryEquals(_manifestFileEntry, fileEntry);
                             callback(eq ? EValidationResult.Latest : EValidationResult.Update);
                             yield break;
                         }
@@ -298,11 +298,11 @@ namespace UnityFS
             try
             {
                 var fullPath = Path.Combine(_localPathRoot, bundle.name);
-                var fileStream = Utils.Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
+                var fileStream = Helpers.GetBundleStream(fullPath, bundle.bundleInfo);
                 if (fileStream != null)
                 {
                     // Stream 生命周期转由 UAssetBundleBundle 管理
-                    bundle.Load(Utils.Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password));
+                    bundle.Load(Helpers.GetDecryptStream(fileStream, bundle.bundleInfo, _password, _manifestObject.chunkSize));
                     return true;
                 }
             }

@@ -53,6 +53,7 @@ namespace UnityFS.Editor
         public int id;
         public int build; // 版本 (打包次数)
         public string encryptionKey;
+        public int chunkSize = 4096;
         public List<BundleInfo> bundles = new List<BundleInfo>();
         [SerializeField]
         private AssetAttributesMap assetAttributesMap = new AssetAttributesMap();

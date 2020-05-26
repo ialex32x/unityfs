@@ -118,7 +118,8 @@ namespace UnityFS
                             var bundle = TryGetBundle(bundleInfo);
                             if (bundle != null)
                             {
-                                bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password));
+                                bundle.Load(Utils.Helpers.GetDecryptStream(stream, bundle.bundleInfo, _password,
+                                    _manifestObject.chunkSize));
                             }
                             else
                             {

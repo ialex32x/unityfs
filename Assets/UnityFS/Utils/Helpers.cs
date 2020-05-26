@@ -97,20 +97,32 @@ namespace UnityFS.Utils
                    && fileEntry1.rsize == fileEntry2.rsize;
         }
 
+        // 比对两个 ManifestEntry 记录是否相同
+        public static bool IsManifestEntryEquals(ManifestEntry fileEntry1, ManifestEntry fileEntry2)
+        {
+            return fileEntry1 != null
+                   && fileEntry2 != null
+                   && fileEntry1.checksum == fileEntry2.checksum
+                   && fileEntry1.size == fileEntry2.size
+                   && fileEntry1.rsize == fileEntry2.rsize
+                   && fileEntry1.chunkSize == fileEntry2.chunkSize;
+        }
+
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
         public static void GetManifest(string localPathRoot, DownloadWorker worker, string checksum, int size,
-            int rsize, string password,
-            Action<Manifest, FileEntry> callback)
+            int rsize, string password, int chunkSize, 
+            Action<Manifest, ManifestEntry> callback)
         {
-            if (checksum != null && size != 0 && rsize != 0)
+            if (checksum != null && size > 0 && rsize > 0 && chunkSize > 0)
             {
-                var fileEntry = new FileEntry()
+                var fileEntry = new ManifestEntry()
                 {
                     name = Manifest.ManifestFileName,
                     checksum = checksum,
                     size = size,
-                    rsize = rsize
+                    rsize = rsize, 
+                    chunkSize = chunkSize, 
                 };
                 GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
                 return;
@@ -131,7 +143,7 @@ namespace UnityFS.Utils
                     }
                     else
                     {
-                        var fileEntry = JsonUtility.FromJson<FileEntry>(content);
+                        var fileEntry = JsonUtility.FromJson<ManifestEntry>(content);
                         if (fileEntry != null)
                         {
                             // Debug.LogFormat("checksum {0} {1}", fileEntry.checksum, fileEntry.size);
@@ -152,9 +164,9 @@ namespace UnityFS.Utils
         }
 
         // 已知清单文件校验值和大小的情况下, 可以使用此接口, 略过 checksum 文件的获取 
-        public static void GetManifestDirect(string localPathRoot, DownloadWorker worker, FileEntry fileEntry,
+        public static void GetManifestDirect(string localPathRoot, DownloadWorker worker, ManifestEntry fileEntry,
             string password,
-            Action<Manifest, FileEntry> callback)
+            Action<Manifest, ManifestEntry> callback)
         {
             var manifestPath = Path.Combine(localPathRoot, Manifest.ManifestFileName);
             var manifest_t = ParseManifestFile(manifestPath, fileEntry, password);
@@ -179,7 +191,7 @@ namespace UnityFS.Utils
         }
 
         // 打开指定的清单文件 (带校验)
-        public static Manifest ParseManifestFile(string filePath, FileEntry fileEntry, string password)
+        public static Manifest ParseManifestFile(string filePath, ManifestEntry fileEntry, string password)
         {
             if (File.Exists(filePath))
             {
@@ -198,7 +210,7 @@ namespace UnityFS.Utils
             return null;
         }
 
-        private static Manifest ParseManifestStream(Stream secStream, FileEntry fileEntry, string password)
+        private static Manifest ParseManifestStream(Stream secStream, ManifestEntry fileEntry, string password)
         {
             secStream.Seek(0, SeekOrigin.Begin);
             using (var zStream = GetDecryptStream(secStream, fileEntry, password))
@@ -343,41 +355,31 @@ namespace UnityFS.Utils
             action();
         }
 
-        public static Stream GetDecryptStream(Stream fin, FileEntry fileEntry, string password)
+        public static Stream GetDecryptStream(Stream fin, ManifestEntry fileEntry, string password)
         {
-            return GetDecryptStream(fin, fileEntry.name, fileEntry.size, fileEntry.rsize, password);
+            return GetDecryptStream(fin, fileEntry.name, fileEntry.size, fileEntry.rsize, fileEntry.chunkSize,
+                password);
         }
 
-        public static Stream GetDecryptStream(Stream fin, Manifest.BundleInfo bundleInfo, string password)
+        public static Stream GetDecryptStream(Stream fin, Manifest.BundleInfo bundleInfo, string password, int chunkSize)
         {
             if (bundleInfo.encrypted)
             {
-                return GetDecryptStream(fin, bundleInfo.name, bundleInfo.size, bundleInfo.rsize, password);
+                return GetDecryptStream(fin, bundleInfo.name, bundleInfo.size, bundleInfo.rsize, chunkSize,
+                    password);
             }
 
             return fin;
         }
 
-        public static Stream GetDecryptStream(Stream fin, string name, int size, int rsize, string password)
+        public static Stream GetDecryptStream(Stream fin, string name, int size, int rsize, int chunkSize,
+            string password)
         {
-            //TODO: 内存问题
-            var buffer = new byte[size];
             var phrase = password + name;
             var key = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase));
             var iv = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(phrase + Manifest.EncryptionSalt));
-            using (var algo = Rijndael.Create())
-            {
-                algo.Padding = PaddingMode.Zeros;
-                var decryptor = algo.CreateDecryptor(key, iv);
-                using (var cstream = new CryptoStream(fin, decryptor, CryptoStreamMode.Read))
-                {
-                    cstream.Read(buffer, 0, buffer.Length);
-                }
-            }
-
-            fin.Close();
-            var seekableStream = new MemoryStream(buffer, 0, rsize, false);
-            return seekableStream;
+            var chunkStream = new ChunkedStream(key, iv, fin, rsize, chunkSize);
+            return chunkStream;
         }
 
         public static string GetStreamingAssetsPath(string innerPath)
@@ -479,7 +481,8 @@ namespace UnityFS.Utils
                     }
                     else
                     {
-                        Debug.LogWarningFormat("CopyStreamingAssets request failed {0}: {1} {2}", streamingAssetsFilePath, uwr.responseCode,
+                        Debug.LogWarningFormat("CopyStreamingAssets request failed {0}: {1} {2}",
+                            streamingAssetsFilePath, uwr.responseCode,
                             uwr.error);
                     }
                 }

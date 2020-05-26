@@ -52,6 +52,20 @@ namespace UnityFS.Utils
             return chunkSize - chunkSize % 512;
         }
 
+        public static ICryptoTransform CreateDecryptor(byte[] key, byte[] iv)
+        {
+            var algo = Rijndael.Create();
+            algo.Padding = PaddingMode.Zeros;
+            var decryptor = algo.CreateDecryptor(key, iv);
+            return decryptor;
+        }
+
+        public ChunkedStream(byte[] key, byte[] iv, Stream stream, long rsize, int chunkSize = 4096,
+            bool leaveOpen = false)
+            : this(CreateDecryptor(key, iv), stream, rsize, chunkSize, leaveOpen)
+        {
+        }
+
         public ChunkedStream(ICryptoTransform transform, Stream stream, long rsize, int chunkSize = 4096,
             bool leaveOpen = false)
         {
@@ -70,6 +84,23 @@ namespace UnityFS.Utils
             _position = 0;
             _rsize = rsize;
             _stream.Seek(0, SeekOrigin.Begin);
+        }
+
+        public static void Encrypt(ICryptoTransform transform, int chunkSize, byte[] original, Stream outStream)
+        {
+            var chunk = new byte[GetChunkSize(chunkSize)];
+            var chunkCount = original.Length / chunk.Length;
+            for (var i = 0; i <= chunkCount; i++)
+            {
+                var chunkBegin = i * chunk.Length;
+                var chunkRSize = Math.Min(original.Length - chunkBegin, chunk.Length);
+                if (chunkRSize > 0)
+                {
+                    var outBuffer = transform.TransformFinalBlock(original, chunkBegin, chunkRSize);
+
+                    outStream.Write(outBuffer, 0, outBuffer.Length);
+                }
+            }
         }
 
         protected override void Dispose(bool disposing)

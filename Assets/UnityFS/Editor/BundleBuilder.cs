@@ -51,7 +51,7 @@ namespace UnityFS.Editor
 
         public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatform platform)
         {
-            BuildSinglePlatformPackages(new PackageSharedBuildInfo() { data = data, outputPath = outputPath }, platform);
+            BuildSinglePlatformPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platform);
         }
 
         public static BuildTarget ToBuildTarget(PackagePlatform platform)
@@ -108,8 +108,10 @@ namespace UnityFS.Editor
                 rawFileManifest = BuildRawFiles(packageBuildInfo, rawFileBuilds);
             }
 
-            var embeddedManifest = BuildFinalPackages(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, rawFileManifest);
-            Cleanup(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, rawFileManifest, embeddedManifest);
+            var embeddedManifest = BuildFinalPackages(packageBuildInfo, assetBundleManifest, zipArchiveManifest,
+                fileListManifest, rawFileManifest);
+            Cleanup(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, rawFileManifest,
+                embeddedManifest);
             packageBuildInfo.DoAnalyze();
             packageBuildInfo.data.build++;
             packageBuildInfo.data.MarkAsDirty();
@@ -133,7 +135,7 @@ namespace UnityFS.Editor
                         Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
 
                     //TODO: streamingassets copy
-                    if (fileListManifest != null) 
+                    if (fileListManifest != null)
                     {
                         foreach (var entry in fileListManifest.fileEntrys)
                         {
@@ -376,10 +378,12 @@ namespace UnityFS.Editor
             {
                 options |= BuildAssetBundleOptions.DisableWriteTypeTree;
             }
+
             if (buildInfo.data.lz4Compression)
             {
                 options |= BuildAssetBundleOptions.ChunkBasedCompression;
             }
+
             return BuildPipeline.BuildAssetBundles(buildInfo.assetBundlePath, assetBundleBuilds,
                 options,
                 buildInfo.buildTarget);
@@ -421,7 +425,7 @@ namespace UnityFS.Editor
         {
             var fi = new FileInfo(assetPath);
             var name = ZipEntry.CleanName(assetPath);
-            var entry = new ZipEntry(name) { DateTime = fi.LastWriteTimeUtc, Size = fi.Length };
+            var entry = new ZipEntry(name) {DateTime = fi.LastWriteTimeUtc, Size = fi.Length};
 
             // entry.Comment = "";
             zip.PutNextEntry(entry);
@@ -661,7 +665,7 @@ namespace UnityFS.Editor
                 {
                     name = entryName,
                     checksum = checksum.hex,
-                    size = (int)fileInfo.Length,
+                    size = (int) fileInfo.Length,
                 };
             }
         }
@@ -694,11 +698,8 @@ namespace UnityFS.Editor
                 {
                     algo.Padding = PaddingMode.Zeros;
                     var cryptor = algo.CreateEncryptor(key, iv);
-                    using (var cryptStream = new CryptoStream(fout, cryptor, CryptoStreamMode.Write))
-                    {
-                        cryptStream.Write(bytes, 0, bytes.Length);
-                        cryptStream.FlushFinalBlock();
-                    }
+
+                    Utils.ChunkedStream.Encrypt(cryptor, buildInfo.data.chunkSize, bytes, fout);
                 }
             }
 
@@ -743,6 +744,7 @@ namespace UnityFS.Editor
                     }
                 }
             }
+
             return priority;
         }
 
@@ -755,8 +757,9 @@ namespace UnityFS.Editor
         {
             var data = buildInfo.data;
             var manifest = new Manifest();
+            manifest.chunkSize = data.chunkSize;
             manifest.build = buildInfo.data.build;
-            manifest.timestamp = (int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
+            manifest.timestamp = (int) (DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
             manifest.tag = buildInfo.sharedBuildInfo.tag;
             var embeddedManifest = new EmbeddedManifest();
             if (assetBundleManifest != null)
@@ -816,7 +819,7 @@ namespace UnityFS.Editor
 
                         bundle.comment = bundleInfo.note;
                         bundle.tag = bundleInfo.tag;
-                        bundle.encrypted = false;
+                        bundle.encrypted = bundleSplit.encrypted;
                         bundle.rsize = fileEntry.rsize;
                         bundle.type = Manifest.BundleType.ZipArchive;
                         bundle.name = fileEntry.name;
@@ -905,14 +908,23 @@ namespace UnityFS.Editor
 
             buildInfo.filelist.Add(Manifest.ManifestFileName);
             buildInfo.filelist.Add(Manifest.ManifestFileName + ".json");
-            var fileEntry = EncryptData(buildInfo, Manifest.ManifestFileName, zData);
-            // var manifestPath = Path.Combine(buildInfo.packagePath, Manifest.ManifestFileName);
-            // File.WriteAllBytes(manifestPath, zData);
-            // var fileEntry = GenFileEntry(Manifest.ManifestFileName, manifestPath);
+            var fileEntry = AsManifestEntry(EncryptData(buildInfo, Manifest.ManifestFileName, zData),
+                buildInfo.data.chunkSize);
             var fileEntryJson = JsonUtility.ToJson(fileEntry);
             Debug.LogFormat("write manifest: {0}", fileEntryJson);
             File.WriteAllBytes(manifestRawPath, bytes);
             File.WriteAllText(manifestChecksumPath, fileEntryJson);
+        }
+
+        private static ManifestEntry AsManifestEntry(FileEntry entry, int chunkSize)
+        {
+            var manifestEntry = new ManifestEntry();
+            manifestEntry.name = entry.name;
+            manifestEntry.size = entry.size;
+            manifestEntry.rsize = entry.rsize;
+            manifestEntry.checksum = entry.checksum;
+            manifestEntry.chunkSize = chunkSize;
+            return manifestEntry;
         }
 
         // write embedded manifest to streamingassets 

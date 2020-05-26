@@ -16,6 +16,7 @@ namespace UnityFS
         public string manifestChecksum;
         public int manifestSize;
         public int manifestRSize;
+        public int manifestChunkSize;   
         public Func<string, string> assetPathTransformer;
         public IList<string> urls;
         public Action oncomplete;

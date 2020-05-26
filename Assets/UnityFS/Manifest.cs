@@ -65,6 +65,7 @@ namespace UnityFS
             public List<string> assets = new List<string>(); // asset path (virtual path)
         }
 
+        public int chunkSize;
         public int build; // 资源版本 (资源打包次数)
         public int timestamp; // epoch time
         public string tag;
@@ -78,6 +79,16 @@ namespace UnityFS
         public int size;
         public int rsize;
         public string checksum;
+    }
+
+    [Serializable]
+    public class ManifestEntry
+    {
+        public string name;
+        public int size;
+        public int rsize;
+        public string checksum;
+        public int chunkSize;
     }
 
     // for streamingassets reader

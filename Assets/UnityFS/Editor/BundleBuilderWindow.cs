@@ -487,6 +487,12 @@ namespace UnityFS.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 _data.encryptionKey = EditorGUILayout.TextField("Password", _data.encryptionKey);
+                _data.chunkSize = EditorGUILayout.IntField("Chunk Size", _data.chunkSize);
+                var nChunkSize = Utils.ChunkedStream.GetChunkSize(_data.chunkSize);
+                if (nChunkSize != _data.chunkSize)
+                {
+                    EditorGUILayout.HelpBox("Chunk Size: " + nChunkSize, MessageType.Info);
+                }
                 if (EditorGUI.EndChangeCheck())
                 {
                     _data.MarkAsDirty();
