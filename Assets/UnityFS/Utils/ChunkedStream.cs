@@ -27,7 +27,10 @@ namespace UnityFS.Utils
 
         public override long Position
         {
-            get => _position;
+            get 
+            {
+                return _position;
+            }
             set
             {
                 if (_position != value)

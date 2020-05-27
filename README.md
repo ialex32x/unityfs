@@ -129,7 +129,7 @@ StartCoroutine(UnityFS.Utils.Helpers.InvokeAfter(() =>
 ![buildreport](Assets/Examples/Textures/buildreport.png)
 
 # Unity 版本
-Unity 2018.3+
+Unity 2017.4+
 
 # License
 MIT
