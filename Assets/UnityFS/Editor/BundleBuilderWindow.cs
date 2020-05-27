@@ -35,22 +35,6 @@ namespace UnityFS.Editor
             GetWindow<BundleBuilderWindow>().Show();
         }
         
-        [MenuItem("UnityFS/test")]
-        public static void Testcode()
-        {
-            var obj = Selection.objects[0];
-            var assetPath = AssetDatabase.GetAssetPath(obj);
-            Debug.Log(assetPath);
-            Debug.Log(obj);
-            var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
-            Debug.Log(importer.textureType);
-            var objects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            foreach (var sprite in objects)
-            {
-                Debug.LogFormat("{0} => {1}", sprite, AssetDatabase.GetAssetPath(sprite));
-            }
-        }
-
         public static void CreateAssetListData()
         {
             var index = 0;
