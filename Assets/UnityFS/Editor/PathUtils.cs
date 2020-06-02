@@ -16,6 +16,26 @@ namespace UnityFS.Editor
         //     return UnsupportedExts.Contains(fi.Extension.ToLower());
         // }
 
+        public static string GetFileSizeString(long size)
+        {
+            if (size > 0)
+            {
+                if (size > 1024 * 1024)
+                {
+                    return string.Format("{0:.0} MB", size / (1024.0 * 1024.0));
+                }
+
+                if (size > 1024)
+                {
+                    return string.Format("{0:.0} KB", size / 1024.0);
+                }
+
+                return string.Format("{0} B", size);
+            }
+
+            return "N/A";
+        }
+
         public static string ReplaceFileExt(string fileName, string oldSuffix, string newSuffix)
         {
             if (fileName.EndsWith(oldSuffix))

@@ -281,11 +281,13 @@ namespace UnityFS.Editor
                                         EditorGUILayout.EnumPopup("Platform", slice.platform);
                                         EditorGUI.EndDisabledGroup();
 
+                                        var totalFileSize = 0L;
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
                                             var assetGuid = slice.assetGuids[assetIndex];
                                             EditorGUILayout.BeginHorizontal();
-                                            BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid);
+                                            BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid,
+                                                fileInfo => totalFileSize += fileInfo.Length);
                                             if (GUILayout.Button("?", GUILayout.Width(20f)))
                                             {
                                                 BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
@@ -293,6 +295,8 @@ namespace UnityFS.Editor
 
                                             EditorGUILayout.EndHorizontal();
                                         }
+                                        
+                                        EditorGUILayout.LabelField("Total: ", PathUtils.GetFileSizeString(totalFileSize));
 
                                         EditorGUILayout.EndVertical();
                                         EditorGUILayout.EndHorizontal();
