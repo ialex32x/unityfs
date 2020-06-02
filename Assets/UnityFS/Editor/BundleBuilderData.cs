@@ -68,10 +68,6 @@ namespace UnityFS.Editor
         public bool streamingAssetsAnyway = false; // 无视 bundleInfo/bundleSlice 的设置, 默认认为进入 StreamingAssets
         public AssetListData assetListData;
 
-        [NonSerialized] public List<Object> allCollectedAssets = new List<Object>();
-
-        [NonSerialized] public string[] allCollectedAssetsPath = new string[0];
-
         public SList skipExts = new SList(".xlsx", ".xlsm", ".xls", ".docx", ".doc", ".cs");
 
         public static BundleBuilderData Load()
@@ -94,24 +90,6 @@ namespace UnityFS.Editor
                 var bundle = bundles[i];
                 bundle.ForEachAsset((split, slice, assetGuid) => visitor(bundle, split, slice, assetGuid));
             }
-        }
-
-        public bool Lookup(string assetGuid, out BundleInfo bundleInfo, out BundleSplit bundleSplit, out BundleSlice bundleSlice)
-        {
-            for (int i = 0, size = bundles.Count; i < size; i++)
-            {
-                var bundle = bundles[i];
-                if (bundle.Lookup(assetGuid, out bundleSplit, out bundleSlice))
-                {
-                    bundleInfo = bundle;
-                    return true;
-                }
-            }
-
-            bundleInfo = null;
-            bundleSplit = null;
-            bundleSlice = null;
-            return false;
         }
 
         public AssetAttributes AddAssetAttributes(string guid)
@@ -142,13 +120,6 @@ namespace UnityFS.Editor
             return assetAttributesMap.TryGetValue(guid, out attrs) ? attrs : null;
         }
 
-        public void OnAssetCollect(Object asset, string assetPath)
-        {
-            allCollectedAssets.Add(asset);
-            ArrayUtility.Add(ref allCollectedAssetsPath, assetPath);
-            MarkAsDirty();
-        }
-
         public void MarkAsDirty()
         {
             EditorUtility.SetDirty(this);
@@ -156,8 +127,8 @@ namespace UnityFS.Editor
 
         public void Cleanup()
         {
-            allCollectedAssets.Clear();
-            ArrayUtility.Clear(ref allCollectedAssetsPath);
+            // allCollectedAssets.Clear();
+            // ArrayUtility.Clear(ref allCollectedAssetsPath);
             foreach (var bundle in bundles)
             {
                 bundle.Cleanup();

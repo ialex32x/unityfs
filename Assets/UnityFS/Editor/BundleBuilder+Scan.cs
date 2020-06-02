@@ -175,7 +175,6 @@ namespace UnityFS.Editor
                 {
                     if (!ContainsAsset(data, asset) && split.AddObject(asset, platform))
                     {
-                        data.OnAssetCollect(asset, assetPath);
                         if (data.extractShaderVariantCollections)
                         {
                             CheckShaderVariants(data, bundle, asset, assetPath, platform);
