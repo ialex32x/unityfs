@@ -235,6 +235,11 @@ namespace UnityFS.Editor
 
                             bundleSplit.encrypted = EditorGUILayout.Toggle("Encrypted?", bundleSplit.encrypted);
                             bundleSplit.sliceObjects = EditorGUILayout.IntField("Slice Objects", bundleSplit.sliceObjects);
+                            var bundleSplitRawSize = 0L;
+                            var bundleSplitBuildSize = 0L;
+                            bundleSplit.GetTotalSize(out bundleSplitRawSize, out bundleSplitBuildSize);
+                            EditorGUILayout.LabelField("Total (Raw)", PathUtils.GetFileSizeString(bundleSplitRawSize));
+                            EditorGUILayout.LabelField("Total (Build)", PathUtils.GetFileSizeString(bundleSplitBuildSize));
                             if (EditorGUI.EndChangeCheck())
                             {
                                 _data.MarkAsDirty();
@@ -278,7 +283,8 @@ namespace UnityFS.Editor
                                         //     slice.streamingAssets = nStreamingAssets;
                                         //     _data.MarkAsDirty();
                                         // }
-                                        EditorGUILayout.LabelField("Total (Original): ", PathUtils.GetFileSizeString(bundleSlice.totalSize));
+                                        EditorGUILayout.LabelField("Total (Raw): ", PathUtils.GetFileSizeString(bundleSlice.totalRawSize));
+                                        EditorGUILayout.LabelField("Total (Build): ", PathUtils.GetFileSizeString(bundleSlice.lastBuildSize));
                                         EditorGUILayout.EnumPopup("Platform", bundleSlice.platform);
                                         EditorGUI.EndDisabledGroup();
 

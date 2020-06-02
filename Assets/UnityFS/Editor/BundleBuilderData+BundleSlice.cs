@@ -18,7 +18,8 @@ namespace UnityFS.Editor
             public PackagePlatform platform; // 打包资源的平台性质
             public List<string> histroy = new List<string>();
 
-            public long totalSize;
+            public long totalRawSize; // 原始资源大小统计 (不准确, 目前没统计依赖)
+            public long lastBuildSize; // 最近一次打包的实际大小
 
             // 最终进入打包的所有资源对象
             public List<string> _assetGuids = new List<string>();
@@ -69,7 +70,7 @@ namespace UnityFS.Editor
 
             public void Cleanup()
             {
-                totalSize = 0;
+                totalRawSize = 0;
                 _assetGuids.Clear();
             }
 
@@ -80,7 +81,7 @@ namespace UnityFS.Editor
                 var fileInfo = new FileInfo(assetPath);
                 if (fileInfo.Exists)
                 {
-                    totalSize += fileInfo.Length;
+                    totalRawSize += fileInfo.Length;
                 }
             }
 

@@ -29,6 +29,18 @@ namespace UnityFS.Editor
 
             public List<BundleSlice> slices = new List<BundleSlice>();
 
+            public void GetTotalSize(out long totalRawSize, out long totalBuildSize)
+            {
+                totalRawSize = 0L;
+                totalBuildSize = 0L;
+                for (int i = 0, count = slices.Count; i < count; i++)
+                {
+                    var slice = slices[i];
+                    totalRawSize += slice.totalRawSize;
+                    totalBuildSize += slice.lastBuildSize;
+                }
+            }
+
             public bool AddObject(Object asset, PackagePlatform platform)
             {
                 _assetHashSet.Add(asset);

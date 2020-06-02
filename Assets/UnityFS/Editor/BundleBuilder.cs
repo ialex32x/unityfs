@@ -789,6 +789,12 @@ namespace UnityFS.Editor
                         bundle.size = fileEntry.size;
                         bundle.load = bundleInfo.load;
                         bundle.priority = GetPriority(buildInfo, bundleInfo, bundleSlice);
+                        if (bundleSlice.lastBuildSize != fileEntry.size)
+                        {
+                            bundleSlice.lastBuildSize = fileEntry.size;
+                            data.MarkAsDirty();
+                        }
+
                         for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                         {
                             var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
