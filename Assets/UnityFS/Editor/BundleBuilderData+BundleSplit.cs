@@ -166,7 +166,7 @@ namespace UnityFS.Editor
                     }
 
                     // 如果 slice 为空, 那么 StreamingAssets 可调整
-                    if (slice.assetGuids.Count == 0 && slice.histroy.Count == 0)
+                    if (slice.GetAssetCount() == 0 && slice.histroy.Count == 0)
                     {
                         slice.streamingAssets = streamingAssets;
                         slice.platform = platform;

@@ -239,7 +239,7 @@ namespace UnityFS.Editor
             }
         }
 
-        public static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid, Action<FileInfo> additionalOp)
+        public static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid, Action<FileInfo> additionalOp = null)
         {
             return DrawSingleAssetAttributes(data, assetGuid, null, false, additionalOp);
         }

@@ -213,46 +213,46 @@ namespace UnityFS.Editor
                 {
                     for (int splitIndex = 0, splitCount = bundle.splits.Count; splitIndex < splitCount; splitIndex++)
                     {
-                        var split = bundle.splits[splitIndex];
-                        var splitName = string.IsNullOrEmpty(split.name) ? "(default)" : split.name;
+                        var bundleSplit = bundle.splits[splitIndex];
+                        var splitName = string.IsNullOrEmpty(bundleSplit.name) ? "(default)" : bundleSplit.name;
                         Foldout(splitName, () =>
                         {
-                            var sliceCount = split.slices.Count;
+                            var sliceCount = bundleSplit.slices.Count;
                             EditorGUI.BeginChangeCheck();
-                            var duplicated = IsDuplicated(bundle, split);
+                            var duplicated = IsDuplicated(bundle, bundleSplit);
                             if (duplicated)
                             {
                                 GUI.color = Color.yellow;
-                                split.name = EditorGUILayout.TextField(
+                                bundleSplit.name = EditorGUILayout.TextField(
                                     Text("bundle.split.name", "Name", "warning: duplicated bundle split name"),
-                                    split.name);
+                                    bundleSplit.name);
                                 GUI.color = _GUIColor;
                             }
                             else
                             {
-                                split.name = EditorGUILayout.TextField("Name", split.name);
+                                bundleSplit.name = EditorGUILayout.TextField("Name", bundleSplit.name);
                             }
 
-                            split.encrypted = EditorGUILayout.Toggle("Encrypted?", split.encrypted);
-                            split.sliceObjects = EditorGUILayout.IntField("Slice Objects", split.sliceObjects);
+                            bundleSplit.encrypted = EditorGUILayout.Toggle("Encrypted?", bundleSplit.encrypted);
+                            bundleSplit.sliceObjects = EditorGUILayout.IntField("Slice Objects", bundleSplit.sliceObjects);
                             if (EditorGUI.EndChangeCheck())
                             {
                                 _data.MarkAsDirty();
                             }
 
-                            InspectRules(split.rules);
+                            InspectRules(bundleSplit.rules);
 
                             var validIndex = 0;
                             for (var sliceIndex = 0; sliceIndex < sliceCount; sliceIndex++)
                             {
-                                var slice = split.slices[sliceIndex];
-                                var assetCount = slice.assetGuids.Count;
+                                var bundleSlice = bundleSplit.slices[sliceIndex];
+                                var assetCount = bundleSlice.GetAssetCount();
                                 if (assetCount > 0)
                                 {
                                     validIndex++;
                                     Block("Slices", () =>
                                     {
-                                        var sliceName = slice.name;
+                                        var sliceName = bundleSlice.name;
                                         if (sliceCount > 1)
                                         {
                                             sliceName = string.Format("[{0}] {1}/{2}: {3}", validIndex,
@@ -260,7 +260,7 @@ namespace UnityFS.Editor
                                                 sliceName);
                                         }
 
-                                        if (slice.streamingAssets)
+                                        if (bundleSlice.streamingAssets)
                                         {
                                             GUI.color = Color.green;
                                         }
@@ -272,22 +272,21 @@ namespace UnityFS.Editor
                                         EditorGUILayout.BeginVertical();
                                         EditorGUI.BeginDisabledGroup(true);
                                         // var nStreamingAssets =
-                                        EditorGUILayout.Toggle("StreamingAssets", slice.streamingAssets);
+                                        EditorGUILayout.Toggle("StreamingAssets", bundleSlice.streamingAssets);
                                         // if (nStreamingAssets != slice.streamingAssets)
                                         // {
                                         //     slice.streamingAssets = nStreamingAssets;
                                         //     _data.MarkAsDirty();
                                         // }
-                                        EditorGUILayout.EnumPopup("Platform", slice.platform);
+                                        EditorGUILayout.LabelField("Total (Original): ", PathUtils.GetFileSizeString(bundleSlice.totalSize));
+                                        EditorGUILayout.EnumPopup("Platform", bundleSlice.platform);
                                         EditorGUI.EndDisabledGroup();
 
-                                        var totalFileSize = 0L;
                                         for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                         {
-                                            var assetGuid = slice.assetGuids[assetIndex];
+                                            var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                                             EditorGUILayout.BeginHorizontal();
-                                            BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid,
-                                                fileInfo => totalFileSize += fileInfo.Length);
+                                            BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid);
                                             if (GUILayout.Button("?", GUILayout.Width(20f)))
                                             {
                                                 BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
@@ -296,8 +295,6 @@ namespace UnityFS.Editor
                                             EditorGUILayout.EndHorizontal();
                                         }
                                         
-                                        EditorGUILayout.LabelField("Total: ", PathUtils.GetFileSizeString(totalFileSize));
-
                                         EditorGUILayout.EndVertical();
                                         EditorGUILayout.EndHorizontal();
                                         GUI.color = _GUIColor;
@@ -313,7 +310,7 @@ namespace UnityFS.Editor
                                             {
                                                 Defer(() =>
                                                 {
-                                                    slice.Reset();
+                                                    bundleSlice.Reset();
                                                     BundleBuilder.Scan(_data);
                                                     _data.MarkAsDirty();
                                                 });
@@ -333,7 +330,7 @@ namespace UnityFS.Editor
                                             {
                                                 Defer(() =>
                                                 {
-                                                    split.slices.Remove(slice);
+                                                    bundleSplit.slices.Remove(bundleSlice);
                                                     BundleBuilder.Scan(_data);
                                                     _data.MarkAsDirty();
                                                 });
@@ -356,8 +353,8 @@ namespace UnityFS.Editor
                                 var newSplitIndex = splitIndex - 1;
                                 Defer(() =>
                                 {
-                                    bundle.splits.Remove(split);
-                                    bundle.splits.Insert(newSplitIndex, split);
+                                    bundle.splits.Remove(bundleSplit);
+                                    bundle.splits.Insert(newSplitIndex, bundleSplit);
                                     _data.MarkAsDirty();
                                 });
                             }
@@ -376,8 +373,8 @@ namespace UnityFS.Editor
                                 var newSplitIndex = splitIndex + 1;
                                 Defer(() =>
                                 {
-                                    bundle.splits.Remove(split);
-                                    bundle.splits.Insert(newSplitIndex, split);
+                                    bundle.splits.Remove(bundleSplit);
+                                    bundle.splits.Insert(newSplitIndex, bundleSplit);
                                     _data.MarkAsDirty();
                                 });
                             }
@@ -396,7 +393,7 @@ namespace UnityFS.Editor
                                 {
                                     Defer(() =>
                                     {
-                                        split.Reset();
+                                        bundleSplit.Reset();
                                         BundleBuilder.Scan(_data);
                                         _data.MarkAsDirty();
                                     });
@@ -416,7 +413,7 @@ namespace UnityFS.Editor
                                 {
                                     Defer(() =>
                                     {
-                                        bundle.splits.Remove(split);
+                                        bundle.splits.Remove(bundleSplit);
                                         _data.MarkAsDirty();
                                     });
                                 }

@@ -319,8 +319,10 @@ namespace UnityFS.Editor
                     {
                         if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
-                            foreach (var assetGuid in bundleSlice.assetGuids)
+                            var assetCount = bundleSlice.GetAssetCount();
+                            for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                             {
+                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                                 var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                                 var fileEntry = GenFileEntry(assetPath, assetPath);
                                 manifest.files.Add(fileEntry);
@@ -469,9 +471,9 @@ namespace UnityFS.Editor
                         if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
                             var assetNames = new List<string>();
-                            for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                            for (int assetIndex = 0, assetCount =bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.assetGuids[assetIndex];
+                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                                 if (data.IsPackAsset(assetGuid))
                                 {
                                     var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
@@ -533,9 +535,9 @@ namespace UnityFS.Editor
                         if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
                             var assetNames = new List<string>();
-                            for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                            for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.assetGuids[assetIndex];
+                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                                 if (data.IsPackAsset(assetGuid))
                                 {
                                     var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
@@ -583,9 +585,9 @@ namespace UnityFS.Editor
                         if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
                             var assetNames = new List<string>();
-                            for (var assetIndex = 0; assetIndex < bundleSlice.assetGuids.Count; assetIndex++)
+                            for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.assetGuids[assetIndex];
+                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                                 if (data.IsPackAsset(assetGuid))
                                 {
                                     var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
@@ -732,10 +734,10 @@ namespace UnityFS.Editor
             BundleBuilderData.BundleSlice bundleSlice)
         {
             var priority = bundleInfo.priority;
-            for (int i = 0, size = bundleSlice.assetGuids.Count; i < size; i++)
+            for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
             {
-                var guid = bundleSlice.assetGuids[i];
-                var attrs = buildInfo.data.GetAssetAttributes(guid);
+                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
+                var attrs = buildInfo.data.GetAssetAttributes(assetGuid);
                 if (attrs != null)
                 {
                     if (attrs.priority > priority)
@@ -787,8 +789,9 @@ namespace UnityFS.Editor
                         bundle.size = fileEntry.size;
                         bundle.load = bundleInfo.load;
                         bundle.priority = GetPriority(buildInfo, bundleInfo, bundleSlice);
-                        foreach (var assetGuid in bundleSlice.assetGuids)
+                        for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                         {
+                            var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                             bundle.assets.Add(assetPath);
                         }

@@ -18,18 +18,20 @@ namespace UnityFS.Editor
             public PackagePlatform platform; // 打包资源的平台性质
             public List<string> histroy = new List<string>();
 
-            // 最终进入打包的所有资源对象
-            private List<string> _assetGuids;
+            public long totalSize;
 
-            public List<string> assetGuids
+            // 最终进入打包的所有资源对象
+            public List<string> _assetGuids = new List<string>();
+
+            public int GetAssetCount()
             {
-                get
-                {
-                    if (_assetGuids == null) _assetGuids = new List<string>();
-                    return _assetGuids;
-                }
+                return _assetGuids.Count; 
             }
 
+            public string GetAssetGuid(int index)
+            {
+                return _assetGuids[index];
+            }
 
             public BundleSlice(string name, int capacity, bool streamingAssets, PackagePlatform platform)
             {
@@ -41,15 +43,15 @@ namespace UnityFS.Editor
 
             public void ForEachAsset(Action<string> visitor)
             {
-                for (int i = 0, size = assetGuids.Count; i < size; i++)
+                for (int i = 0, size = GetAssetCount(); i < size; i++)
                 {
-                    visitor(assetGuids[i]);
+                    visitor(GetAssetGuid(i));
                 }
             }
 
             public bool Lookup(string assetGuid)
             {
-                return assetGuids.Contains(assetGuid);
+                return _assetGuids.Contains(assetGuid);
             }
 
             // 是否为指定平台打包
@@ -58,16 +60,28 @@ namespace UnityFS.Editor
                 return this.platform == PackagePlatform.Any || this.platform == buildPlatform;
             }
 
+            // 完全重置此分包 (丢弃历史记录)
             public void Reset()
             {
                 histroy.Clear();
-                assetGuids.Clear();
                 Cleanup();
             }
 
             public void Cleanup()
             {
-                assetGuids.Clear();
+                totalSize = 0;
+                _assetGuids.Clear();
+            }
+
+            private void _AddAsset(string guid)
+            {
+                _assetGuids.Add(guid);
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                var fileInfo = new FileInfo(assetPath);
+                if (fileInfo.Exists)
+                {
+                    totalSize += fileInfo.Length;
+                }
             }
 
             // 如果是历史资源, 将加入; 否则返回 false
@@ -77,16 +91,16 @@ namespace UnityFS.Editor
                 {
                     if (this.streamingAssets == streamingAssets && this.platform == platform)
                     {
-                        assetGuids.Add(guid);
+                        _AddAsset(guid);
                         return true;
                     }
 
                     // 此处的判定规则影响包的性质改变, 进而影响分包切分布局, 导致额外的包变更
-                    if (assetGuids.Count == 0 && histroy.Count == 1)
+                    if (GetAssetCount() == 0 && histroy.Count == 1)
                     {
                         this.streamingAssets = streamingAssets;
                         this.platform = platform;
-                        assetGuids.Add(guid);
+                        _AddAsset(guid);
                         return true;
                     }
                 }
@@ -100,7 +114,7 @@ namespace UnityFS.Editor
             {
                 if (capacity <= 0 || histroy.Count < capacity)
                 {
-                    assetGuids.Add(guid);
+                    _AddAsset(guid);
                     histroy.Add(guid);
                     return true;
                 }
