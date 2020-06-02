@@ -415,7 +415,7 @@ namespace UnityFS.Editor
                         }
                         else
                         {
-                            EditorGUI.LabelField(cellRect, bundleInfo.note);
+                            EditorGUI.LabelField(cellRect, string.Format("{0} ({1})", bundleInfo.note, bundleInfo.name));
                         }
                     }
                     else if (item.depth == 1)
