@@ -660,14 +660,13 @@ namespace UnityFS.Editor
         {
             using (var stream = File.OpenRead(filePath))
             {
-                var fileInfo = new FileInfo(filePath);
                 var checksum = new Utils.Crc16();
                 checksum.Update(stream);
                 return new FileEntry()
                 {
                     name = entryName,
                     checksum = checksum.hex,
-                    size = (int) fileInfo.Length,
+                    size = (int) stream.Position,
                 };
             }
         }
