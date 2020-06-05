@@ -70,7 +70,12 @@ namespace UnityFS.Editor
 
         public static void BuildSinglePlatformPackages(PackageSharedBuildInfo sharedBuildInfo, PackagePlatform platform)
         {
-            _BuildPackages(new PackageBuildInfo(sharedBuildInfo, platform, ToBuildTarget(platform)));
+            //NOTE: 命令行模式下, ScriptableObject 会被编辑器主动 Destroy, 这里利用一个临时的 GameObject 强制保持引用
+            //NOTE: 之后考虑将 data 改为普通对象使用 json 序列化
+            using (var hold = ReferenceHolder.Create(sharedBuildInfo.data))
+            {
+                _BuildPackages(new PackageBuildInfo(sharedBuildInfo, platform, ToBuildTarget(platform)));
+            }
         }
 
         // 生成打包 

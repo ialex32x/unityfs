@@ -161,8 +161,10 @@ namespace UnityFS.Editor
             var rows = new List<TreeViewItem>();
             if (_data != null)
             {
-                foreach (var bundle in GetSortedBundleInfos(_data.bundles))
+                var sorted = GetSortedBundleInfos(_data.bundles);
+                for (var i = 0; i < sorted.Count; i++)
                 {
+                    var bundle = sorted[i];
                     var bundleName = string.IsNullOrEmpty(bundle.name) ? "(noname)" : bundle.name;
                     var bundleTV = new BundleBuilderTreeViewBundle(bundle.id, 0, bundleName, bundle);
                     rows.Add(bundleTV);
@@ -175,6 +177,7 @@ namespace UnityFS.Editor
                         bundleTV.children = CreateChildListForCollapsedParent();
                     }
                 }
+
                 SetupParentsAndChildrenFromDepths(root, rows);
             }
             return rows;
