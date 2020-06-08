@@ -31,6 +31,8 @@ namespace UnityFS
             Important = 1 << 1,
             Normal = 1 << 2,
             Optional = 1 << 3,
+            
+            Any = Startup | Important | Normal | Optional,
         }
 
         [Serializable]

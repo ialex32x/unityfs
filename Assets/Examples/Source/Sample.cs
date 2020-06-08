@@ -95,7 +95,8 @@ namespace Examples
 
         private void OnUnityFSLoaded()
         {
-            UnityFS.ResourceManager.EnsureBundles(Manifest.BundleLoad.Startup, OnAllStartupsLoaded);
+            var bundles = ResourceManager.GetInvalidatedBundles(Manifest.BundleLoad.Startup);
+            UnityFS.ResourceManager.EnsureBundles(bundles, OnAllStartupsLoaded);
         }
     
         private void OnAllStartupsLoaded()

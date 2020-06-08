@@ -11,24 +11,40 @@ namespace UnityFS
 
     public partial class BundleAssetProvider
     {
-        // 保证所有指定级别的包文件均为本地最新状态
-        public IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        public IList<Manifest.BundleInfo> GetInvalidatedBundles(Manifest.BundleLoad load)
         {
-            var jobs = new List<DownloadWorker.JobInfo>();
-            var countdown = new Utils.CountdownObject(onComplete);
-            for (int i = 0, size = _manifestObject.bundles.Count; i < size; i++)
+            var size = _manifestObject.bundles.Count;
+            var list = new List<Manifest.BundleInfo>(size);
+            for (var i = 0; i < size; i++)
             {
                 var bundleInfo = _manifestObject.bundles[i];
                 if ((bundleInfo.load & load) != 0)
                 {
                     if (!IsBundleAvailable(bundleInfo))
                     {
-                        countdown.Add();
-                        var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove(), true);
-                        if (job != null)
-                        {
-                            jobs.Add(job);
-                        }
+                        list.Add(bundleInfo);
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        // 保证所有指定级别的包文件均为本地最新状态
+        public IList<DownloadWorker.JobInfo> EnsureBundles(IList<Manifest.BundleInfo> bundleInfos, Action onComplete)
+        {
+            var jobs = new List<DownloadWorker.JobInfo>();
+            var countdown = new Utils.CountdownObject(onComplete);
+            for (int i = 0, size = bundleInfos.Count; i < size; i++)
+            {
+                var bundleInfo = bundleInfos[i];
+                if (!IsBundleAvailable(bundleInfo))
+                {
+                    countdown.Add();
+                    var job = _DownloadBundleFile(bundleInfo, () => countdown.Remove(), true);
+                    if (job != null)
+                    {
+                        jobs.Add(job);
                     }
                 }
             }
@@ -49,22 +65,6 @@ namespace UnityFS
             }
 
             return null;
-        }
-
-        public IList<Manifest.BundleInfo> GetInvalidatedBundles()
-        {
-            var size = _manifestObject.bundles.Count;
-            var list = new List<Manifest.BundleInfo>(size);
-            for (var i = 0; i < size; i++)
-            {
-                var bundleInfo = _manifestObject.bundles[i];
-                if (!IsBundleAvailable(bundleInfo))
-                {
-                    list.Add(bundleInfo);
-                }
-            }
-
-            return list;
         }
 
         // 检查是否存在有效的本地包

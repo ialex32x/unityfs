@@ -552,7 +552,7 @@ namespace UnityFS.Utils
         // Example: 空闲时执行下载
         public static IEnumerator _IdleDownload()
         {
-            var bundles = ResourceManager.GetInvalidatedBundles();
+            var bundles = ResourceManager.GetInvalidatedBundles(Manifest.BundleLoad.Any);
             var size = bundles.Count;
             var wait = new WaitForSeconds(30f);
             yield return new WaitForSeconds(15f);

@@ -335,9 +335,9 @@ namespace UnityFS
             return fs;
         }
 
-        public static IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        public static IList<DownloadWorker.JobInfo> EnsureBundles(IList<Manifest.BundleInfo> bundleInfos, Action onComplete)
         {
-            return GetAssetProvider().EnsureBundles(load, onComplete);
+            return GetAssetProvider().EnsureBundles(bundleInfos, onComplete);
         }
 
         // 下载指定的资源包 (返回 null 表示不需要下载)
@@ -347,9 +347,9 @@ namespace UnityFS
         }
 
         // 检查本地资源包状态, 返回所有需要下载的包信息的列表
-        public static IList<Manifest.BundleInfo> GetInvalidatedBundles()
+        public static IList<Manifest.BundleInfo> GetInvalidatedBundles(Manifest.BundleLoad load)
         {
-            return GetAssetProvider().GetInvalidatedBundles();
+            return GetAssetProvider().GetInvalidatedBundles(load);
         }
 
         public static void AddWorker(DownloadWorker worker)

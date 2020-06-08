@@ -307,7 +307,7 @@ namespace UnityFS
         {
         }
 
-        public IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        public IList<DownloadWorker.JobInfo> EnsureBundles(IList<Manifest.BundleInfo> bundleInfos, Action onComplete)
         {
             onComplete?.Invoke();
             return new List<DownloadWorker.JobInfo>();
@@ -318,7 +318,7 @@ namespace UnityFS
             return null;
         }
 
-        public IList<Manifest.BundleInfo> GetInvalidatedBundles()
+        public IList<Manifest.BundleInfo> GetInvalidatedBundles(Manifest.BundleLoad load)
         {
             return new List<Manifest.BundleInfo>();
         }
