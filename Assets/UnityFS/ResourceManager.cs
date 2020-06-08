@@ -340,12 +340,25 @@ namespace UnityFS
             return GetAssetProvider().EnsureBundles(bundleInfos, onComplete);
         }
 
+        [Obsolete("use IList<DownloadWorker.JobInfo> EnsureBundles(IList<Manifest.BundleInfo> bundleInfos, Action onComplete) instead.")]
+        public static IList<DownloadWorker.JobInfo> EnsureBundles(Manifest.BundleLoad load, Action onComplete)
+        {
+            var bundleInfos = GetInvalidatedBundles(load);
+            return GetAssetProvider().EnsureBundles(bundleInfos, onComplete);
+        }
+
         // 下载指定的资源包 (返回 null 表示不需要下载)
         public static DownloadWorker.JobInfo EnsureBundle(Manifest.BundleInfo bundleInfo)
         {
             return GetAssetProvider().EnsureBundle(bundleInfo);
         }
 
+        [Obsolete("use IList<Manifest.BundleInfo> GetInvalidatedBundles(Manifest.BundleLoad load) instead.")]
+        public static IList<Manifest.BundleInfo> GetInvalidatedBundles()
+        {
+            return GetAssetProvider().GetInvalidatedBundles(Manifest.BundleLoad.Any);
+        }
+        
         // 检查本地资源包状态, 返回所有需要下载的包信息的列表
         public static IList<Manifest.BundleInfo> GetInvalidatedBundles(Manifest.BundleLoad load)
         {
