@@ -73,7 +73,11 @@ namespace UnityFS
             remove { _callbacks.Remove(value); }
         }
 
-        public BundleAssetProvider(ResourceManagerArgs args)
+        public BundleAssetProvider()
+        {
+        }
+
+        public void Open(ResourceManagerArgs args)
         {
             _bytesPerSecond = args.bytesPerSecond;
             _bytesPerSecondIdle = args.bytesPerSecondIdle;
@@ -83,28 +87,26 @@ namespace UnityFS
                 System.Threading.ThreadPriority.Lowest);
             _localPathRoot = args.localPathRoot;
             _assetPathTransformer = args.assetPathTransformer;
-        }
-
-        public void Open(ResourceManagerArgs args)
-        {
             _password = args.password;
-            Helpers.GetManifest(_localPathRoot, _worker,  args.manifestChecksum, args.manifestSize, args.manifestRSize,
-                _password, args.manifestChunkSize, (manifest, fileEntry) =>
+            _streamingAssets = new StreamingAssetsLoader();
+            _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
+            {
+                if (args.useBaseManifest)
                 {
-                    _streamingAssets = new StreamingAssetsLoader();
-                    _streamingAssets.LoadEmbeddedManifest(streamingAssets =>
+                    Helpers.ReadSAManifest(_password, (manifest, fileEntry) =>
                     {
                         SetManifest(manifest, fileEntry);
-                        try
-                        {
-                            ResourceManager.GetListener().OnSetManifest();
-                        }
-                        catch (Exception exception)
-                        {
-                            Debug.LogWarningFormat("OnSetManifest exception\n{0}", exception);
-                        }
                     });
-                });
+                }
+                else
+                {
+                    Helpers.GetManifest(_localPathRoot, _worker, args.manifestChecksum, args.manifestSize, args.manifestRSize,
+                        _password, args.manifestChunkSize, (manifest, fileEntry) =>
+                        {
+                            SetManifest(manifest, fileEntry);
+                        });
+                }
+            });
         }
 
         protected void _LoadBundle(IEnumerator e)
@@ -200,6 +202,15 @@ namespace UnityFS
                 var callback = _callbacks[0];
                 _callbacks.RemoveAt(0);
                 callback();
+            }
+            
+            try
+            {
+                ResourceManager.GetListener().OnSetManifest();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarningFormat("OnSetManifest exception\n{0}", exception);
             }
         }
 

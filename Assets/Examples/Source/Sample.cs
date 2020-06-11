@@ -190,7 +190,7 @@ namespace Examples
         {
             if (GUILayout.Button("Test ReadSA"))
             {
-                Helpers.ReadSAManifest("test", manifest =>
+                Helpers.ReadSAManifest("test", (manifest, fileEntry) =>
                 {
                     Debug.LogFormat("Read SA Manifest: {0}", manifest.build);
                 });

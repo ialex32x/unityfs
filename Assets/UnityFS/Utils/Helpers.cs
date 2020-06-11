@@ -442,20 +442,20 @@ namespace UnityFS.Utils
             return name;
         }
 
-        public static void ReadSAManifest(string password, Action<Manifest> callback)
+        public static void ReadSAManifest(string password, Action<Manifest, ManifestEntry> callback)
         {
             JobScheduler.DispatchCoroutine(_ReadStreamingAssetsText(Manifest.ChecksumFileName, checksumText =>
             {
                 if (checksumText == null)
                 {
-                    callback(null);
+                    callback(null, null);
                     return;
                 }
 
                 var fileEntry = JsonUtility.FromJson<ManifestEntry>(checksumText);
                 if (fileEntry == null)
                 {
-                    callback(null);
+                    callback(null, null);
                     return;
                 }
 
@@ -463,12 +463,12 @@ namespace UnityFS.Utils
                 {
                     if (manifestBytes == null)
                     {
-                        callback(null);
+                        callback(null, null);
                         return;
                     }
 
                     var manifest = ParseManifestStream(new MemoryStream(manifestBytes), fileEntry, password);
-                    callback(manifest);
+                    callback(manifest, fileEntry);
                 }));
             }));
         }

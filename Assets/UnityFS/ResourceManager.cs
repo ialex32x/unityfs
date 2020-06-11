@@ -26,6 +26,7 @@ namespace UnityFS
         public float asyncSimMax;
         public string listDataPath;
         public string password;
+        public bool useBaseManifest; // base manifest in StreamingAssets
     }
 
     public static class ResourceManager
@@ -98,6 +99,12 @@ namespace UnityFS
             }
 
             JobScheduler.Initialize();
+            
+            if (_assetProvider != null)
+            {
+                _assetProvider.Close();
+            }
+
 #if UNITY_EDITOR
             if (_analyzer == null)
             {
@@ -120,12 +127,7 @@ namespace UnityFS
             else
 #endif
             {
-                if (_assetProvider != null)
-                {
-                    _assetProvider.Close();
-                }
-
-                _assetProvider = new BundleAssetProvider(args);
+                _assetProvider = new BundleAssetProvider();
             }
 
             args.oninitialize?.Invoke();

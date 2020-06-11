@@ -444,8 +444,10 @@ namespace UnityFS.Editor
 
         private string _newExts;
 
+        private Vector2 _settingSV;
         private void OnDrawSettings()
         {
+            _settingSV = EditorGUILayout.BeginScrollView(_settingSV);
             Block("Encryption", () =>
             {
                 EditorGUI.BeginChangeCheck();
@@ -534,6 +536,7 @@ namespace UnityFS.Editor
                     _data.MarkAsDirty();
                 }
             });
+            EditorGUILayout.EndScrollView();
         }
 
         private void OnDrawPackages()
