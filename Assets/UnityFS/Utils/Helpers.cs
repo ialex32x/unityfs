@@ -111,7 +111,7 @@ namespace UnityFS.Utils
         // 基本流程:
         // 在不知道清单文件校验值和大小的情况下, 使用此接口尝试先下载 checksum 文件, 得到清单文件信息
         public static void GetManifest(string localPathRoot, DownloadWorker worker, string checksum, int size,
-            int rsize, string password, int chunkSize, 
+            int rsize, string password, int chunkSize,
             Action<Manifest, ManifestEntry> callback)
         {
             if (checksum != null && size > 0 && rsize > 0 && chunkSize > 0)
@@ -121,8 +121,8 @@ namespace UnityFS.Utils
                     name = Manifest.ManifestFileName,
                     checksum = checksum,
                     size = size,
-                    rsize = rsize, 
-                    chunkSize = chunkSize, 
+                    rsize = rsize,
+                    chunkSize = chunkSize,
                 };
                 GetManifestDirect(localPathRoot, worker, fileEntry, password, callback);
                 return;
@@ -440,6 +440,93 @@ namespace UnityFS.Utils
             }
 
             return name;
+        }
+
+        public static void ReadSAManifest(string password, Action<Manifest> callback)
+        {
+            JobScheduler.DispatchCoroutine(_ReadStreamingAssetsText(Manifest.ChecksumFileName, checksumText =>
+            {
+                if (checksumText == null)
+                {
+                    callback(null);
+                    return;
+                }
+
+                var fileEntry = JsonUtility.FromJson<ManifestEntry>(checksumText);
+                if (fileEntry == null)
+                {
+                    callback(null);
+                    return;
+                }
+
+                JobScheduler.DispatchCoroutine(_ReadStreamingAssetsBytes(Manifest.ManifestFileName, manifestBytes =>
+                {
+                    if (manifestBytes == null)
+                    {
+                        callback(null);
+                        return;
+                    }
+
+                    var manifest = ParseManifestStream(new MemoryStream(manifestBytes), fileEntry, password);
+                    callback(manifest);
+                }));
+            }));
+        }
+
+        private static IEnumerator _ReadStreamingAssetsBytes(string fileName, Action<byte[]> callback)
+        {
+            var rootPath = GetStreamingAssetsPath(Manifest.EmbeddedBundlesBasePath);
+            var streamingAssetsFilePath = rootPath + fileName;
+            var uwr = UnityWebRequest.Get(streamingAssetsFilePath);
+            yield return uwr.SendWebRequest();
+            if (uwr.error == null && uwr.responseCode == 200)
+            {
+                try
+                {
+                    callback(uwr.downloadHandler.data);
+                    yield break;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarningFormat("LoadStream exception: {0}\n{1}",
+                        streamingAssetsFilePath, exception);
+                }
+            }
+            else
+            {
+                Debug.LogWarningFormat("LoadStream request failed {0}: {1} {2}", streamingAssetsFilePath,
+                    uwr.responseCode, uwr.error);
+            }
+
+            callback(null);
+        }
+
+        private static IEnumerator _ReadStreamingAssetsText(string fileName, Action<string> callback)
+        {
+            var rootPath = GetStreamingAssetsPath(Manifest.EmbeddedBundlesBasePath);
+            var streamingAssetsFilePath = rootPath + fileName;
+            var uwr = UnityWebRequest.Get(streamingAssetsFilePath);
+            yield return uwr.SendWebRequest();
+            if (uwr.error == null && uwr.responseCode == 200)
+            {
+                try
+                {
+                    callback(uwr.downloadHandler.text);
+                    yield break;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarningFormat("LoadStream exception: {0}\n{1}",
+                        streamingAssetsFilePath, exception);
+                }
+            }
+            else
+            {
+                Debug.LogWarningFormat("LoadStream request failed {0}: {1} {2}", streamingAssetsFilePath,
+                    uwr.responseCode, uwr.error);
+            }
+
+            callback(null);
         }
 
         // 指定的文件清单复制到本地目录

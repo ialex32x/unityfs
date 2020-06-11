@@ -66,6 +66,7 @@ namespace UnityFS.Editor
         public bool lz4Compression = true;
         public bool extractShaderVariantCollections = true; // 自动展开 shaderVariantCollections 中包含的 shader
         public bool streamingAssetsAnyway = false; // 无视 bundleInfo/bundleSlice 的设置, 默认认为进入 StreamingAssets
+        public bool streamingAssetsManifest = false; // 是否将清单本身复制到 StreamingAssets
         public AssetListData assetListData;
 
         public SList skipExts = new SList(".xlsx", ".xlsm", ".xls", ".docx", ".doc", ".cs");

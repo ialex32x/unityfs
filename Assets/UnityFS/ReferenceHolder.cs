@@ -11,14 +11,19 @@ namespace UnityFS
 
         public static ReferenceHolder Create(Object t)
         {
-            var rh = new GameObject().AddComponent<ReferenceHolder>();
+            var go = new GameObject();
+            var rh = go.AddComponent<ReferenceHolder>();
             rh.target = t;
+            go.hideFlags = HideFlags.HideAndDontSave;
             return rh;
         }
 
         public void Dispose()
         {
-            Object.DestroyImmediate(gameObject);
+            if (gameObject != null)
+            {
+                Object.DestroyImmediate(gameObject);
+            }
         }
     }
 }

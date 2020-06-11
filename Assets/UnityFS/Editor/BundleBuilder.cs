@@ -133,6 +133,14 @@ namespace UnityFS.Editor
             {
                 File.Copy(Path.Combine(packagePath, Manifest.EmbeddedManifestFileName),
                     Path.Combine(buildInfo.streamingAssetsPath, Manifest.EmbeddedManifestFileName), true);
+
+                if (buildInfo.data.streamingAssetsManifest)
+                {
+                    File.Copy(Path.Combine(packagePath, Manifest.ManifestFileName),
+                        Path.Combine(buildInfo.streamingAssetsPath, Manifest.ManifestFileName), true);
+                    File.Copy(Path.Combine(packagePath, Manifest.ChecksumFileName),
+                        Path.Combine(buildInfo.streamingAssetsPath, Manifest.ChecksumFileName), true);
+                }
                 
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
@@ -180,7 +188,17 @@ namespace UnityFS.Editor
 
                     if (!match)
                     {
-                        fi.Delete();
+                        if (buildInfo.data.streamingAssetsManifest)
+                        {
+                            if (!builtinFiles.Contains(fi.Name))
+                            {
+                                fi.Delete();
+                            }
+                        }
+                        else
+                        {
+                            fi.Delete();
+                        }
                     }
                 }
 
@@ -198,6 +216,8 @@ namespace UnityFS.Editor
 //            "AssetBundles.manifest",
             Manifest.ChecksumFileName,
             Manifest.ManifestFileName,
+            Manifest.ChecksumFileName + ".meta",
+            Manifest.ManifestFileName + ".meta",
         });
 
         private static string NormalizeFileName(string filename)
@@ -219,7 +239,7 @@ namespace UnityFS.Editor
                 var fi = new FileInfo(file);
                 var filename = NormalizeFileName(relativeDir + '/' + fi.Name);
                 var match = false;
-
+                
                 if (fileListManifest != null)
                 {
                     foreach (var entry in fileListManifest.fileEntrys)

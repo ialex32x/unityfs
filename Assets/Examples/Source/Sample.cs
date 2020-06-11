@@ -188,6 +188,13 @@ namespace Examples
 
         private void OnGUI()
         {
+            if (GUILayout.Button("Test ReadSA"))
+            {
+                Helpers.ReadSAManifest("test", manifest =>
+                {
+                    Debug.LogFormat("Read SA Manifest: {0}", manifest.build);
+                });
+            }
             if (GUILayout.Button("Validate"))
             {
                 ResourceManager.ValidateManifest(ResourceManager.urls, result =>
