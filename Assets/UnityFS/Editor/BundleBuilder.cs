@@ -133,21 +133,21 @@ namespace UnityFS.Editor
             {
                 File.Copy(Path.Combine(packagePath, Manifest.EmbeddedManifestFileName),
                     Path.Combine(buildInfo.streamingAssetsPath, Manifest.EmbeddedManifestFileName), true);
+                
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
                     // Debug.LogFormat("copy {0}", bundleInfo.name);
                     File.Copy(Path.Combine(packagePath, bundleInfo.name),
                         Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
-
-                    //TODO: streamingassets copy
-                    if (fileListManifest != null)
+                }
+                
+                if (fileListManifest != null)
+                {
+                    foreach (var entry in fileListManifest.fileEntrys)
                     {
-                        foreach (var entry in fileListManifest.fileEntrys)
+                        if (entry.streamingAssets && CopyRawFile(buildInfo.streamingAssetsPath, entry.assetPath))
                         {
-                            if (entry.streamingAssets && CopyRawFile(buildInfo.streamingAssetsPath, entry.assetPath))
-                            {
-                                Debug.LogWarningFormat("copy xxx {0}", entry.assetPath);
-                            }
+                            Debug.LogWarningFormat("copy xxx {0}", entry.assetPath);
                         }
                     }
                 }
