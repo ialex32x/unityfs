@@ -64,17 +64,37 @@ namespace UnityFS
             get { return _assetPath; }
         }
         
-        public Object GetObject(string name = null)
+        public Object GetObject()
         {
             if (_disposed)
             {
                 Debug.LogError($"GetObject(): uasset already disposed ({_assetPath})");
                 return null;
             }
-            return GetObjectWithName(name);;
+            return GetObjectWithName(null);
         }
 
-        public T GetObject<T>(string name = null)
+        public Object GetObject(string name)
+        {
+            if (_disposed)
+            {
+                Debug.LogError($"GetObject(): uasset already disposed ({_assetPath})");
+                return null;
+            }
+            return GetObjectWithName(name);
+        }
+
+        public T GetObject<T>()
+            where T : Object
+        {
+            if (_type != null && typeof(T) != _type)
+            {
+                throw new InvalidCastException(string.Format("{0} != {1}: {2}", _type, typeof(T), _assetPath));
+            }
+            return GetObject() as T;
+        }
+
+        public T GetObject<T>(string name)
             where T : Object
         {
             if (_type != null && typeof(T) != _type)
