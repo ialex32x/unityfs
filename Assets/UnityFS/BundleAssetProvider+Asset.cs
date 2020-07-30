@@ -83,6 +83,11 @@ namespace UnityFS
 
             public override void Load(Stream stream)
             {
+                if (_disposed)
+                {
+                    return;
+                }
+
                 if (!_loaded)
                 {
                     using (var reader = new StreamReader(stream))
@@ -109,6 +114,11 @@ namespace UnityFS
 
             public override UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints)
             {
+                if (_disposed)
+                {
+                    return null;
+                }
+
                 return new UFileListBundleAsset(this, assetPath);
             }
         }
@@ -246,7 +256,7 @@ namespace UnityFS
             // (生命周期转由 UAssetBundleBundle 管理)
             public override void Load(Stream stream)
             {
-                if (_zipFile == null && !_loaded)
+                if (!_disposed && _zipFile == null && !_loaded)
                 {
                     _zipFile = new ZipFile(stream);
                     _zipFile.IsStreamOwner = true;
@@ -261,6 +271,10 @@ namespace UnityFS
 
             public override UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints)
             {
+                if (_disposed)
+                {
+                    return null;
+                }
                 return new UZipArchiveBundleAsset(this, assetPath);
             }
         }
@@ -366,7 +380,7 @@ namespace UnityFS
             // stream 生命周期将被 UAssetBundleBundle 托管
             public override void Load(Stream stream)
             {
-                if (_stream == null && _provider != null)
+                if (!_disposed && _stream == null && _provider != null)
                 {
                     _stream = stream;
                     if ((_hints & EAssetHints.Synchronized) == 0)
@@ -395,9 +409,15 @@ namespace UnityFS
             {
                 AddRef();
                 yield return null;
-                var request = AssetBundle.LoadFromStreamAsync(_stream);
-                yield return request;
-                OnAssetBundleLoaded(request.assetBundle);
+                if (!_disposed)
+                {
+                    var request = AssetBundle.LoadFromStreamAsync(_stream);
+                    yield return request;
+                    if (!_disposed)
+                    {
+                        OnAssetBundleLoaded(request.assetBundle);
+                    }
+                }
                 RemoveRef();
             }
 

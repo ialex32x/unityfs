@@ -10,6 +10,7 @@ namespace UnityFS
     public abstract class UBundle : IRefCounted
     {
         protected int _refCount;
+        protected bool _disposed;
         protected Manifest.BundleInfo _info;
 
         protected List<UBundle> _denpendencies;
@@ -96,6 +97,7 @@ namespace UnityFS
 
         protected virtual void OnRelease()
         {
+            _disposed = true;
             if (_denpendencies != null)
             {
                 for (int i = 0, size = _denpendencies.Count; i < size; i++)
@@ -153,6 +155,11 @@ namespace UnityFS
 
         private void OnDependedBundleLoaded(UBundle bundle)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             if (_loaded && _IsDependenciesLoaded())
             {
                 OnLoaded();
@@ -165,6 +172,11 @@ namespace UnityFS
         // 调用所有回调
         protected void OnLoaded()
         {
+            if (_disposed)
+            {
+                return;
+            }
+            
             while (_callbacks.Count > 0)
             {
                 var callback = _callbacks[0];
