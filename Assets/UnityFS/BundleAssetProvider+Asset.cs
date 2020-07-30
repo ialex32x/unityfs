@@ -309,16 +309,28 @@ namespace UnityFS
 
             protected override bool IsAvailable()
             {
+                if (_disposed)
+                {
+                    return false;
+                }
                 return _bundle.Exists(_assetPath);
             }
 
             public override byte[] ReadAllBytes()
             {
+                if (_disposed)
+                {
+                    return null;
+                }
                 return _bundle.ReadAllBytes(_assetPath);
             }
 
             public Stream OpenRead()
             {
+                if (_disposed)
+                {
+                    return null;
+                }
                 return _bundle.OpenRead(_assetPath);
             }
 
@@ -351,6 +363,10 @@ namespace UnityFS
 
             public bool IsAvailable()
             {
+                if (_disposed)
+                {
+                    return false;
+                }
                 return _provider.IsBundleAvailable(_info);
             }
 
@@ -396,11 +412,19 @@ namespace UnityFS
 
             public void _LoadAsset(IEnumerator e)
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 _provider._LoadAsset(e);
             }
 
             private void _LoadSync()
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 var assetBundle = AssetBundle.LoadFromStream(_stream);
                 OnAssetBundleLoaded(assetBundle);
             }
@@ -423,11 +447,19 @@ namespace UnityFS
 
             public AssetBundle GetAssetBundle()
             {
+                if (_disposed)
+                {
+                    return null;
+                }
                 return _assetBundle;
             }
 
             private void OnAssetBundleLoaded(AssetBundle assetBundle)
             {
+                if (_disposed)
+                {
+                    return;
+                }
                 _assetBundle = assetBundle;
                 _loaded = true;
                 // Debug.Log($"assetbundle loaded {name}");
@@ -439,6 +471,11 @@ namespace UnityFS
 
             public override UAsset CreateAsset(string assetPath, Type type, bool concrete, EAssetHints hints)
             {
+                if (_disposed)
+                {
+                    return null;
+                }
+
                 if (concrete)
                 {
                     return new UAssetBundleConcreteAsset(this, assetPath, type, hints);

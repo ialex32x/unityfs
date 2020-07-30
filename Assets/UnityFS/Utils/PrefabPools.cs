@@ -8,6 +8,7 @@ namespace UnityFS.Utils
 
     public class PrefabPools
     {
+        private bool _disposed;
         private Transform _root;
         private Dictionary<string, PrefabPool> _prefabPools;
 
@@ -35,16 +36,21 @@ namespace UnityFS.Utils
 
         public PrefabPool.Handle Alloc(string assetPath)
         {
-            return GetPrefabPool(assetPath).GetHandle();
+            return GetPrefabPool(assetPath)?.GetHandle();
         }
 
         public GameObject Instantiate(string assetPath)
         {
-            return GetPrefabPool(assetPath).Instantiate();
+            return GetPrefabPool(assetPath)?.Instantiate();
         }
 
         public PrefabPool GetPrefabPool(string assetPath, int capacity = 0)
         {
+            if (_disposed)
+            {
+                return null;
+            }
+
             if (_prefabPools == null)
             {
                 _prefabPools = new Dictionary<string, PrefabPool>();
@@ -57,9 +63,26 @@ namespace UnityFS.Utils
             return pool;
         }
 
+        public void Release()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+                if (_prefabPools == null)
+                {
+                    return;
+                }
+                foreach (var kv in _prefabPools)
+                {
+                    kv.Value.Release();
+                }
+                _prefabPools.Clear();
+            }
+        }
+
         public void Drain()
         {
-            if (_prefabPools == null)
+            if (_disposed || _prefabPools == null)
             {
                 return;
             }

@@ -251,11 +251,19 @@ namespace UnityFS.Utils
 
         public Handle GetHandle()
         {
+            if (_asset == null)
+            {
+                return null;
+            }
             return new Handle(this);
         }
 
         public GameObject Instantiate()
         {
+            if (_asset == null)
+            {
+                return null;
+            }
             if (!_asset.isLoaded)
             {
                 UnityEngine.Debug.LogErrorFormat("GameObjectPool({0}) 加载未完成", _asset.assetPath);
@@ -315,6 +323,16 @@ namespace UnityFS.Utils
                     _gameObjects.Add(gameObject);
                     --_count;
                 }
+            }
+        }
+
+        public void Release()
+        {
+            Drain();
+            if (_asset != null)
+            {
+                _asset.completed -= onAssetLoaded;
+                _asset = null;
             }
         }
 
