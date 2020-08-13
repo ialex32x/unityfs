@@ -1,16 +1,11 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Security.Cryptography;
-using System.Security.Permissions;
 using System.Text;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Zip.Compression;
-using NUnit.Framework;
-using UnityEditor.WindowsStandalone;
 
 namespace UnityFS.Editor
 {

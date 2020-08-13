@@ -35,6 +35,7 @@ namespace UnityFS
 
         // 资源加载器
         private static IAssetProvider _assetProvider;
+        private static ILogger _logger;
         private static Analyzer.IAssetsAnalyzer _analyzer;
         private static IAssetProviderListener _listener;
         private static List<DownloadWorker> _allWorkers = new List<DownloadWorker>();
@@ -57,6 +58,24 @@ namespace UnityFS
                 _urls.Clear();
                 _urls.AddRange(value);
             }
+        }
+
+        public static ILogger logger
+        {
+            get
+            {
+                if (_logger == null)
+                {
+                    _logger=new DefaultLogger();
+                }
+                
+                return _logger;
+            }
+        }
+
+        public static void SetLogger(ILogger logger)
+        {
+            _logger = logger;
         }
 
         public static void SetListener(IAssetProviderListener listener)

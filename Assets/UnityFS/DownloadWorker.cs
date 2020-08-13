@@ -59,7 +59,7 @@ namespace UnityFS
 
         private bool _destroy;
         private byte[] _buffer;
-        private int _timeout = 10 * 1000; // http 请求超时时间 (毫秒)
+        private int _timeout = 2 * 1000; // http 请求超时时间 (毫秒)
         private LinkedList<JobInfo> _jobInfos = new LinkedList<JobInfo>();
         private Thread _thread;
         private AutoResetEvent _event = new AutoResetEvent(false);
@@ -195,7 +195,7 @@ namespace UnityFS
                 }
                 catch (Exception exception)
                 {
-                    Debug.LogErrorFormat("fatal error: {0}", exception);
+                    ResourceManager.logger.OnWorkerError(this, exception);
                 }
                 finally
                 {
@@ -239,7 +239,7 @@ namespace UnityFS
 
         private void ProcessJob(JobInfo jobInfo)
         {
-            Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.comment);
+            // Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.comment);
             var tempPath = jobInfo.path + PartExt;
             if (_fileStream != null)
             {
@@ -291,8 +291,8 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        Debug.LogErrorFormat("file exception: {0}\n{1}", jobInfo.path, exception);
-                        error = $"file exception: {exception}";
+                        // ResourceManager.logger.OnTaskError(jobInfo, exception);
+                        error = string.Format("file exception: {0}", exception);
                         success = false;
                     }
                 }
@@ -309,7 +309,7 @@ namespace UnityFS
                         var req = WebRequest.CreateHttp(uri);
                         req.Method = WebRequestMethods.Http.Get;
                         req.ContentType = BundleContentType;
-                        req.ReadWriteTimeout = 10000;
+                        // req.ReadWriteTimeout = 10000;
                         if (_timeout > 0)
                         {
                             req.Timeout = _timeout;
@@ -363,8 +363,9 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        Debug.LogErrorFormat("network exception: {0}\n{1}", url, exception);
-                        error = $"network exception: {exception}";
+                        // ResourceManager.logger.OnTaskError(jobInfo, exception);
+                        // Debug.LogErrorFormat("network exception: {0}\n{1}", url, exception);
+                        error = string.Format("network exception: {0}", exception);
                         success = false;
                     }
                 }
@@ -373,9 +374,9 @@ namespace UnityFS
                 {
                     if (jobInfo.size > 0)
                     {
-                        error = string.Format("filesize exception: {0} {1} != {2}", jobInfo.name,
-                            _fileStream.Length, jobInfo.size);
-                        Debug.LogError(error);
+                        error = string.Format("filesize exception: {0} != {1}", _fileStream.Length, jobInfo.size);
+                        // Debug.LogError(error);
+                        // ResourceManager.logger.OnTaskError(jobInfo, error);
                         success = false;
                     }
                     else
@@ -397,9 +398,9 @@ namespace UnityFS
                     {
                         if (!string.IsNullOrEmpty(jobInfo.checksum))
                         {
-                            error = string.Format("corrupted file: {0} {1} != {2}", jobInfo.name, dataChecker.hex,
-                                jobInfo.checksum);
-                            Debug.LogError(error);
+                            error = string.Format("corrupted file: {0} != {1}", dataChecker.hex, jobInfo.checksum);
+                            // Debug.LogError(error);
+                            // ResourceManager.logger.OnTaskError(jobInfo, error);
                             success = false;
                         }
                         else
@@ -413,14 +414,25 @@ namespace UnityFS
                 {
                     success = false;
                 }
-
+                
+                // close fileStream anyway
+                try
+                {
+                    if (_fileStream != null)
+                    {
+                        _fileStream.Close();
+                        _fileStream = null;
+                    }
+                }
+                catch (Exception)
+                {
+                }
+                
                 if (success)
                 {
                     try
                     {
                         // _WriteStream(buffer, fileStream, finalPath);
-                        _fileStream.Close();
-                        _fileStream = null;
                         if (File.Exists(jobInfo.path))
                         {
                             File.Delete(jobInfo.path);
@@ -441,8 +453,9 @@ namespace UnityFS
                     }
                     catch (Exception exception)
                     {
-                        error = string.Format("write exception: {0}\n{1}", jobInfo.name, exception);
-                        Debug.LogError(error);
+                        error = string.Format("write exception: {0}", exception);
+                        // Debug.LogError(error);
+                        // ResourceManager.logger.OnTaskError(jobInfo, error);
                         success = false;
                     }
                 }
@@ -450,19 +463,14 @@ namespace UnityFS
                 jobInfo.tried++;
                 if (jobInfo.retry > 0 && jobInfo.tried >= jobInfo.retry)
                 {
-                    if (_fileStream != null)
-                    {
-                        _fileStream.Close();
-                        _fileStream = null;
-                    }
-
                     jobInfo.error = error ?? "unknown error";
                     Complete(jobInfo);
                     break;
                 }
 
-                Thread.Sleep(2000);
-                Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", url, error);
+                ResourceManager.logger.OnTaskError(jobInfo, error);
+                Thread.Sleep(1000);
+                // Debug.LogErrorFormat("[retry] download failed: {0}\n{1}", url, error);
             }
         }
 
