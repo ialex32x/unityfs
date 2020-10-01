@@ -115,8 +115,8 @@ namespace UnityFS.Editor
             packageBuildInfo.DoAnalyze();
             packageBuildInfo.data.build++;
             packageBuildInfo.data.MarkAsDirty();
-            Debug.Log(
-                $"{packageBuildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
+            Debug.Log($"{packageBuildInfo.packagePath}: build bundles finished. {assetBundleBuilds.Length} assetbundles. {zipArchiveBuilds.Count} zip archives. {fileListBuilds.Length} file lists. {embeddedManifest.bundles.Count} bundles to streamingassets.");
+            AssetDatabase.SaveAssets();
         }
 
         // 将首包资源复制到 StreamingAssets 目录 (在 BuildPlayer 之前调用)
