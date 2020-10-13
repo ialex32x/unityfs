@@ -236,11 +236,6 @@ namespace UnityFS.Editor
             }
         }
 
-        public static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid)
-        {
-            return DrawSingleAssetAttributes(data, assetGuid, null, false, null);
-        }
-
         private static AssetAttributes DrawSearchResultAssetAttributes(Rect elementRect, BundleBuilderData data, SearchResult result, BundleBuilderWindow builder, bool batchMode)
         {
             var assetGuid = result.assetGuid;
@@ -299,74 +294,6 @@ namespace UnityFS.Editor
                 GUI.Button(iRect, ">");
                 EditorGUI.EndDisabledGroup();
             }
-
-            if (batchMode)
-            {
-                if (nAssetPacker != attrs.packer)
-                {
-                    builder?.ApplyAllMarks(attributes => attributes.packer = nAssetPacker);
-                }
-
-                if (nPriority != attrs.priority)
-                {
-                    var deltaPriority = nPriority - attrs.priority;
-                    builder?.ApplyAllMarks(attributes => attributes.priority = Math.Max(0,
-                        Math.Min(data.priorityMax, attributes.priority + deltaPriority)));
-                }
-            }
-            else
-            {
-                if (nAssetPacker != attrs.packer)
-                {
-                    attrs.packer = nAssetPacker;
-                    data.MarkAsDirty();
-                }
-
-                if (nPriority != attrs.priority)
-                {
-                    attrs.priority = nPriority;
-                    data.MarkAsDirty();
-                }
-
-                if (attrs.priority == 0 && attrs.packer == AssetPacker.Auto)
-                {
-                    data.RemoveAssetAttributes(assetGuid);
-                }
-                else if (bNew)
-                {
-                    if (attrs.priority != 0 || attrs.packer != AssetPacker.Auto)
-                    {
-                        var newAttributes = data.AddAssetAttributes(assetGuid);
-                        newAttributes.priority = attrs.priority;
-                        newAttributes.packer = attrs.packer;
-                    }
-                }
-            }
-
-            return attrs;
-        }
-
-        private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid, BundleBuilderWindow builder, bool batchMode, Action<FileInfo> additionalOp)
-        {
-            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-            var fileInfoWidth = 60f;
-            var fileInfo = new FileInfo(assetPath);
-            var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
-            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
-            var attrs = data.GetAssetAttributes(assetGuid);
-            var bNew = attrs == null;
-
-            if (bNew)
-            {
-                attrs = new AssetAttributes();
-            }
-
-            var nAssetPacker = (AssetPacker)EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
-            var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax, GUILayout.MaxWidth(220f));
-            EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
-            EditorGUILayout.TextField(assetPath);
-            EditorGUILayout.LabelField(PathUtils.GetFileSizeString(fileSize), _rightAlignStyle, GUILayout.MaxWidth(fileInfoWidth));
-            additionalOp?.Invoke(fileInfo);
 
             if (batchMode)
             {

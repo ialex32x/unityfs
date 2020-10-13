@@ -292,7 +292,7 @@ namespace UnityFS.Editor
                                         {
                                             var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
                                             EditorGUILayout.BeginHorizontal();
-                                            BundleBuilderWindow.DrawSingleAssetAttributes(_data, assetGuid);
+                                            DrawSingleAssetAttributes(_data, assetGuid);
                                             if (GUILayout.Button("?", GUILayout.Width(20f)))
                                             {
                                                 BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
@@ -447,6 +447,56 @@ namespace UnityFS.Editor
                     GUI.color = _GUIColor;
                 });
             });
+        }
+        
+        private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid)
+        {
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+            var fileInfoWidth = 60f;
+            var fileInfo = new FileInfo(assetPath);
+            var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
+            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+            var attrs = data.GetAssetAttributes(assetGuid);
+            var bNew = attrs == null;
+
+            if (bNew)
+            {
+                attrs = new AssetAttributes();
+            }
+
+            var nAssetPacker = (AssetPacker)EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
+            var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax, GUILayout.MaxWidth(220f));
+            EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
+            EditorGUILayout.TextField(assetPath);
+            EditorGUILayout.LabelField(PathUtils.GetFileSizeString(fileSize), _rightAlignStyle, GUILayout.MaxWidth(fileInfoWidth));
+
+            if (nAssetPacker != attrs.packer)
+            {
+                attrs.packer = nAssetPacker;
+                data.MarkAsDirty();
+            }
+
+            if (nPriority != attrs.priority)
+            {
+                attrs.priority = nPriority;
+                data.MarkAsDirty();
+            }
+
+            if (attrs.priority == 0 && attrs.packer == AssetPacker.Auto)
+            {
+                data.RemoveAssetAttributes(assetGuid);
+            }
+            else if (bNew)
+            {
+                if (attrs.priority != 0 || attrs.packer != AssetPacker.Auto)
+                {
+                    var newAttributes = data.AddAssetAttributes(assetGuid);
+                    newAttributes.priority = attrs.priority;
+                    newAttributes.packer = attrs.packer;
+                }
+            }
+
+            return attrs;
         }
     }
 }
