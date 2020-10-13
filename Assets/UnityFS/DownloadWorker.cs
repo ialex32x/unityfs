@@ -21,13 +21,13 @@ namespace UnityFS
             public bool emergency; // 是否紧急 (创建此任务时)
             public string url; // (可选) 指定地址, 如果没有指定, 则使用 manager.urls + name 得到
             public string dataChecker; // (可选) crc16, md5. 不指定时使用 crc16
-            
+
             public int retry; // 重试次数 (<=0 时无限重试)
             public int tried; // 已重试次数
             public int bytes; // 当前字节数
             public string error; // 错误
             public Action callback;
-            
+
             private string _finalPath; // 最终存储路径
             private int _size;
             private int _priority;
@@ -37,7 +37,7 @@ namespace UnityFS
 
             public bool isRunning { get; set; }
             public bool isDone { get; set; }
-            public float progress => Mathf.Clamp01((float) bytes / size);
+            public float progress => Mathf.Clamp01((float)bytes / size);
             public string path => _finalPath;
             public int size => _size;
 
@@ -69,8 +69,8 @@ namespace UnityFS
         // invoke in main thread
         private Action<JobInfo> _callback;
 
-        public DownloadWorker(Action<JobInfo> callback, int bufferSize, 
-            IList<string> urls, 
+        public DownloadWorker(Action<JobInfo> callback, int bufferSize,
+            IList<string> urls,
             System.Threading.ThreadPriority threadPriority)
         {
             _urls = urls;
@@ -241,11 +241,16 @@ namespace UnityFS
         {
             // Debug.LogFormat("processing job: {0} ({1})", jobInfo.name, jobInfo.comment);
             var tempPath = jobInfo.path + PartExt;
-            if (_fileStream != null)
+
+            try
             {
-                _fileStream.Close();
-                _fileStream = null;
+                if (_fileStream != null)
+                {
+                    _fileStream.Close();
+                    _fileStream = null;
+                }
             }
+            catch (Exception) { }
 
             var dataChecker = GetDataChecker(jobInfo);
             while (true)
@@ -265,7 +270,7 @@ namespace UnityFS
                         if (fileInfo.Exists) // 处理续传
                         {
                             _fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                            partialSize = (int) fileInfo.Length;
+                            partialSize = (int)fileInfo.Length;
                             if (partialSize > jobInfo.size) // 目标文件超过期望大小, 直接废弃
                             {
                                 _fileStream.SetLength(0);
@@ -350,7 +355,7 @@ namespace UnityFS
                                         recvAll += recv;
                                         _fileStream.Write(_buffer, 0, recv);
                                         dataChecker.Update(_buffer, 0, recv);
-                                        jobInfo.bytes = (int) (recvAll + partialSize);
+                                        jobInfo.bytes = (int)(recvAll + partialSize);
                                         // PrintDebug($"{recvAll + partialSize}, {_size}, {_progress}");
                                     }
                                     else
@@ -381,7 +386,7 @@ namespace UnityFS
                     }
                     else
                     {
-                        wsize = (int) _fileStream.Length;
+                        wsize = (int)_fileStream.Length;
                     }
                 }
 
@@ -414,7 +419,7 @@ namespace UnityFS
                 {
                     success = false;
                 }
-                
+
                 // close fileStream anyway
                 try
                 {
@@ -427,7 +432,7 @@ namespace UnityFS
                 catch (Exception)
                 {
                 }
-                
+
                 if (success)
                 {
                     try
@@ -458,6 +463,11 @@ namespace UnityFS
                         // ResourceManager.logger.OnTaskError(jobInfo, error);
                         success = false;
                     }
+                }
+                
+                if (!success)
+                {
+                    try { File.Delete(tempPath); } catch (Exception) { }
                 }
 
                 jobInfo.tried++;

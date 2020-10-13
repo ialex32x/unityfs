@@ -90,7 +90,7 @@ namespace UnityFS.Editor
             {
                 if (histroy.Contains(guid))
                 {
-                    if (this.streamingAssets == streamingAssets && this.platform == platform)
+                    if (this.streamingAssets == streamingAssets && this.IsBuild(platform))
                     {
                         _AddAsset(guid);
                         return true;
