@@ -108,10 +108,8 @@ namespace UnityFS.Editor
                 rawFileManifest = BuildRawFiles(packageBuildInfo, rawFileBuilds);
             }
 
-            var embeddedManifest = BuildFinalPackages(packageBuildInfo, assetBundleManifest, zipArchiveManifest,
-                fileListManifest, rawFileManifest);
-            Cleanup(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, rawFileManifest,
-                embeddedManifest);
+            var embeddedManifest = BuildFinalPackages(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, rawFileManifest);
+            Cleanup(packageBuildInfo, assetBundleManifest, zipArchiveManifest, fileListManifest, rawFileManifest, embeddedManifest);
             packageBuildInfo.DoAnalyze();
             packageBuildInfo.data.build++;
             packageBuildInfo.data.MarkAsDirty();
