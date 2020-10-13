@@ -133,7 +133,7 @@ namespace UnityFS.Editor
             }
         }
 
-        private Vector2 _searchSV;
+        private SVirtualScrollInfo _searchSV;
         private bool _showStreamingAssetsOnly; // 仅列出 StreamingAssets 资源
         private bool _showDefinedOnly; // 仅列出非默认的 (有修改)
         private bool _showSelectionOnly; // 仅列出 Project 窗口中选中的
@@ -153,7 +153,7 @@ namespace UnityFS.Editor
             var showDefinedOnly = _showDefinedOnly;
             var showSelectionOnly = _showSelectionOnly;
             var showStreamingAssetsOnly = _showStreamingAssetsOnly;
-            var searchCount = _data.searchMax;
+            // var searchCount = _data.searchMax;
 
             _searchResults.Clear();
             var selectionSet = new HashSet<string>();
@@ -172,33 +172,30 @@ namespace UnityFS.Editor
 
             _data.ForEachAsset((bundleInfo, bundleSplit, bundleSlice, assetGuid) =>
             {
-                if (_searchResults.Count < searchCount)
+                if (!showStreamingAssetsOnly || bundleSlice.streamingAssets)
                 {
-                    if (!showStreamingAssetsOnly || bundleSlice.streamingAssets)
+                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                    if (!showSelectionOnly || selectionSet.Contains(assetPath))
                     {
-                        var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
-                        if (!showSelectionOnly || selectionSet.Contains(assetPath))
+                        if (string.IsNullOrEmpty(keyword) ||
+                            assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            if (string.IsNullOrEmpty(keyword) ||
-                                assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                            if (string.IsNullOrEmpty(sliceKeyword) ||
+                                bundleSlice.name.IndexOf(sliceKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                if (string.IsNullOrEmpty(sliceKeyword) ||
-                                    bundleSlice.name.IndexOf(sliceKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                                var attrs = _data.GetAssetAttributes(assetGuid);
+                                if (attrs != null || !showDefinedOnly)
                                 {
-                                    var attrs = _data.GetAssetAttributes(assetGuid);
-                                    if (attrs != null || !showDefinedOnly)
+                                    var result = new SearchResult()
                                     {
-                                        var result = new SearchResult()
-                                        {
-                                            bundleInfo = bundleInfo,
-                                            bundleSplit = bundleSplit,
-                                            bundleSlice = bundleSlice,
-                                            assetPath = assetPath,
-                                            assetGuid = assetGuid,
-                                        };
+                                        bundleInfo = bundleInfo,
+                                        bundleSplit = bundleSplit,
+                                        bundleSlice = bundleSlice,
+                                        assetPath = assetPath,
+                                        assetGuid = assetGuid,
+                                    };
 
-                                        _searchResults.Add(result);
-                                    }
+                                    _searchResults.Add(result);
                                 }
                             }
                         }
@@ -239,53 +236,135 @@ namespace UnityFS.Editor
             }
         }
 
-        public static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid, Action<FileInfo> additionalOp = null)
+        public static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid)
         {
-            return DrawSingleAssetAttributes(data, assetGuid, null, false, additionalOp);
+            return DrawSingleAssetAttributes(data, assetGuid, null, false, null);
         }
 
-        private static void GotoBundleSlice(BundleBuilderData data,
-                                            BundleBuilderData.BundleInfo rBundleInfo,
-                                            BundleBuilderData.BundleSlice rBundleSlice)
+        private static AssetAttributes DrawSearchResultAssetAttributes(Rect elementRect, BundleBuilderData data, SearchResult result, BundleBuilderWindow builder, bool batchMode)
         {
-            if (rBundleInfo != null)
-            {
-                EditorGUILayout.TextField(rBundleSlice.name);
-                if (GUILayout.Button(">", GUILayout.Width(20f)))
-                {
-                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new[] { rBundleInfo }));
-                }
-            }
-            else
-            {
-                EditorGUI.BeginDisabledGroup(true);
-                EditorGUILayout.TextField("<null>");
-                GUILayout.Button(">", GUILayout.Width(20f));
-                EditorGUI.EndDisabledGroup();
-            }
-        }
-
-        private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid,
-            BundleBuilderWindow builder, bool batchMode, Action<FileInfo> additionalOp)
-        {
+            var assetGuid = result.assetGuid;
             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+            var fileInfoWidth = 60f;
+            var sliceInfoWidth = 200f;
+            var fileInfo = new FileInfo(assetPath);
+            var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
             var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
             var attrs = data.GetAssetAttributes(assetGuid);
             var bNew = attrs == null;
+
             if (bNew)
             {
                 attrs = new AssetAttributes();
             }
 
-            var nAssetPacker =
-                (AssetPacker)EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
-            var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax,
-                GUILayout.MaxWidth(220f));
-            EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
-            EditorGUILayout.TextField(assetPath);
+            var iRect = new Rect(elementRect.x, elementRect.y, 110f, elementRect.height);
+            var nAssetPacker = (AssetPacker)EditorGUI.EnumPopup(iRect, attrs.packer);
+            iRect.x += 110f + 8f;
+            iRect.width = 220f;
+            iRect.height = elementRect.height - 2f;
+            var nPriority = EditorGUI.IntSlider(iRect, attrs.priority, 0, data.priorityMax);
+            iRect.x += iRect.width;
+            iRect.width = 180f;
+            iRect.height = elementRect.height - 4f;
+            EditorGUI.ObjectField(iRect, assetObject, typeof(Object), false);
+            iRect.x += iRect.width;
+            iRect.width = fileInfoWidth;
+            iRect.height = elementRect.height - 2f;
+            EditorGUI.LabelField(iRect, PathUtils.GetFileSizeString(fileSize), _rightAlignStyle);
+
+            iRect.x += iRect.width;
+            iRect.width = elementRect.width - iRect.x - sliceInfoWidth - 20f + 20f;
+            EditorGUI.TextField(iRect, assetPath);
+
+            iRect.x += iRect.width;
+            iRect.width = sliceInfoWidth;
+            iRect.height = elementRect.height - 2f;
+            if (result.bundleInfo != null)
+            {
+                EditorGUI.TextField(iRect, result.bundleSlice.name);
+                iRect.x += iRect.width;
+                iRect.width = 20f;
+                if (GUI.Button(iRect, ">"))
+                {
+                    BundleAssetsWindow.Inspect(data, new List<BundleBuilderData.BundleInfo>(new[] { result.bundleInfo }));
+                }
+            }
+            else
+            {
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUI.TextField(iRect, "<null>");
+                iRect.x += iRect.width;
+                iRect.width = 20f;
+                GUI.Button(iRect, ">");
+                EditorGUI.EndDisabledGroup();
+            }
+
+            if (batchMode)
+            {
+                if (nAssetPacker != attrs.packer)
+                {
+                    builder?.ApplyAllMarks(attributes => attributes.packer = nAssetPacker);
+                }
+
+                if (nPriority != attrs.priority)
+                {
+                    var deltaPriority = nPriority - attrs.priority;
+                    builder?.ApplyAllMarks(attributes => attributes.priority = Math.Max(0,
+                        Math.Min(data.priorityMax, attributes.priority + deltaPriority)));
+                }
+            }
+            else
+            {
+                if (nAssetPacker != attrs.packer)
+                {
+                    attrs.packer = nAssetPacker;
+                    data.MarkAsDirty();
+                }
+
+                if (nPriority != attrs.priority)
+                {
+                    attrs.priority = nPriority;
+                    data.MarkAsDirty();
+                }
+
+                if (attrs.priority == 0 && attrs.packer == AssetPacker.Auto)
+                {
+                    data.RemoveAssetAttributes(assetGuid);
+                }
+                else if (bNew)
+                {
+                    if (attrs.priority != 0 || attrs.packer != AssetPacker.Auto)
+                    {
+                        var newAttributes = data.AddAssetAttributes(assetGuid);
+                        newAttributes.priority = attrs.priority;
+                        newAttributes.packer = attrs.packer;
+                    }
+                }
+            }
+
+            return attrs;
+        }
+
+        private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid, BundleBuilderWindow builder, bool batchMode, Action<FileInfo> additionalOp)
+        {
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
             var fileInfoWidth = 60f;
             var fileInfo = new FileInfo(assetPath);
             var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
+            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+            var attrs = data.GetAssetAttributes(assetGuid);
+            var bNew = attrs == null;
+
+            if (bNew)
+            {
+                attrs = new AssetAttributes();
+            }
+
+            var nAssetPacker = (AssetPacker)EditorGUILayout.EnumPopup(attrs.packer, GUILayout.MaxWidth(110f));
+            var nPriority = EditorGUILayout.IntSlider(attrs.priority, 0, data.priorityMax, GUILayout.MaxWidth(220f));
+            EditorGUILayout.ObjectField(assetObject, typeof(Object), false, GUILayout.MaxWidth(180f));
+            EditorGUILayout.TextField(assetPath);
             EditorGUILayout.LabelField(PathUtils.GetFileSizeString(fileSize), _rightAlignStyle, GUILayout.MaxWidth(fileInfoWidth));
             additionalOp?.Invoke(fileInfo);
 
@@ -402,27 +481,23 @@ namespace UnityFS.Editor
                     }
                 }
 
-                _searchSV = EditorGUILayout.BeginScrollView(_searchSV);
-
-                for (var i = 0; i < _searchResults.Count; i++)
+                var elementCount = _searchResults.Count;
+                _searchSV.hint = -1;
+                _searchSV = DrawVirtualScrollView(_searchSV, 22f, elementCount, (Rect elementRect, float elementHeight, int i) =>
                 {
                     var result = _searchResults[i];
                     var marked = _searchMarks.Contains(result);
                     var assetGuid = result.assetGuid;
-
-                    EditorGUILayout.BeginHorizontal();
-                    var nMarked = EditorGUILayout.Toggle(marked, GUILayout.Width(20f));
+                    var headRect = new Rect(elementRect.x, elementRect.y, 20f, elementRect.height);
+                    var nMarked = EditorGUI.Toggle(headRect, marked);
                     if (marked) // 批量修改模式
                     {
                         GUI.color = Color.green;
                     }
 
-                    var rBundleInfo = result.bundleInfo;
-                    var rBundleSplit = result.bundleSplit;
-                    var rBundleSlice = result.bundleSlice;
-                    DrawSingleAssetAttributes(_data, assetGuid, this, marked, (_) => GotoBundleSlice(_data, rBundleInfo, rBundleSlice));
+                    var lineRect = new Rect(elementRect.x + 20f, elementRect.y, elementRect.width - 20f, elementRect.height);
+                    DrawSearchResultAssetAttributes(lineRect, _data, result, this, marked);
                     GUI.color = _GUIColor;
-                    EditorGUILayout.EndHorizontal();
 
                     if (nMarked != marked)
                     {
@@ -435,9 +510,7 @@ namespace UnityFS.Editor
                             _searchMarks.Remove(result);
                         }
                     }
-                }
-
-                EditorGUILayout.EndScrollView();
+                });
             });
             EditorGUILayout.Space();
         }
@@ -529,14 +602,14 @@ namespace UnityFS.Editor
                         _data.mainAssetListPath = AssetDatabase.GetAssetPath(assetN);
                     }
                 }
-                
+
                 // 中间输出目录
                 _data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", _data.assetBundlePath);
                 _data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", _data.zipArchivePath);
                 // 最终包输出目录
                 _data.packagePath = EditorGUILayout.TextField("Package Path", _data.packagePath);
                 _data.priorityMax = EditorGUILayout.IntField("Priority Max", _data.priorityMax);
-                _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
+                // _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
                 _data.streamingAssetsAnyway = EditorGUILayout.Toggle("StreamingAssets Anyway", _data.streamingAssetsAnyway);
                 _data.streamingAssetsManifest = EditorGUILayout.Toggle("StreamingAssets Manifest", _data.streamingAssetsManifest);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);

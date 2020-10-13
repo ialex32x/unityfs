@@ -61,7 +61,7 @@ namespace UnityFS.Editor
         public string zipArchivePath = "out/zipArchives";
         public string packagePath = "out/packages";
         public int priorityMax = 10000;
-        public int searchMax = 200;
+        // public int searchMax = 200;
         public bool disableTypeTree = false;
         public bool lz4Compression = true;
         public bool deterministicAssetBundle = true;

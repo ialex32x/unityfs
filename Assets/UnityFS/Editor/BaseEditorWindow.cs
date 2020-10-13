@@ -21,6 +21,77 @@ namespace UnityFS.Editor
 
         private BuildTarget _targetPlatform;
 
+        public struct SVirtualScrollInfo
+        {
+            public float sv_begin; // 滚动区域开始位置
+            public float sv_end; // 滚动区域结束位置
+            public Vector2 sv;
+            public Rect svb;
+            public Rect sve;
+
+            public int hint; // 提示位置
+        }
+
+        protected SVirtualScrollInfo EnsureVirtualScrollView(SVirtualScrollInfo svi, float elementHeight, int elementCount, int i)
+        {
+            var begin = i * elementHeight + 1f;
+            var end = begin + elementHeight - 1f;
+
+            if (svi.sv_begin > end || svi.sv_end < begin)
+            {
+                svi.sv.y = begin;
+                Repaint();
+            }
+            var totalEnd = elementHeight * elementCount;
+            var remain = svi.sv_end - totalEnd;
+            if (remain > 0f)
+            {
+                var span = svi.sv_end - svi.sv_begin;
+                svi.sv_end = totalEnd;
+                svi.sv_begin = totalEnd - span;
+            }
+            return svi;
+        }
+
+        protected SVirtualScrollInfo DrawVirtualScrollView(SVirtualScrollInfo svi, float elementHeight, int elementCount, Action<Rect, float, int> elementDrawCallback)
+        {
+            var begin = EditorGUILayout.GetControlRect(GUILayout.Height(0));
+            var elementWidth = begin.width;
+            if (Event.current.type == EventType.Repaint)
+            {
+                svi.svb = begin;
+            }
+            svi.sv = EditorGUILayout.BeginScrollView(svi.sv, false, false);
+            var virtualSpace = EditorGUILayout.GetControlRect(GUILayout.Height(elementHeight * elementCount), GUILayout.Width(elementWidth - 12f));
+            var elementIndexBegin = Mathf.FloorToInt(svi.sv_begin / elementHeight);
+            var elementIndexEnd = Mathf.CeilToInt(svi.sv_end / elementHeight);
+            for (var i = elementIndexBegin; i < elementIndexEnd; i++)
+            {
+                if (i < 0 || i >= elementCount)
+                {
+                    continue;
+                }
+                var rect = new Rect(0, i * elementHeight + 1f, elementWidth - 6f, elementHeight - 1f);
+
+                elementDrawCallback(rect, elementHeight, i);
+                // EditorGUI.LabelField(rect, $"Virtual Element {i + 1}/{elementCount} ({elementIndexEnd - elementIndexBegin})");
+            }
+            EditorGUILayout.EndScrollView();
+            var end = EditorGUILayout.GetControlRect(GUILayout.Height(0));
+            if (Event.current.type == EventType.Repaint)
+            {
+                svi.sve = end;
+            }
+            svi.sv_begin = svi.sv.y;
+            svi.sv_end = svi.sv.y + svi.sve.yMin - svi.svb.yMax - 8;
+            if (svi.hint >= 0)
+            {
+                var hint = begin.y + 16f + (svi.hint * elementHeight * (svi.sve.yMin - svi.svb.yMax - 32f)) / virtualSpace.height;
+                EditorGUI.DrawRect(new Rect(6f + elementWidth - 12f, hint, 12f, 2f), Color.green);
+            }
+            return svi;
+        }
+
         protected virtual void OnDisable()
         {
         }
