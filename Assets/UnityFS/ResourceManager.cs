@@ -95,9 +95,9 @@ namespace UnityFS
 
         private static string NormalizedListPath(string fileName)
         {
-            if (!fileName.EndsWith(".asset"))
+            if (!fileName.EndsWith(Manifest.AssetListDataExt))
             {
-                fileName += ".asset";
+                fileName += Manifest.AssetListDataExt;
             }
 
             if (!fileName.StartsWith("Assets/"))
@@ -129,13 +129,8 @@ namespace UnityFS
             {
                 if (!string.IsNullOrEmpty(args.listDataPath))
                 {
-                    var listData =
-                        UnityEditor.AssetDatabase.LoadMainAssetAtPath(NormalizedListPath(args.listDataPath)) as
-                            AssetListData;
-                    if (listData != null)
-                    {
-                        _analyzer = new Analyzer.DefaultAssetsAnalyzer(listData);
-                    }
+                    var listDataPath = NormalizedListPath(args.listDataPath);
+                    _analyzer = new Analyzer.DefaultAssetsAnalyzer(listDataPath);
                 }
             }
 

@@ -67,7 +67,39 @@ namespace UnityFS.Editor
         public bool extractShaderVariantCollections = true; // 自动展开 shaderVariantCollections 中包含的 shader
         public bool streamingAssetsAnyway = false; // 无视 bundleInfo/bundleSlice 的设置, 默认认为进入 StreamingAssets
         public bool streamingAssetsManifest = false; // 是否将清单本身复制到 StreamingAssets
-        public AssetListData assetListData;
+
+        [SerializeField]
+        private string _mainAssetListPath;
+
+        private bool _assetListDataLoaded;
+        private AssetListData _assetListData;
+
+        public string mainAssetListPath
+        {
+            get { return _mainAssetListPath; }
+            set
+            {
+                if (_mainAssetListPath != value)
+                {
+                    _mainAssetListPath = value;
+                    _assetListDataLoaded = false;
+                    MarkAsDirty();
+                }
+            }
+        }
+
+        public AssetListData assetListData
+        {
+            get
+            {
+                if (!_assetListDataLoaded)
+                {
+                    _assetListData = AssetListData.ReadFrom(_mainAssetListPath);
+                    _assetListDataLoaded = true;
+                }
+                return _assetListData;
+            }
+        }
 
         public SList skipExts = new SList(".xlsx", ".xlsm", ".xls", ".docx", ".doc", ".cs");
 

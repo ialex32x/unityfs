@@ -16,15 +16,29 @@ namespace UnityFS.Analyzer
     public class DefaultAssetsAnalyzer : IAssetsAnalyzer
     {
         private bool _stop;
+        private bool _dirty;
+        private string _listDataPath;
         private AssetListData _listData;
         private AnalyzerTimeline _timeline = new AnalyzerTimeline();
 
-        public DefaultAssetsAnalyzer(AssetListData listData)
+        public DefaultAssetsAnalyzer(string listDataPath)
         {
-            _listData = listData;
+            _listDataPath = listDataPath;
+            _listData = AssetListData.ReadFrom(_listDataPath) ?? new AssetListData();
             _timeline.Start();
-            _listData?.Begin();
+            if (_listData.Begin())
+            {
+                _dirty = true;
+            }
             JobScheduler.DispatchCoroutine(_Update());
+#if UNITY_EDITOR
+            Application.quitting += OnQuiting;
+#endif
+        }
+
+        private void OnQuiting()
+        {
+            Stop();
         }
 
         private IEnumerator _Update()
@@ -40,14 +54,21 @@ namespace UnityFS.Analyzer
         {
             _stop = true;
             _timeline.Stop();
-            _listData?.End();
+            _listData.End();
+            if (_dirty)
+            {
+                AssetListData.WriteTo(_listDataPath, _listData);
+            }
         }
 
         public void OnAssetOpen(string assetPath)
         {
             if (_timeline.OpenAsset(assetPath))
             {
-                _listData?.AddObject(_timeline.frameTime, assetPath);
+                if (_listData.AddObject(_timeline.frameTime, assetPath))
+                {
+                    _dirty = true;
+                }
             }
         }
 

@@ -34,17 +34,17 @@ namespace UnityFS.Editor
         {
             GetWindow<BundleBuilderWindow>().Show();
         }
-        
+
         public static void CreateAssetListData()
         {
             var index = 0;
             do
             {
-                var filePath = "Assets/unityfs_asset_list" + (index > 0 ? "_" + (index++) : "") + ".asset";
+                var filePath = "Assets/unityfs_asset_list" + (index > 0 ? "_" + (index++) : "") + Manifest.AssetListDataExt;
                 if (!File.Exists(filePath))
                 {
-                    var list = ScriptableObject.CreateInstance<AssetListData>();
-                    AssetDatabase.CreateAsset(list, filePath);
+                    var listData = new AssetListData();
+                    AssetListData.WriteTo(filePath, listData);
                     AssetDatabase.Refresh();
                     return;
                 }
@@ -285,7 +285,7 @@ namespace UnityFS.Editor
             EditorGUILayout.TextField(assetPath);
             var fileInfoWidth = 60f;
             var fileInfo = new FileInfo(assetPath);
-            var fileSize = fileInfo.Exists ? fileInfo.Length: 0L;
+            var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
             EditorGUILayout.LabelField(PathUtils.GetFileSizeString(fileSize), _rightAlignStyle, GUILayout.MaxWidth(fileInfoWidth));
             additionalOp?.Invoke(fileInfo);
 
@@ -511,9 +511,25 @@ namespace UnityFS.Editor
             Block("Misc.", () =>
             {
                 EditorGUI.BeginChangeCheck();
-                _data.assetListData =
-                    (AssetListData)EditorGUILayout.ObjectField("资源访问分析", _data.assetListData, typeof(AssetListData),
-                        false);
+
+                if (File.Exists(_data.mainAssetListPath))
+                {
+                    var assetH = AssetDatabase.LoadMainAssetAtPath(_data.mainAssetListPath);
+                    var assetN = EditorGUILayout.ObjectField("资源访问分析", assetH, typeof(Object), false);
+                    if (assetN != assetH)
+                    {
+                        _data.mainAssetListPath = AssetDatabase.GetAssetPath(assetN);
+                    }
+                }
+                else
+                {
+                    var assetN = EditorGUILayout.ObjectField("资源访问分析", null, typeof(Object), false);
+                    if (assetN != null)
+                    {
+                        _data.mainAssetListPath = AssetDatabase.GetAssetPath(assetN);
+                    }
+                }
+                
                 // 中间输出目录
                 _data.assetBundlePath = EditorGUILayout.TextField("AssetBundle Path", _data.assetBundlePath);
                 _data.zipArchivePath = EditorGUILayout.TextField("ZipArchive Path", _data.zipArchivePath);

@@ -12,7 +12,7 @@ namespace UnityFS.Editor
         public class PackedObject
         {
             public PackagePlatform platform;
-            public Object asset;
+            public string assetPath;
         }
 
         [Serializable]
@@ -24,7 +24,7 @@ namespace UnityFS.Editor
             public List<BundleSplitRule> rules = new List<BundleSplitRule>();
 
             // scan 过程收集将要打入此 split 的所有资源的列表
-            private HashSet<Object> _assetHashSet = new HashSet<Object>();
+            private HashSet<string> _assetPathHashSet = new HashSet<string>();
             private List<PackedObject> _assets = new List<PackedObject>();
 
             public List<BundleSlice> slices = new List<BundleSlice>();
@@ -41,20 +41,20 @@ namespace UnityFS.Editor
                 }
             }
 
-            public bool AddObject(Object asset, PackagePlatform platform)
+            public bool AddObject(string assetPath, PackagePlatform platform)
             {
-                _assetHashSet.Add(asset);
+                _assetPathHashSet.Add(assetPath);
                 _assets.Add(new PackedObject()
                 {
-                    asset = asset,
+                    assetPath = assetPath,
                     platform = platform,
                 });
                 return true;
             }
 
-            public bool ContainsObject(Object asset)
+            public bool ContainsAssetPath(string assetPath)
             {
-                return _assetHashSet.Contains(asset);
+                return _assetPathHashSet.Contains(assetPath);
             }
 
             public void Reset()
@@ -65,7 +65,7 @@ namespace UnityFS.Editor
 
             public void Cleanup()
             {
-                _assetHashSet.Clear();
+                _assetPathHashSet.Clear();
                 _assets.Clear();
                 foreach (var slice in slices)
                 {
@@ -194,7 +194,7 @@ namespace UnityFS.Editor
             private bool AdjustBundleSlice(BundleBuilderData data, BundleBuilderData.BundleInfo bundleInfo,
                 string bundleName, PackedObject packedObject)
             {
-                var assetPath = AssetDatabase.GetAssetPath(packedObject.asset);
+                var assetPath = packedObject.assetPath;
                 var guid = AssetDatabase.AssetPathToGUID(assetPath);
                 var streamingAssets = data.IsStreamingAssets(guid, bundleInfo);
                 var slicePlatform = packedObject.platform;

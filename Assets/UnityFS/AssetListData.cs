@@ -17,22 +17,61 @@ namespace UnityFS
     }
 
     [Serializable]
-    public class AssetListData : ScriptableObject, ISerializationCallbackReceiver
+    public class AssetListData
     {
         public float timeSeconds = 30f;
-        private HashSet<string> _keys = new HashSet<string>();
         public List<AssetTimestamp> timestamps = new List<AssetTimestamp>();
 
-        public void Begin()
+        private HashSet<string> _keys = new HashSet<string>();
+
+        public static void WriteTo(string filePath, AssetListData listData)
+        {
+            try
+            {
+                if (listData == null)
+                {
+                    listData = new AssetListData();
+                }
+                listData.OnBeforeSerialize();
+                var json = JsonUtility.ToJson(listData);
+                File.WriteAllText(filePath, json);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(exception);
+            }
+        }
+
+        public static AssetListData ReadFrom(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    var json = File.ReadAllText(filePath);
+                    var data = JsonUtility.FromJson<AssetListData>(json);
+                    data.OnAfterDeserialize();
+                    return data;
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return null;
+        }
+
+        public bool Begin()
         {
 #if UNITY_EDITOR
             if (timestamps.Count != 0)
             {
                 _keys.Clear();
                 timestamps.Clear();
-                EditorUtility.SetDirty(this);
+                return true;
             }
 #endif
+            return false;
         }
 
         public void End()
@@ -44,7 +83,7 @@ namespace UnityFS
             return _keys.Contains(guid);
         }
 
-        public void AddObject(float time, string assetPath)
+        public bool AddObject(float time, string assetPath)
         {
 #if UNITY_EDITOR
             if (time < timeSeconds)
@@ -58,14 +97,11 @@ namespace UnityFS
                         time = time,
                         guid = assetGuid,
                     });
-                    EditorUtility.SetDirty(this);
-                }
-                else
-                {
-                    Debug.LogWarningFormat(assetPath);
+                    return true;
                 }
             }
 #endif
+            return false;
         }
 
         public void OnBeforeSerialize()

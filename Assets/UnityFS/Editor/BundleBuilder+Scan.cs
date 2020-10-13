@@ -90,22 +90,26 @@ namespace UnityFS.Editor
                     }
 
                     var normFileName = file.Replace('\\', '/');
-                    var fileAsset = AssetDatabase.LoadMainAssetAtPath(normFileName);
-                    CollectAsset(data, bundle, fileAsset, normFileName, platform);
+                    // var fileAsset = AssetDatabase.LoadMainAssetAtPath(normFileName);
+                    CollectAsset(data, bundle, normFileName, platform);
                 }
             }
             else
             {
-                CollectAsset(data, bundle, asset, targetPath, platform);
+                CollectAsset(data, bundle, targetPath, platform);
             }
         }
 
-        private static bool CollectAssetList(BundleBuilderData data, BundleBuilderData.BundleInfo bundle,
-            AssetListData asset, PackagePlatform platform)
+        private static bool CollectAssetList(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, AssetListData assetListData, PackagePlatform platform)
         {
-            for (var index = 0; index < asset.timestamps.Count; index++)
+            if (assetListData == null)
             {
-                var ts = asset.timestamps[index];
+                return false;
+            }
+
+            for (var index = 0; index < assetListData.timestamps.Count; index++)
+            {
+                var ts = assetListData.timestamps[index];
                 var assetPath = AssetDatabase.GUIDToAssetPath(ts.guid);
 
                 // 剔除 filelist 对象
@@ -117,8 +121,8 @@ namespace UnityFS.Editor
                         continue;
                     }
 
-                    var mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                    CollectAsset(data, bundle, mainAsset, assetPath, platform);
+                    // var mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                    CollectAsset(data, bundle, assetPath, platform);
                 }
             }
 
@@ -126,17 +130,11 @@ namespace UnityFS.Editor
         }
 
         // 最终资源
-        private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset,
-            string assetPath, PackagePlatform platform)
+        private static bool CollectAsset(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, string assetPath, PackagePlatform platform)
         {
-            if (asset == null)
+            if (assetPath.EndsWith(Manifest.AssetListDataExt))
             {
-                return false;
-            }
-
-            var listData = asset as AssetListData;
-            if (listData != null)
-            {
+                var listData = AssetListData.ReadFrom(assetPath);
                 return CollectAssetList(data, bundle, listData, platform);
             }
 
@@ -151,14 +149,14 @@ namespace UnityFS.Editor
                         var rule = split.rules[ruleIndex];
                         if (rule.exclude)
                         {
-                            if (IsRuleMatched(rule, asset, assetPath))
+                            if (IsRuleMatched(rule, assetPath))
                             {
                                 break;
                             }
                         }
                         else
                         {
-                            if (IsRuleMatched(rule, asset, assetPath))
+                            if (IsRuleMatched(rule, assetPath))
                             {
                                 ruleMatch = true;
                                 break;
@@ -173,14 +171,11 @@ namespace UnityFS.Editor
 
                 if (ruleMatch)
                 {
-                    if (!ContainsAsset(data, asset) && split.AddObject(asset, platform))
+                    if (!ContainsAsset(data, assetPath) && split.AddObject(assetPath, platform))
                     {
-                        if (data.extractShaderVariantCollections)
-                        {
-                            CheckShaderVariants(data, bundle, asset, assetPath, platform);
-                        }
+                        CheckShaderVariants(data, bundle, assetPath, platform);
                     }
-                    
+
                     return true;
                 }
             }
@@ -188,10 +183,20 @@ namespace UnityFS.Editor
             return false;
         }
 
-        private static void CheckShaderVariants(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object shaderVariants,
-            string assetPath, PackagePlatform platform)
+        private static void CheckShaderVariants(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, string assetPath, PackagePlatform platform)
         {
-            #if UNITY_2018_1_OR_NEWER
+#if UNITY_2018_1_OR_NEWER
+            if (!data.extractShaderVariantCollections)
+            {
+                return;
+            }
+
+            if (!assetPath.EndsWith(".shadervariants"))
+            {
+                return;
+            }
+
+            var shaderVariants = AssetDatabase.LoadMainAssetAtPath(assetPath);
             var shaderVariantCollection = shaderVariants as ShaderVariantCollection;
             if (shaderVariantCollection != null)
             {
@@ -202,20 +207,22 @@ namespace UnityFS.Editor
                     var shaderPath = AssetDatabase.GetAssetPath(shader);
                     if (shaderPath.StartsWith("Assets/"))
                     {
-                        CollectAsset(data, bundle, shader, shaderPath, platform);
+                        //TODO: check if in shaderVariants
+
+                        CollectAsset(data, bundle, shaderPath, platform);
                     }
                 }
             }
-            #endif
+#endif
         }
 
-        public static bool ContainsAsset(BundleBuilderData data, Object assetObject)
+        public static bool ContainsAsset(BundleBuilderData data, string assetPath)
         {
             foreach (var bundle in data.bundles)
             {
                 foreach (var split in bundle.splits)
                 {
-                    if (split.ContainsObject(assetObject))
+                    if (split.ContainsAssetPath(assetPath))
                     {
                         return true;
                     }
@@ -225,36 +232,54 @@ namespace UnityFS.Editor
             return false;
         }
 
-        public static bool IsAssetTypeMatched(BundleBuilderData.BundleSplitRule rule, Object asset)
+        private static bool IsTextureAsset(string extension)
+        {
+            return extension == ".png"
+                || extension == ".jpg" || extension == ".jpeg"
+                || extension == ".bmp"
+                || extension == ".tga";
+        }
+
+        private static bool IsTextAsset(string extension)
+        {
+            return extension == ".txt"
+                || extension == ".bytes"
+                || extension == ".xml"
+                || extension == ".json";
+        }
+
+        private static bool IsAudioAsset(string extension)
+        {
+            return extension == ".mp3"
+                || extension == ".ogg";
+        }
+
+        public static bool IsAssetTypeMatched(BundleBuilderData.BundleSplitRule rule, string assetPath, FileInfo fileInfo)
         {
             if (rule.assetTypes != 0)
             {
-                if ((rule.assetTypes & BundleAssetTypes.Prefab) == 0 && asset is GameObject)
-                {
-                    var file = AssetDatabase.GetAssetPath(asset);
-                    if (file != null && file.EndsWith(".prefab"))
-                    {
-                        return false;
-                    }
-                }
-                else if ((rule.assetTypes & BundleAssetTypes.TextAsset) == 0 && asset is TextAsset)
+                var ext = fileInfo.Extension.ToLower();
+                if ((rule.assetTypes & BundleAssetTypes.Prefab) == 0 && ext == ".prefab")
                 {
                     return false;
                 }
-                else if ((rule.assetTypes & BundleAssetTypes.Animation) == 0 &&
-                         (asset is Animation || asset is AnimationClip))
+                else if ((rule.assetTypes & BundleAssetTypes.TextAsset) == 0 && IsTextAsset(ext))
                 {
                     return false;
                 }
-                else if ((rule.assetTypes & BundleAssetTypes.Material) == 0 && asset is Material)
+                else if ((rule.assetTypes & BundleAssetTypes.Animation) == 0 && ext == ".anim")
                 {
                     return false;
                 }
-                else if ((rule.assetTypes & BundleAssetTypes.Texture) == 0 && asset is Texture)
+                else if ((rule.assetTypes & BundleAssetTypes.Material) == 0 && ext == ".mat")
                 {
                     return false;
                 }
-                else if ((rule.assetTypes & BundleAssetTypes.Audio) == 0 && asset is AudioClip)
+                else if ((rule.assetTypes & BundleAssetTypes.Texture) == 0 && IsTextureAsset(ext))
+                {
+                    return false;
+                }
+                else if ((rule.assetTypes & BundleAssetTypes.Audio) == 0 && IsAudioAsset(ext))
                 {
                     return false;
                 }
@@ -263,49 +288,52 @@ namespace UnityFS.Editor
             return true;
         }
 
-        public static bool IsRuleMatched(BundleBuilderData.BundleSplitRule rule, Object asset, string assetPath)
+        public static bool IsRuleMatched(BundleBuilderData.BundleSplitRule rule, string assetPath)
         {
+            var fileInfo = new FileInfo(assetPath);
+            var assetName = fileInfo.Name.Substring(0, fileInfo.Name.Length - fileInfo.Extension.Length);
+
             switch (rule.type)
             {
                 case BundleBuilderData.BundleSplitType.Prefix:
-                {
-                    if (!asset.name.StartsWith(rule.keyword))
                     {
-                        return false;
-                    }
+                        if (!assetName.StartsWith(rule.keyword))
+                        {
+                            return false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case BundleBuilderData.BundleSplitType.Suffix:
-                {
-                    if (!asset.name.EndsWith(rule.keyword))
                     {
-                        return false;
-                    }
+                        if (!assetName.EndsWith(rule.keyword))
+                        {
+                            return false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case BundleBuilderData.BundleSplitType.FileSuffix:
-                {
-                    if (!assetPath.EndsWith(rule.keyword))
                     {
-                        return false;
-                    }
+                        if (!assetPath.EndsWith(rule.keyword))
+                        {
+                            return false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case BundleBuilderData.BundleSplitType.PathPrefix:
-                {
-                    if (!assetPath.StartsWith(rule.keyword))
                     {
-                        return false;
-                    }
+                        if (!assetPath.StartsWith(rule.keyword))
+                        {
+                            return false;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
 
-            return IsAssetTypeMatched(rule, asset);
+            return IsAssetTypeMatched(rule, assetPath, fileInfo);
         }
     }
 }
