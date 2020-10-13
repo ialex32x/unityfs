@@ -393,7 +393,11 @@ namespace UnityFS.Editor
         public static AssetBundleManifest BuildAssetBundles(PackageBuildInfo buildInfo,
             AssetBundleBuild[] assetBundleBuilds)
         {
-            var options = BuildAssetBundleOptions.DeterministicAssetBundle;
+            var options = BuildAssetBundleOptions.None;
+            if (buildInfo.data.deterministicAssetBundle)
+            {
+                options |= BuildAssetBundleOptions.DeterministicAssetBundle;
+            }
             if (buildInfo.data.disableTypeTree)
             {
                 options |= BuildAssetBundleOptions.DisableWriteTypeTree;

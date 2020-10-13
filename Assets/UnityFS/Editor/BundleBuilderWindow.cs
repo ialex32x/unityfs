@@ -541,6 +541,7 @@ namespace UnityFS.Editor
                 _data.streamingAssetsManifest = EditorGUILayout.Toggle("StreamingAssets Manifest", _data.streamingAssetsManifest);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
+                _data.deterministicAssetBundle = EditorGUILayout.Toggle("Deterministic AssetBundle", _data.deterministicAssetBundle);
 #if !UNITY_2018_1_OR_NEWER
                 EditorGUILayout.HelpBox("'extractShaderVariantCollections' require: UNITY_2018_1_OR_NEWER", MessageType.Warning);
 
