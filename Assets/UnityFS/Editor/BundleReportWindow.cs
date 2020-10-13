@@ -77,8 +77,8 @@ namespace UnityFS.Editor
                     EditorGUILayout.BeginHorizontal();
                     EditorGUI.BeginChangeCheck();
                     rule.assetTypes =
-                        (BundleAssetTypes) EditorGUILayout.EnumFlagsField(rule.assetTypes, GUILayout.Width(80f));
-                    rule.type = (BundleBuilderData.BundleSplitType) EditorGUILayout.EnumPopup(rule.type,
+                        (BundleAssetTypes)EditorGUILayout.EnumFlagsField(rule.assetTypes, GUILayout.Width(80f));
+                    rule.type = (BundleBuilderData.BundleSplitType)EditorGUILayout.EnumPopup(rule.type,
                         GUILayout.Width(80f));
                     rule.keyword = EditorGUILayout.TextField(rule.keyword, GUILayout.MinWidth(80f),
                         GUILayout.ExpandWidth(true));
@@ -153,8 +153,8 @@ namespace UnityFS.Editor
                     bundle.note = EditorGUILayout.TextField("Info", bundle.note);
                     bundle.tag = EditorGUILayout.TextField("Tag", bundle.tag);
                     bundle.streamingAssets = EditorGUILayout.Toggle("StreamingAssets", bundle.streamingAssets);
-                    bundle.load = (Manifest.BundleLoad) EditorGUILayout.EnumPopup("Load", bundle.load);
-                    bundle.type = (Manifest.BundleType) EditorGUILayout.EnumPopup("Type", bundle.type);
+                    bundle.load = (Manifest.BundleLoad)EditorGUILayout.EnumPopup("Load", bundle.load);
+                    bundle.type = (Manifest.BundleType)EditorGUILayout.EnumPopup("Type", bundle.type);
                     bundle.priority = EditorGUILayout.IntSlider("Priority", bundle.priority, 0, 10000);
                     if (EditorGUI.EndChangeCheck())
                     {
@@ -199,7 +199,7 @@ namespace UnityFS.Editor
                         EditorGUI.BeginChangeCheck();
                         target.enabled = EditorGUILayout.Toggle(target.enabled, GUILayout.Width(12f));
                         EditorGUILayout.ObjectField(target.target, typeof(Object), false);
-                        target.platform = (PackagePlatform) EditorGUILayout.EnumPopup(target.platform);
+                        target.platform = (PackagePlatform)EditorGUILayout.EnumPopup(target.platform);
                         if (EditorGUI.EndChangeCheck())
                         {
                             _data.MarkAsDirty();
@@ -285,22 +285,27 @@ namespace UnityFS.Editor
                                         // }
                                         EditorGUILayout.LabelField("Total (Raw): ", PathUtils.GetFileSizeString(bundleSlice.totalRawSize));
                                         EditorGUILayout.LabelField("Total (Build): ", PathUtils.GetFileSizeString(bundleSlice.lastBuildSize));
+                                        EditorGUILayout.IntField("Objects: ", assetCount);
                                         EditorGUILayout.EnumPopup("Platform", bundleSlice.platform);
                                         EditorGUI.EndDisabledGroup();
 
-                                        for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
+                                        if (_data.showBundleDetails)
                                         {
-                                            var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                                            EditorGUILayout.BeginHorizontal();
-                                            DrawSingleAssetAttributes(_data, assetGuid);
-                                            if (GUILayout.Button("?", GUILayout.Width(20f)))
+                                            //TODO: 太卡了, 需要优化展示方式
+                                            for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                             {
-                                                BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
-                                            }
+                                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
+                                                EditorGUILayout.BeginHorizontal();
+                                                DrawSingleAssetAttributes(_data, assetGuid);
+                                                if (GUILayout.Button("?", GUILayout.Width(20f)))
+                                                {
+                                                    BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
+                                                }
 
-                                            EditorGUILayout.EndHorizontal();
+                                                EditorGUILayout.EndHorizontal();
+                                            }
                                         }
-                                        
+
                                         EditorGUILayout.EndVertical();
                                         EditorGUILayout.EndHorizontal();
                                         GUI.color = _GUIColor;
@@ -448,7 +453,7 @@ namespace UnityFS.Editor
                 });
             });
         }
-        
+
         private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid)
         {
             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
