@@ -541,9 +541,11 @@ namespace UnityFS.Editor
                 _data.streamingAssetsManifest = EditorGUILayout.Toggle("StreamingAssets Manifest", _data.streamingAssetsManifest);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
-#if UNITY_2018_1_OR_NEWER
-                _data.extractShaderVariantCollections = EditorGUILayout.Toggle("Extract Shader Collections", _data.extractShaderVariantCollections);
+#if !UNITY_2018_1_OR_NEWER
+                EditorGUILayout.HelpBox("'extractShaderVariantCollections' require: UNITY_2018_1_OR_NEWER", MessageType.Warning);
+
 #endif
+                _data.extractShaderVariantCollections = EditorGUILayout.Toggle("Extract Shader Collections", _data.extractShaderVariantCollections);
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.IntField("Build", _data.build);
                 EditorGUI.EndDisabledGroup();
