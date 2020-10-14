@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace UnityFS.Editor
 {
@@ -11,13 +12,14 @@ namespace UnityFS.Editor
     using UnityEngine;
     using UnityEditor;
 
-    public class BundleBuilderWindow : BaseEditorWindow
+    public partial class BundleBuilderWindow : BaseEditorWindow
     {
         public const string KeyForPackagePlatforms = ".BundleBuilderWindow.Platforms";
         public const string KeyForTabIndex = ".BundleBuilderWindow.TabIndex";
         public const string KeyForSearchKey = "BundleBuilderWindow._searchKeyword";
         public const string KeyForSearchSliceKey = "BundleBuilderWindow._searchSliceKeyword";
         public const string KeyForShowDefinedOnly = "BundleBuilderWindow.showDefinedOnly";
+        public const string KeyForUseRegexMatch = "BundleBuilderWindow.UseRegexMatch";
         public const string KeyForShowSelectionOnly = "BundleBuilderWindow.showSelectionOnly";
         public const string KeyForShowStreamingAssetsOnly = "BundleBuilderWindow.showStreamingAssetsOnly";
         [SerializeField] MultiColumnHeaderState _headerState;
@@ -67,6 +69,7 @@ namespace UnityFS.Editor
             _searchKeyword = EditorPrefs.GetString(KeyForSearchKey);
             _searchSliceKeyword = EditorPrefs.GetString(KeyForSearchSliceKey);
             _showDefinedOnly = EditorPrefs.GetInt(KeyForShowDefinedOnly) == 1;
+            _useRegexMatch = EditorPrefs.GetInt(KeyForUseRegexMatch) == 1;
             _showSelectionOnly = EditorPrefs.GetInt(KeyForShowSelectionOnly) == 1;
             _showStreamingAssetsOnly = EditorPrefs.GetInt(KeyForShowStreamingAssetsOnly) == 1;
             UpdateSearchResults();
@@ -102,10 +105,12 @@ namespace UnityFS.Editor
             window._searchKeyword = AssetDatabase.GUIDToAssetPath(guid);
             window._searchSliceKeyword = "";
             window._showDefinedOnly = false;
+            window._useRegexMatch = false;
             window._showSelectionOnly = false;
             EditorPrefs.SetString(KeyForSearchKey, window._searchKeyword);
             EditorPrefs.SetString(KeyForSearchSliceKey, window._searchSliceKeyword);
             EditorPrefs.SetInt(KeyForShowDefinedOnly, window._showDefinedOnly ? 1 : 0);
+            EditorPrefs.SetInt(KeyForUseRegexMatch, window._useRegexMatch ? 1 : 0);
             EditorPrefs.SetInt(KeyForShowSelectionOnly, window._showSelectionOnly ? 1 : 0);
             window.UpdateSearchResults();
         }
@@ -137,6 +142,7 @@ namespace UnityFS.Editor
         private bool _showStreamingAssetsOnly; // 仅列出 StreamingAssets 资源
         private bool _showDefinedOnly; // 仅列出非默认的 (有修改)
         private bool _showSelectionOnly; // 仅列出 Project 窗口中选中的
+        private bool _useRegexMatch; // 是否启用正则匹配
         private string _searchKeyword;  // 仅列出符合指定关键字的资源
         private string _searchSliceKeyword; // 仅列出符合指定关键字的包中的资源 
         private bool _batchedSelectMarks;
@@ -151,9 +157,19 @@ namespace UnityFS.Editor
             var keyword = _searchKeyword;
             var sliceKeyword = _searchSliceKeyword;
             var showDefinedOnly = _showDefinedOnly;
+            var useRegexMatch = _useRegexMatch;
             var showSelectionOnly = _showSelectionOnly;
             var showStreamingAssetsOnly = _showStreamingAssetsOnly;
             // var searchCount = _data.searchMax;
+
+            Regex nameRegex = null;
+            Regex sliceNameRegex = null;
+
+            if (_useRegexMatch)
+            {
+                nameRegex = MakeRegex(keyword);
+                sliceNameRegex = MakeRegex(sliceKeyword);
+            }
 
             _searchResults.Clear();
             var selectionSet = new HashSet<string>();
@@ -177,11 +193,9 @@ namespace UnityFS.Editor
                     var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                     if (!showSelectionOnly || selectionSet.Contains(assetPath))
                     {
-                        if (string.IsNullOrEmpty(keyword) ||
-                            assetPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        if (IsStringMatch(nameRegex, keyword, assetPath))
                         {
-                            if (string.IsNullOrEmpty(sliceKeyword) ||
-                                bundleSlice.name.IndexOf(sliceKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                            if (IsStringMatch(sliceNameRegex, sliceKeyword, bundleSlice.name))
                             {
                                 var attrs = _data.GetAssetAttributes(assetGuid);
                                 if (attrs != null || !showDefinedOnly)
@@ -202,6 +216,34 @@ namespace UnityFS.Editor
                     }
                 }
             });
+        }
+
+        private Regex MakeRegex(string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern))
+            {
+                return null;
+            }
+
+            try
+            {
+                var regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.Singleline);
+                return regex;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private bool IsStringMatch(Regex regex, string keyword, string text)
+        {
+            if (regex != null)
+            {
+                return regex.IsMatch(text);
+            }
+
+            return string.IsNullOrEmpty(keyword) || text.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void ApplyAllMarks(Action<AssetAttributes> callback)
@@ -366,6 +408,14 @@ namespace UnityFS.Editor
                 {
                     _showDefinedOnly = nShowDefinedOnly;
                     EditorPrefs.SetInt(KeyForShowDefinedOnly, _showDefinedOnly ? 1 : 0);
+                    UpdateSearchResults();
+                }
+
+                var nUseRegexMatch = EditorGUILayout.Toggle("Use Regex Match", _useRegexMatch);
+                if (nUseRegexMatch != _useRegexMatch)
+                {
+                    _useRegexMatch = nUseRegexMatch;
+                    EditorPrefs.SetInt(KeyForUseRegexMatch, _useRegexMatch ? 1 : 0);
                     UpdateSearchResults();
                 }
 
