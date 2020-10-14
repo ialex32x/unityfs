@@ -539,6 +539,7 @@ namespace UnityFS.Editor
                 // _data.searchMax = EditorGUILayout.IntField("Search Max", _data.searchMax);
                 _data.streamingAssetsAnyway = EditorGUILayout.Toggle("StreamingAssets Anyway", _data.streamingAssetsAnyway);
                 _data.streamingAssetsManifest = EditorGUILayout.Toggle("StreamingAssets Manifest", _data.streamingAssetsManifest);
+                _data.showBundleDetails = EditorGUILayout.Toggle("Show Bundle Details", _data.showBundleDetails);
                 _data.disableTypeTree = EditorGUILayout.Toggle("Disable TypeTree", _data.disableTypeTree);
                 _data.lz4Compression = EditorGUILayout.Toggle("LZ4 Compression", _data.lz4Compression);
                 _data.deterministicAssetBundle = EditorGUILayout.Toggle("Deterministic AssetBundle", _data.deterministicAssetBundle);

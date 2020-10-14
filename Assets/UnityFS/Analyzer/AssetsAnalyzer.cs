@@ -11,6 +11,9 @@ namespace UnityFS.Analyzer
         void OnAssetOpen(string assetPath);
         void OnAssetAccess(string assetPath);
         void OnAssetClose(string assetPath);
+
+        void Begin();
+        void End();
     }
 
     public class DefaultAssetsAnalyzer : IAssetsAnalyzer
@@ -31,14 +34,6 @@ namespace UnityFS.Analyzer
                 _dirty = true;
             }
             JobScheduler.DispatchCoroutine(_Update());
-#if UNITY_EDITOR
-            Application.quitting += OnQuiting;
-#endif
-        }
-
-        private void OnQuiting()
-        {
-            Stop();
         }
 
         private IEnumerator _Update()
@@ -50,7 +45,15 @@ namespace UnityFS.Analyzer
             }
         }
 
-        public void Stop()
+        public void Begin()
+        {
+            if (_stop)
+            {
+                throw new NotSupportedException();
+            }
+        }
+
+        public void End()
         {
             _stop = true;
             _timeline.Stop();

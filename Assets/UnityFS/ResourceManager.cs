@@ -134,6 +134,11 @@ namespace UnityFS
                 }
             }
 
+            if (_analyzer != null)
+            {
+                _analyzer.Begin();
+            }
+
             if (args.devMode)
             {
                 _assetProvider = new AssetDatabaseAssetProvider(args.asyncSimMin, args.asyncSimMax);
@@ -186,6 +191,12 @@ namespace UnityFS
             {
                 _assetProvider.Close();
             }
+
+            if (_analyzer != null)
+            {
+                _analyzer.End();
+            }
+
             JobScheduler.Clear();
         }
 

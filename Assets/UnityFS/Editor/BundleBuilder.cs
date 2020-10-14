@@ -430,8 +430,7 @@ namespace UnityFS.Editor
                     File.Delete(zipArchiveFileName);
                 }
 
-                using (var zip = new ZipOutputStream(File.Open(zipArchiveFileName, FileMode.Create, FileAccess.Write,
-                    FileShare.Write)))
+                using (var zip = new ZipOutputStream(File.Open(zipArchiveFileName, FileMode.Create, FileAccess.Write, FileShare.Write)))
                 {
                     zip.IsStreamOwner = true;
                     foreach (var assetPath in build.assetPaths)
