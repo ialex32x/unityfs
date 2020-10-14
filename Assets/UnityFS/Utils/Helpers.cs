@@ -24,6 +24,11 @@ namespace UnityFS.Utils
             _roots.Remove(asset);
         }
 
+        public static void RemoveAll()
+        {
+            _roots.Clear();
+        }
+
         public static void ValidateManifest(IList<string> urls, Action<int> callback, int retry = 0)
         {
             ResourceManager.ValidateManifest(urls, result => callback((int) result), retry);
