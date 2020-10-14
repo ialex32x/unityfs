@@ -421,6 +421,22 @@ namespace UnityFS
             }
         }
 
+        public void CollectAssets(List<UAsset> assets)
+        {
+            foreach (var kv in _assets)
+            {
+                var weak = kv.Value;
+                if (weak.IsAlive)
+                {
+                    var asset = weak.Target as UAsset;
+                    if (asset != null)
+                    {
+                        assets.Add(asset);
+                    }
+                }
+            }
+        }
+
         // 获取包信息
         public Manifest.BundleInfo GetBundleInfo(string bundleName)
         {

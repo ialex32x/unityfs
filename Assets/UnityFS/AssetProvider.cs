@@ -41,6 +41,11 @@ namespace UnityFS
         // 资源包是否立即可用 (本地有效)
         bool IsBundleAvailable(string bundleName);
 
+        /// <summary>
+        /// 将所有仍存在引用的资源填入 assets 列表中
+        /// </summary>
+        void CollectAssets(List<UAsset> assets);
+
         void Open(ResourceManagerArgs args);
         void Close();
     }

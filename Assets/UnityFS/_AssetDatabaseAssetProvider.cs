@@ -242,6 +242,22 @@ namespace UnityFS
             return asset;
         }
 
+        public void CollectAssets(List<UAsset> assets)
+        {
+            foreach (var kv in _assets)
+            {
+                var weak = kv.Value;
+                if (weak.IsAlive)
+                {
+                    var asset = weak.Target as UAsset;
+                    if (asset != null)
+                    {
+                        assets.Add(asset);
+                    }
+                }
+            }
+        }
+
         private bool IsFileExists(string assetPath)
         {
             return File.Exists(assetPath);

@@ -385,6 +385,11 @@ namespace UnityFS
         {
             return GetAssetProvider().GetInvalidatedBundles(Manifest.BundleLoad.Any);
         }
+
+        public static void CollectAssets(List<UAsset> assets)
+        {
+            GetAssetProvider().CollectAssets(assets);
+        }
         
         // 检查本地资源包状态, 返回所有需要下载的包信息的列表
         public static IList<Manifest.BundleInfo> GetInvalidatedBundles(Manifest.BundleLoad load)
