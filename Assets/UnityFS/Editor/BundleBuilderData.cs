@@ -19,7 +19,7 @@ namespace UnityFS.Editor
             public int id;
             public bool enabled = true;
 
-            public Object target;
+            public string targetPath;
 
             public PackagePlatform platform; // 在特定平台中生效
             // public BundleAssetTypes types = (BundleAssetTypes)~0; // (仅搜索目录时) 仅包含指定资源类型
@@ -118,29 +118,29 @@ namespace UnityFS.Editor
             return data;
         }
 
-        public void ForEachAsset(Action<BundleInfo, BundleSplit, BundleSlice, string> visitor)
+        public void ForEachAssetPath(Action<BundleInfo, BundleSplit, BundleSlice, string> visitor)
         {
             for (int i = 0, size = bundles.Count; i < size; i++)
             {
                 var bundle = bundles[i];
-                bundle.ForEachAsset((split, slice, assetGuid) => visitor(bundle, split, slice, assetGuid));
+                bundle.ForEachAssetPath((split, slice, assetPath) => visitor(bundle, split, slice, assetPath));
             }
         }
 
-        public AssetAttributes AddAssetAttributes(string guid)
+        public AssetAttributes AddAssetPathAttributes(string assetPath)
         {
             AssetAttributes attrs;
-            if (!assetAttributesMap.TryGetValue(guid, out attrs))
+            if (!assetAttributesMap.TryGetValue(assetPath, out attrs))
             {
-                attrs = assetAttributesMap[guid] = new AssetAttributes();
+                attrs = assetAttributesMap[assetPath] = new AssetAttributes();
                 MarkAsDirty();
             }
             return attrs;
         }
 
-        public bool RemoveAssetAttributes(string guid)
+        public bool RemoveAssetPathAttributes(string assetPath)
         {
-            if (assetAttributesMap.Remove(guid))
+            if (assetAttributesMap.Remove(assetPath))
             {
                 MarkAsDirty();
                 return true;
@@ -149,10 +149,10 @@ namespace UnityFS.Editor
             return false;
         }
 
-        public AssetAttributes GetAssetAttributes(string guid)
+        public AssetAttributes GetAssetPathAttributes(string assetPath)
         {
             AssetAttributes attrs;
-            return assetAttributesMap.TryGetValue(guid, out attrs) ? attrs : null;
+            return assetAttributesMap.TryGetValue(assetPath, out attrs) ? attrs : null;
         }
 
         public void MarkAsDirty()
@@ -176,22 +176,22 @@ namespace UnityFS.Editor
             }
         }
 
-        public bool IsPackAsset(string guid)
+        public bool IsPackAsset(string assetPath)
         {
-            var assetAttributes = GetAssetAttributes(guid);
+            var assetAttributes = GetAssetPathAttributes(assetPath);
             return assetAttributes == null || assetAttributes.packer != AssetPacker.DontPack;
         }
 
         // 确定一个资源是否需要进入 StreamingAssets
-        public bool IsStreamingAssets(string guid, BundleBuilderData.BundleInfo bundleInfo)
+        public bool IsStreamingAssets(string assetPath, BundleBuilderData.BundleInfo bundleInfo)
         {
-            var assetAttributes = GetAssetAttributes(guid);
+            var assetAttributes = GetAssetPathAttributes(assetPath);
 
             // 配置为自动分配 StreamingAssets
             if (assetAttributes == null || assetAttributes.packer == AssetPacker.Auto)
             {
                 // 出现在分析列表中 
-                if (assetListData != null && assetListData.Contains(guid))
+                if (assetListData != null && assetListData.Contains(assetPath))
                 {
                     return true;
                 }

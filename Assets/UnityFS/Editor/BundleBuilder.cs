@@ -46,7 +46,7 @@ namespace UnityFS.Editor
 
         public static void BuildPackages(BundleBuilderData data, string outputPath, PackagePlatform platform)
         {
-            BuildSinglePlatformPackages(new PackageSharedBuildInfo() {data = data, outputPath = outputPath}, platform);
+            BuildSinglePlatformPackages(new PackageSharedBuildInfo() { data = data, outputPath = outputPath }, platform);
         }
 
         public static BuildTarget ToBuildTarget(PackagePlatform platform)
@@ -134,14 +134,14 @@ namespace UnityFS.Editor
                     File.Copy(Path.Combine(packagePath, Manifest.ChecksumFileName),
                         Path.Combine(buildInfo.streamingAssetsPath, Manifest.ChecksumFileName), true);
                 }
-                
+
                 foreach (var bundleInfo in embeddedManifest.bundles)
                 {
                     // Debug.LogFormat("copy {0}", bundleInfo.name);
                     File.Copy(Path.Combine(packagePath, bundleInfo.name),
                         Path.Combine(buildInfo.streamingAssetsPath, bundleInfo.name), true);
                 }
-                
+
                 if (fileListManifest != null)
                 {
                     foreach (var entry in fileListManifest.fileEntrys)
@@ -232,7 +232,7 @@ namespace UnityFS.Editor
                 var fi = new FileInfo(file);
                 var filename = NormalizeFileName(relativeDir + '/' + fi.Name);
                 var match = false;
-                
+
                 if (fileListManifest != null)
                 {
                     foreach (var entry in fileListManifest.fileEntrys)
@@ -340,8 +340,7 @@ namespace UnityFS.Editor
                             var assetCount = bundleSlice.GetAssetCount();
                             for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                                var assetPath = bundleSlice.GetAssetPath(assetIndex);
                                 var fileEntry = GenFileEntry(assetPath, assetPath);
                                 manifest.files.Add(fileEntry);
                                 if (CopyRawFile(buildInfo.packagePath, assetPath))
@@ -448,7 +447,7 @@ namespace UnityFS.Editor
         {
             var fi = new FileInfo(assetPath);
             var name = ZipEntry.CleanName(assetPath);
-            var entry = new ZipEntry(name) {DateTime = fi.LastWriteTimeUtc, Size = fi.Length};
+            var entry = new ZipEntry(name) { DateTime = fi.LastWriteTimeUtc, Size = fi.Length };
 
             // entry.Comment = "";
             zip.PutNextEntry(entry);
@@ -492,12 +491,11 @@ namespace UnityFS.Editor
                         if (bundleSlice.IsBuild(buildInfo.buildPlatform))
                         {
                             var assetNames = new List<string>();
-                            for (int assetIndex = 0, assetCount =bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
+                            for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                                if (data.IsPackAsset(assetGuid))
+                                var assetPath = bundleSlice.GetAssetPath(assetIndex);
+                                if (data.IsPackAsset(assetPath))
                                 {
-                                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                                     assetNames.Add(assetPath);
                                 }
                             }
@@ -558,10 +556,9 @@ namespace UnityFS.Editor
                             var assetNames = new List<string>();
                             for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                                if (data.IsPackAsset(assetGuid))
+                                var assetPath = bundleSlice.GetAssetPath(assetIndex);
+                                if (data.IsPackAsset(assetPath))
                                 {
-                                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                                     assetNames.Add(assetPath);
                                 }
                             }
@@ -608,10 +605,9 @@ namespace UnityFS.Editor
                             var assetNames = new List<string>();
                             for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                             {
-                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                                if (data.IsPackAsset(assetGuid))
+                                var assetPath = bundleSlice.GetAssetPath(assetIndex);
+                                if (data.IsPackAsset(assetPath))
                                 {
-                                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                                     assetNames.Add(assetPath);
                                 }
                             }
@@ -687,7 +683,7 @@ namespace UnityFS.Editor
                 {
                     name = entryName,
                     checksum = checksum.hex,
-                    size = (int) stream.Position,
+                    size = (int)stream.Position,
                 };
             }
         }
@@ -756,8 +752,8 @@ namespace UnityFS.Editor
             var priority = bundleInfo.priority;
             for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
             {
-                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                var attrs = buildInfo.data.GetAssetAttributes(assetGuid);
+                var assetPath = bundleSlice.GetAssetPath(assetIndex);
+                var attrs = buildInfo.data.GetAssetPathAttributes(assetPath);
                 if (attrs != null)
                 {
                     if (attrs.priority > priority)
@@ -781,7 +777,7 @@ namespace UnityFS.Editor
             var manifest = new Manifest();
             manifest.chunkSize = data.chunkSize;
             manifest.build = buildInfo.data.build;
-            manifest.timestamp = (int) (DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
+            manifest.timestamp = (int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
             manifest.tag = buildInfo.sharedBuildInfo.tag;
             var embeddedManifest = new EmbeddedManifest();
             if (assetBundleManifest != null)
@@ -817,8 +813,7 @@ namespace UnityFS.Editor
 
                         for (int assetIndex = 0, assetCount = bundleSlice.GetAssetCount(); assetIndex < assetCount; assetIndex++)
                         {
-                            var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
-                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                            var assetPath = bundleSlice.GetAssetPath(assetIndex);
                             bundle.assets.Add(assetPath);
                         }
 
@@ -891,8 +886,7 @@ namespace UnityFS.Editor
                     buildInfo.filelist.Add(fileList.name);
                     foreach (var bundleTargets in bundleInfo.targets)
                     {
-                        var target = bundleTargets.target;
-                        var targetPath = AssetDatabase.GetAssetPath(target);
+                        var targetPath = bundleTargets.targetPath;
                         bundle.assets.Add(targetPath);
                     }
 
@@ -982,11 +976,11 @@ namespace UnityFS.Editor
         }
 
         // 包中是否存在指定的目标资源 (只比对target, 不检查实际资源列表)
-        public static bool ContainsTarget(BundleBuilderData.BundleInfo bundleInfo, Object targetObject)
+        public static bool ContainsTarget(BundleBuilderData.BundleInfo bundleInfo, string targetPath)
         {
             foreach (var target in bundleInfo.targets)
             {
-                if (target.target == targetObject)
+                if (target.targetPath == targetPath)
                 {
                     return true;
                 }
@@ -1000,12 +994,13 @@ namespace UnityFS.Editor
         {
             foreach (var targetObject in targetObjects)
             {
-                if (!ContainsTarget(bundleInfo, targetObject))
+                var targetPath = AssetDatabase.GetAssetPath(targetObject);
+                if (!ContainsTarget(bundleInfo, targetPath))
                 {
                     bundleInfo.targets.Add(new BundleBuilderData.BundleAssetTarget()
                     {
                         id = ++data.id,
-                        target = targetObject,
+                        targetPath = targetPath,
                     });
                 }
             }

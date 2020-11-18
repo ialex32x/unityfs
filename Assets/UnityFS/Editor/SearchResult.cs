@@ -10,6 +10,5 @@ namespace UnityFS.Editor
         public BundleBuilderData.BundleSlice bundleSlice;
 
         public string assetPath;
-        public string assetGuid;
     }
 }

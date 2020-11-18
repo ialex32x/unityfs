@@ -45,7 +45,7 @@ namespace UnityFS.Editor
             {
                 if (targetAsset.enabled/*&& targetAsset.IsBuildPlatform(buildPlatform)*/)
                 {
-                    Scan(data, bundle, targetAsset.target, targetAsset.platform);
+                    Scan(data, bundle, targetAsset.targetPath, targetAsset.platform);
                 }
             }
 
@@ -57,20 +57,19 @@ namespace UnityFS.Editor
             return true;
         }
 
-        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, Object asset, PackagePlatform platform)
+        public static void Scan(BundleBuilderData data, BundleBuilderData.BundleInfo bundle, string targetPath, PackagePlatform platform)
         {
-            if (asset == null)
+            if (string.IsNullOrEmpty(targetPath))
             {
                 return;
             }
 
-            var targetPath = AssetDatabase.GetAssetPath(asset);
             if (Directory.Exists(targetPath))
             {
                 // 是一个目录
                 foreach (var directory in Directory.GetDirectories(targetPath))
                 {
-                    Scan(data, bundle, AssetDatabase.LoadMainAssetAtPath(directory), platform);
+                    Scan(data, bundle, directory, platform);
                 }
 
                 foreach (var file in Directory.GetFiles(targetPath))
@@ -110,7 +109,7 @@ namespace UnityFS.Editor
             for (var index = 0; index < assetListData.timestamps.Count; index++)
             {
                 var ts = assetListData.timestamps[index];
-                var assetPath = AssetDatabase.GUIDToAssetPath(ts.guid);
+                var assetPath = ts.assetPath;
 
                 // 剔除 filelist 对象
                 if (!Directory.Exists(assetPath))

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba571c4fc5746744a8dfbbbee4eecee, type: 3}
   m_Name: unityfs
   m_EditorClassIdentifier: 
-  id: 32
-  build: 7
+  id: 35
+  build: 8
   encryptionKey: test
   chunkSize: 4096
   bundles:
@@ -30,16 +30,15 @@ MonoBehaviour:
     targets:
     - id: 2
       enabled: 1
-      target: {fileID: 102900000, guid: 22cfd8e2b9869124fab40932ad9c64fd, type: 3}
+      targetPath: Assets/Examples/Prefabs
       platform: 0
     - id: 10
       enabled: 1
-      target: {fileID: 6276737056871012079, guid: 846b46e40548c90498da55cb6cbab306,
-        type: 3}
+      targetPath: Assets/Examples/Prefabs/Cube 2.prefab
       platform: 0
     - id: 13
       enabled: 1
-      target: {fileID: 2100000, guid: a9acb3cd117fed445a2a6c70671571c9, type: 2}
+      targetPath: Assets/Examples/Materials/New Material 2.mat
       platform: 0
     splits:
     - encrypted: 1
@@ -55,62 +54,174 @@ MonoBehaviour:
         capacity: 1
         streamingAssets: 1
         platform: 0
-        histroy:
-        - df4858d82a3ad344d88e9ce52e8cbaa0
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_vrhpr6.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 846b46e40548c90498da55cb6cbab306
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_h7lsx.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 668e963c9b20d8f4a9ff590b67836a18
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_l9ulz6.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 992af6815f49f5c40a046b974de3c5d7
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_amgdl3.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 39c9918754758004abd0fc77903fefd3
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_onrfe6.pkg
         capacity: 1
         streamingAssets: 1
         platform: 0
-        histroy:
-        - bb139e380276a5b4a8c47ec1c7d48c3f
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_hpgcj4.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - e6ed50713350f7f4495cb1c101ea3a83
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_aajr76.pkg
         capacity: 1
         streamingAssets: 1
         platform: 0
-        histroy:
-        - 26da0e2a307e83d4abcc4678b485e810
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_chbdf.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - b94a6b52c1f97994ebf8dde96dd5f8db
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test1_cube_tsq6hfqmdn6_sw9vx6.pkg
         capacity: 1
         streamingAssets: 0
         platform: 0
-        histroy:
-        - ce7ab5d846e45ac4ca42d89d2dd9bbde
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 1.prefab
+        totalRawSize: 116329
+        lastBuildSize: 118848
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 1.prefab
+      - name: test1_cube_6edafwlehn6_wbvmw6.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 2.prefab
+        totalRawSize: 117647
+        lastBuildSize: 117760
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 2.prefab
+      - name: test1_cube_6edafwlehn6_6jypz5.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 3.prefab
+        totalRawSize: 116329
+        lastBuildSize: 118432
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 3.prefab
+      - name: test1_cube_6edafwlehn6_xa7rp3.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 4.prefab
+        totalRawSize: 116329
+        lastBuildSize: 118592
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 4.prefab
+      - name: test1_cube_6edafwlehn6_2ftze5.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 5.prefab
+        totalRawSize: 116329
+        lastBuildSize: 117968
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 5.prefab
+      - name: test1_cube_6edafwlehn6_eaem3.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 6.prefab
+        totalRawSize: 116329
+        lastBuildSize: 118448
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 6.prefab
+      - name: test1_cube_njhafwlehn6_g69nc5.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 6a.prefab
+        totalRawSize: 116329
+        lastBuildSize: 118624
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 6a.prefab
+      - name: test1_cube_njhafwlehn6_njv5y5.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 7.prefab
+        totalRawSize: 116329
+        lastBuildSize: 118064
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 7.prefab
+      - name: test1_cube_njhafwlehn6_dgaef6.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 8.prefab
+        totalRawSize: 117647
+        lastBuildSize: 117904
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 8.prefab
+      - name: test1_cube_njhafwlehn6_vvbor.pkg
+        capacity: 1
+        streamingAssets: 0
+        platform: 0
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/Cube 9.prefab
+        totalRawSize: 117647
+        lastBuildSize: 117808
+        _assetPaths:
+        - Assets/Examples/Prefabs/Cube 9.prefab
     - encrypted: 1
       name: mat
       sliceObjects: 0
@@ -137,9 +248,14 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - a9acb3cd117fed445a2a6c70671571c9
-        - f881d420c2dde77468fb13be84f58ce2
+        assetPathHistroy:
+        - Assets/Examples/Prefabs/dont_pack_me.mat
+        - Assets/Examples/Materials/New Material 2.mat
+        totalRawSize: 4074
+        lastBuildSize: 77472
+        _assetPaths:
+        - Assets/Examples/Prefabs/dont_pack_me.mat
+        - Assets/Examples/Materials/New Material 2.mat
   - id: 3
     buildOrder: 0
     name: test2.pkg
@@ -153,11 +269,11 @@ MonoBehaviour:
     targets:
     - id: 22
       enabled: 1
-      target: {fileID: 102900000, guid: 2feb7197082914e38a692c44a3798c2d, type: 3}
+      targetPath: Scripts
       platform: 0
     - id: 23
       enabled: 1
-      target: {fileID: 102900000, guid: 3dfe3a28b05b400449a47f5d67d0e83d, type: 3}
+      targetPath: Assets/Examples/Config
       platform: 0
     splits:
     - encrypted: 1
@@ -173,8 +289,15 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - b35ac340fd756464da622a10bd306629
+        assetPathHistroy:
+        - Assets/Examples/Scripts/main.js
+        - Scripts/main.js
+        - Scripts/file2.js
+        totalRawSize: 33
+        lastBuildSize: 0
+        _assetPaths:
+        - Scripts/file2.js
+        - Scripts/main.js
     - encrypted: 1
       name: 
       sliceObjects: 0
@@ -184,16 +307,25 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 423169b27afc2744d9f06d44346b777e
-        - e6471453252543c48af648e48b08262a
-        - 2bd99bdd627371a4ab6980f7fa960b3e
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: test2_ma9zqgqmdn6_wpbtd.pkg
         capacity: 0
-        streamingAssets: 1
+        streamingAssets: 0
         platform: 0
-        histroy:
-        - 2bd99bdd627371a4ab6980f7fa960b3e
+        assetPathHistroy:
+        - Assets/Examples/Config/test 1.txt
+        - Assets/Examples/Config/test 2.txt
+        - Assets/Examples/Config/test.txt
+        - Scripts
+        totalRawSize: 68
+        lastBuildSize: 0
+        _assetPaths:
+        - Assets/Examples/Config/test 1.txt
+        - Assets/Examples/Config/test 2.txt
+        - Assets/Examples/Config/test.txt
   - id: 17
     buildOrder: 1000
     name: bundle_17.pkg
@@ -207,7 +339,7 @@ MonoBehaviour:
     targets:
     - id: 18
       enabled: 1
-      target: {fileID: 102900000, guid: aee3db6889e696244a2836f9d06c45fc, type: 3}
+      targetPath: Assets/Examples/Textures
       platform: 0
     splits:
     - encrypted: 1
@@ -219,20 +351,16 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 26d5d477691d5a64290cb20bade47e1a
-        - e46dad9ccca72ad4587045373fba4ffa
-        - ad80bd1399b82cc4ba0c7f4d055ac1ce
-        - bbdea57f4b2d0904aac65d22b0c3092e
-        - 17bbb37abc5feb4458d9da91f2eb4c72
-        - 346337d8ea77fbc43a3ba7ac6a929b2d
-        - d0003454f4b6e7943aca59649d985e25
-        - 9577fb63144332b488d1c8433859ecc8
-        - c61fd958f9e455049afd354b396e1da6
-        - 8876ed2c6a1dea34ebdb8f54e04a0ddd
-        - 94ce73b887c90fb49b507a4155ff0260
-        - bca2247aa0c6e704aa8a818130fceaf7
-        - 88a0ecc9dbb98ff499b5f0df3004e831
+        assetPathHistroy:
+        - Assets/Examples/Textures/buildreport.png
+        - Assets/Examples/Textures/editorwindow.png
+        - Assets/Examples/Textures/test.png
+        totalRawSize: 128542
+        lastBuildSize: 116656
+        _assetPaths:
+        - Assets/Examples/Textures/buildreport.png
+        - Assets/Examples/Textures/editorwindow.png
+        - Assets/Examples/Textures/test.png
   - id: 19
     buildOrder: 1000
     name: bundle_19.pkg
@@ -246,15 +374,15 @@ MonoBehaviour:
     targets:
     - id: 20
       enabled: 1
-      target: {fileID: 102900000, guid: 3753d2e5af63eac439ba9b0f36641e6d, type: 3}
+      targetPath: Assets/Examples/Scenes/main_test.unity
       platform: 0
     - id: 21
       enabled: 1
-      target: {fileID: 102900000, guid: b35be9c075bfa7d4990280e18b1ac7fb, type: 3}
+      targetPath: Assets/Examples/Scenes/test2.unity
       platform: 0
     - id: 24
       enabled: 1
-      target: {fileID: 4900000, guid: b35ac340fd756464da622a10bd306629, type: 3}
+      targetPath: Assets/Examples/Scripts/main.js
       platform: 0
     splits:
     - encrypted: 0
@@ -266,14 +394,24 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - 3753d2e5af63eac439ba9b0f36641e6d
+        assetPathHistroy: []
+        totalRawSize: 0
+        lastBuildSize: 0
+        _assetPaths: []
       - name: bundle_19_4m5n8gqmdn6_kfqji6.pkg
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - b35be9c075bfa7d4990280e18b1ac7fb
+        assetPathHistroy:
+        - Assets/Examples/Scenes/main_test.unity
+        - Assets/Examples/Scenes/test2.unity
+        - Assets/Examples/Scripts/main.js
+        totalRawSize: 22787
+        lastBuildSize: 169960
+        _assetPaths:
+        - Assets/Examples/Scenes/main_test.unity
+        - Assets/Examples/Scenes/test2.unity
+        - Assets/Examples/Scripts/main.js
   - id: 25
     buildOrder: 1000
     name: bundle_25.pkg
@@ -287,7 +425,7 @@ MonoBehaviour:
     targets:
     - id: 26
       enabled: 1
-      target: {fileID: 102900000, guid: 2a5ab583c0072634e95457d9c3788741, type: 3}
+      targetPath: Assets/Examples/Files
       platform: 0
     splits:
     - encrypted: 0
@@ -299,9 +437,14 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - db7d162e08a882244a4eddc108898b11
-        - 471ba1dad829d6b45a75be93afc2cef9
+        assetPathHistroy:
+        - Assets/Examples/Files/test1.json
+        - Assets/Examples/Files/test2.json
+        totalRawSize: 357
+        lastBuildSize: 0
+        _assetPaths:
+        - Assets/Examples/Files/test1.json
+        - Assets/Examples/Files/test2.json
   - id: 29
     buildOrder: 1000
     name: bundle_29.pkg
@@ -315,7 +458,7 @@ MonoBehaviour:
     targets:
     - id: 30
       enabled: 1
-      target: {fileID: 20000000, guid: dcb7a7a5a34f7ac46bcac47f69b07576, type: 2}
+      targetPath: Assets/Examples/Shaders/NewShaderVariants.shadervariants
       platform: 0
     splits:
     - encrypted: 0
@@ -327,9 +470,14 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 0
         platform: 0
-        histroy:
-        - dcb7a7a5a34f7ac46bcac47f69b07576
-        - d4f313eebb079324197c5b717e1b092f
+        assetPathHistroy:
+        - Assets/Examples/Shaders/NewShaderVariants.shadervariants
+        - Assets/Examples/Shaders/NewSurfaceShader.shader
+        totalRawSize: 2074
+        lastBuildSize: 53000
+        _assetPaths:
+        - Assets/Examples/Shaders/NewShaderVariants.shadervariants
+        - Assets/Examples/Shaders/NewSurfaceShader.shader
   - id: 31
     buildOrder: 1000
     name: bundle_31.pkg
@@ -343,7 +491,7 @@ MonoBehaviour:
     targets:
     - id: 32
       enabled: 1
-      target: {fileID: 102900000, guid: 6639c5434788ed840963587829ea3725, type: 3}
+      targetPath: Assets/Examples/Textures/Atlas
       platform: 0
     splits:
     - encrypted: 0
@@ -355,17 +503,30 @@ MonoBehaviour:
         capacity: 0
         streamingAssets: 1
         platform: 0
-        histroy:
-        - bbdea57f4b2d0904aac65d22b0c3092e
-        - 17bbb37abc5feb4458d9da91f2eb4c72
-        - 346337d8ea77fbc43a3ba7ac6a929b2d
-        - d0003454f4b6e7943aca59649d985e25
-        - 9577fb63144332b488d1c8433859ecc8
-        - c61fd958f9e455049afd354b396e1da6
-        - 8876ed2c6a1dea34ebdb8f54e04a0ddd
-        - 94ce73b887c90fb49b507a4155ff0260
-        - bca2247aa0c6e704aa8a818130fceaf7
-        - 88a0ecc9dbb98ff499b5f0df3004e831
+        assetPathHistroy:
+        - Assets/Examples/Textures/Atlas/0.png
+        - Assets/Examples/Textures/Atlas/1.png
+        - Assets/Examples/Textures/Atlas/2.png
+        - Assets/Examples/Textures/Atlas/3.png
+        - Assets/Examples/Textures/Atlas/4.png
+        - Assets/Examples/Textures/Atlas/5.png
+        - Assets/Examples/Textures/Atlas/6.png
+        - Assets/Examples/Textures/Atlas/7.png
+        - Assets/Examples/Textures/Atlas/8.png
+        - Assets/Examples/Textures/Atlas/9.png
+        totalRawSize: 38492
+        lastBuildSize: 14745
+        _assetPaths:
+        - Assets/Examples/Textures/Atlas/0.png
+        - Assets/Examples/Textures/Atlas/1.png
+        - Assets/Examples/Textures/Atlas/2.png
+        - Assets/Examples/Textures/Atlas/3.png
+        - Assets/Examples/Textures/Atlas/4.png
+        - Assets/Examples/Textures/Atlas/5.png
+        - Assets/Examples/Textures/Atlas/6.png
+        - Assets/Examples/Textures/Atlas/7.png
+        - Assets/Examples/Textures/Atlas/8.png
+        - Assets/Examples/Textures/Atlas/9.png
   assetAttributesMap:
     _keys:
     - df4858d82a3ad344d88e9ce52e8cbaa0
@@ -415,12 +576,14 @@ MonoBehaviour:
   zipArchivePath: out/zipArchives
   packagePath: out/packages
   priorityMax: 10000
-  searchMax: 200
+  showBundleDetails: 0
   disableTypeTree: 0
   lz4Compression: 1
+  deterministicAssetBundle: 1
   extractShaderVariantCollections: 1
   streamingAssetsAnyway: 0
-  assetListData: {fileID: 11400000, guid: 44b73c513a944c24793e4ba9ef0ff18d, type: 2}
+  streamingAssetsManifest: 0
+  _mainAssetListPath: 
   skipExts:
     _values:
     - .xlsx

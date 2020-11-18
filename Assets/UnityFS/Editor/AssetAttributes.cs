@@ -21,7 +21,6 @@ namespace UnityFS.Editor
     [Serializable]
     public class AssetAttributes
     {
-        // public string assetGuid;
         public int priority;
         public AssetPacker packer;
     }

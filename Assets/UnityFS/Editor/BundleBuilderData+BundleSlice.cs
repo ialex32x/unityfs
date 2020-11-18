@@ -16,22 +16,22 @@ namespace UnityFS.Editor
             public int capacity;
             public bool streamingAssets; // 是否进入 StreamingAssets
             public PackagePlatform platform; // 打包资源的平台性质
-            public List<string> histroy = new List<string>();
+            public List<string> assetPathHistroy = new List<string>();
 
             public long totalRawSize; // 原始资源大小统计 (不准确, 目前没统计依赖)
             public long lastBuildSize; // 最近一次打包的实际大小
 
             // 最终进入打包的所有资源对象
-            public List<string> _assetGuids = new List<string>();
+            public List<string> _assetPaths = new List<string>();
 
             public int GetAssetCount()
             {
-                return _assetGuids.Count; 
+                return _assetPaths.Count; 
             }
 
-            public string GetAssetGuid(int index)
+            public string GetAssetPath(int index)
             {
-                return _assetGuids[index];
+                return _assetPaths[index];
             }
 
             public BundleSlice(string name, int capacity, bool streamingAssets, PackagePlatform platform)
@@ -46,13 +46,13 @@ namespace UnityFS.Editor
             {
                 for (int i = 0, size = GetAssetCount(); i < size; i++)
                 {
-                    visitor(GetAssetGuid(i));
+                    visitor(GetAssetPath(i));
                 }
             }
 
-            public bool Lookup(string assetGuid)
+            public bool LookupAssetPath(string assetPath)
             {
-                return _assetGuids.Contains(assetGuid);
+                return _assetPaths.Contains(assetPath);
             }
 
             // 是否为指定平台打包
@@ -64,20 +64,19 @@ namespace UnityFS.Editor
             // 完全重置此分包 (丢弃历史记录)
             public void Reset()
             {
-                histroy.Clear();
+                assetPathHistroy.Clear();
                 Cleanup();
             }
 
             public void Cleanup()
             {
                 totalRawSize = 0;
-                _assetGuids.Clear();
+                _assetPaths.Clear();
             }
 
-            private void _AddAsset(string guid)
+            private void _AddAssetPath(string assetPath)
             {
-                _assetGuids.Add(guid);
-                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                _assetPaths.Add(assetPath);
                 var fileInfo = new FileInfo(assetPath);
                 if (fileInfo.Exists)
                 {
@@ -86,22 +85,22 @@ namespace UnityFS.Editor
             }
 
             // 如果是历史资源, 将加入; 否则返回 false
-            public bool AddHistory(string guid, bool streamingAssets, PackagePlatform platform)
+            public bool AddHistory(string assetPath, bool streamingAssets, PackagePlatform platform)
             {
-                if (histroy.Contains(guid))
+                if (assetPathHistroy.Contains(assetPath))
                 {
                     if (this.streamingAssets == streamingAssets && this.IsBuild(platform))
                     {
-                        _AddAsset(guid);
+                        _AddAssetPath(assetPath);
                         return true;
                     }
 
                     // 此处的判定规则影响包的性质改变, 进而影响分包切分布局, 导致额外的包变更
-                    if (GetAssetCount() == 0 && histroy.Count == 1)
+                    if (GetAssetCount() == 0 && assetPathHistroy.Count == 1)
                     {
                         this.streamingAssets = streamingAssets;
                         this.platform = platform;
-                        _AddAsset(guid);
+                        _AddAssetPath(assetPath);
                         return true;
                     }
                 }
@@ -111,12 +110,12 @@ namespace UnityFS.Editor
 
             // 尝试添加资源
             // 仅历史数量在切分容量剩余时可以加入
-            public bool AddNew(string guid)
+            public bool AddNewAssetPath(string assetPath)
             {
-                if (capacity <= 0 || histroy.Count < capacity)
+                if (capacity <= 0 || assetPathHistroy.Count < capacity)
                 {
-                    _AddAsset(guid);
-                    histroy.Add(guid);
+                    _AddAssetPath(assetPath);
+                    assetPathHistroy.Add(assetPath);
                     return true;
                 }
 

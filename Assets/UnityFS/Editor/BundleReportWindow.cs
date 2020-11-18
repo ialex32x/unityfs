@@ -171,10 +171,11 @@ namespace UnityFS.Editor
                     {
                         Defer(() =>
                         {
+                            var addObjectPath = AssetDatabase.GetAssetPath(addObject);
                             bundle.targets.Add(new BundleBuilderData.BundleAssetTarget()
                             {
                                 enabled = true,
-                                target = addObject,
+                                targetPath = addObjectPath,
                             });
                         });
                     }
@@ -198,7 +199,15 @@ namespace UnityFS.Editor
                         GUI.color = _GUIColor;
                         EditorGUI.BeginChangeCheck();
                         target.enabled = EditorGUILayout.Toggle(target.enabled, GUILayout.Width(12f));
-                        EditorGUILayout.ObjectField(target.target, typeof(Object), false);
+                        if (target.targetPath.StartsWith("Assets/"))
+                        {
+                            var targetAsset = AssetDatabase.LoadMainAssetAtPath(target.targetPath);
+                            EditorGUILayout.ObjectField(targetAsset, typeof(Object), false);
+                        }
+                        else
+                        {
+                            EditorGUILayout.TextField(target.targetPath);
+                        }
                         target.platform = (PackagePlatform)EditorGUILayout.EnumPopup(target.platform);
                         if (EditorGUI.EndChangeCheck())
                         {
@@ -294,12 +303,12 @@ namespace UnityFS.Editor
                                             //TODO: 太卡了, 需要优化展示方式
                                             for (var assetIndex = 0; assetIndex < assetCount; assetIndex++)
                                             {
-                                                var assetGuid = bundleSlice.GetAssetGuid(assetIndex);
+                                                var assetPath = bundleSlice.GetAssetPath(assetIndex);
                                                 EditorGUILayout.BeginHorizontal();
-                                                DrawSingleAssetAttributes(_data, assetGuid);
+                                                DrawSingleAssetAttributes(_data, assetPath);
                                                 if (GUILayout.Button("?", GUILayout.Width(20f)))
                                                 {
-                                                    BundleBuilderWindow.DisplayAssetAttributes(assetGuid);
+                                                    BundleBuilderWindow.DisplayAssetAttributes(assetPath);
                                                 }
 
                                                 EditorGUILayout.EndHorizontal();
@@ -454,14 +463,13 @@ namespace UnityFS.Editor
             });
         }
 
-        private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetGuid)
+        private static AssetAttributes DrawSingleAssetAttributes(BundleBuilderData data, string assetPath)
         {
-            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
             var fileInfoWidth = 60f;
             var fileInfo = new FileInfo(assetPath);
             var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
             var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
-            var attrs = data.GetAssetAttributes(assetGuid);
+            var attrs = data.GetAssetPathAttributes(assetPath);
             var bNew = attrs == null;
 
             if (bNew)
@@ -489,13 +497,13 @@ namespace UnityFS.Editor
 
             if (attrs.priority == 0 && attrs.packer == AssetPacker.Auto)
             {
-                data.RemoveAssetAttributes(assetGuid);
+                data.RemoveAssetPathAttributes(assetPath);
             }
             else if (bNew)
             {
                 if (attrs.priority != 0 || attrs.packer != AssetPacker.Auto)
                 {
-                    var newAttributes = data.AddAssetAttributes(assetGuid);
+                    var newAttributes = data.AddAssetPathAttributes(assetPath);
                     newAttributes.priority = attrs.priority;
                     newAttributes.packer = attrs.packer;
                 }

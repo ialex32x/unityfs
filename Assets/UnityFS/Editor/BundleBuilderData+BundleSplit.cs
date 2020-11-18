@@ -73,22 +73,22 @@ namespace UnityFS.Editor
                 }
             }
 
-            public void ForEachAsset(Action<BundleSlice, string> visitor)
+            public void ForEachAssetPath(Action<BundleSlice, string> visitor)
             {
                 for (int i = 0, size = slices.Count; i < size; i++)
                 {
                     var slice = slices[i];
-                    slice.ForEachAsset(assetGuid => visitor(slice, assetGuid));
+                    slice.ForEachAsset(assetPath => visitor(slice, assetPath));
                 }
             }
 
             // 查找指定资源所在 slice, 不存在时返回 null
-            public BundleSlice Lookup(string assetGuid)
+            public BundleSlice LookupAssetPath(string assetPath)
             {
                 for (var i = 0; i < slices.Count; i++)
                 {
                     var slice = slices[i];
-                    if (slice.Lookup(assetGuid))
+                    if (slice.LookupAssetPath(assetPath))
                     {
                         return slice;
                     }
@@ -178,7 +178,7 @@ namespace UnityFS.Editor
                     }
 
                     // 如果 slice 为空, 那么 StreamingAssets 可调整
-                    if (slice.GetAssetCount() == 0 && slice.histroy.Count == 0)
+                    if (slice.GetAssetCount() == 0 && slice.assetPathHistroy.Count == 0)
                     {
                         slice.streamingAssets = streamingAssets;
                         slice.platform = platform;
@@ -195,25 +195,24 @@ namespace UnityFS.Editor
                 string bundleName, PackedObject packedObject)
             {
                 var assetPath = packedObject.assetPath;
-                var guid = AssetDatabase.AssetPathToGUID(assetPath);
-                var streamingAssets = data.IsStreamingAssets(guid, bundleInfo);
+                var streamingAssets = data.IsStreamingAssets(assetPath, bundleInfo);
                 var slicePlatform = packedObject.platform;
                 for (var i = 0; i < this.slices.Count; i++)
                 {
                     var oldSlice = this.slices[i];
-                    if (oldSlice.AddHistory(guid, streamingAssets, slicePlatform))
+                    if (oldSlice.AddHistory(assetPath, streamingAssets, slicePlatform))
                     {
                         return false;
                     }
                 }
 
                 var lastSlice = GetLastSlice(streamingAssets, slicePlatform);
-                if (lastSlice == null || !lastSlice.AddNew(guid))
+                if (lastSlice == null || !lastSlice.AddNewAssetPath(assetPath))
                 {
                     var sliceName = GetBundleSliceName(bundleName).ToLower();
                     var newSlice = new BundleSlice(sliceName, sliceObjects, streamingAssets, slicePlatform);
                     this.slices.Add(newSlice);
-                    newSlice.AddNew(guid);
+                    newSlice.AddNewAssetPath(assetPath);
                 }
 
                 return true;

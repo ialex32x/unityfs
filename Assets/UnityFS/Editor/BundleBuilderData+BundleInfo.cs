@@ -25,32 +25,25 @@ namespace UnityFS.Editor
             public List<BundleAssetTarget> targets = new List<BundleAssetTarget>(); // 打包目标 (可包含文件夹)
             public List<BundleSplit> splits = new List<BundleSplit>();
 
-            public static string GetAssetGUID(Object asset)
-            {
-                var assetPath = AssetDatabase.GetAssetOrScenePath(asset);
-                var guid = AssetDatabase.AssetPathToGUID(assetPath);
-                return guid;
-            }
-
             public BundleInfo()
             {
             }
 
-            public void ForEachAsset(Action<BundleSplit, BundleSlice, string> visitor)
+            public void ForEachAssetPath(Action<BundleSplit, BundleSlice, string> visitor)
             {
                 for (int i = 0, size = splits.Count; i < size; i++)
                 {
                     var split = splits[i];
-                    split.ForEachAsset((slice, assetGuid) => visitor(split, slice, assetGuid));
+                    split.ForEachAssetPath((slice, assetPath) => visitor(split, slice, assetPath));
                 }
             }
 
-            public bool Lookup(string assetGuid, out BundleSplit bundleSplit, out BundleSlice bundleSlice)
+            public bool LookupAssetPath(string assetPath, out BundleSplit bundleSplit, out BundleSlice bundleSlice)
             {
                 for (int i = 0, size = splits.Count; i < size; i++)
                 {
                     var split = splits[i];
-                    var slice = split.Lookup(assetGuid);
+                    var slice = split.LookupAssetPath(assetPath);
                     if (slice != null)
                     {
                         bundleSplit = split;

@@ -98,11 +98,11 @@ namespace UnityFS.Editor
             }
         }
 
-        public static void DisplayAssetAttributes(string guid)
+        public static void DisplayAssetAttributes(string assetPath)
         {
             var window = GetWindow<BundleBuilderWindow>();
             window._tabIndex = 1;
-            window._searchKeyword = AssetDatabase.GUIDToAssetPath(guid);
+            window._searchKeyword = assetPath;
             window._searchSliceKeyword = "";
             window._showDefinedOnly = false;
             window._useRegexMatch = false;
@@ -186,18 +186,17 @@ namespace UnityFS.Editor
                 }
             }
 
-            _data.ForEachAsset((bundleInfo, bundleSplit, bundleSlice, assetGuid) =>
+            _data.ForEachAssetPath((bundleInfo, bundleSplit, bundleSlice, assetPath) =>
             {
                 if (!showStreamingAssetsOnly || bundleSlice.streamingAssets)
                 {
-                    var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
                     if (!showSelectionOnly || selectionSet.Contains(assetPath))
                     {
                         if (IsStringMatch(nameRegex, keyword, assetPath))
                         {
                             if (IsStringMatch(sliceNameRegex, sliceKeyword, bundleSlice.name))
                             {
-                                var attrs = _data.GetAssetAttributes(assetGuid);
+                                var attrs = _data.GetAssetPathAttributes(assetPath);
                                 if (attrs != null || !showDefinedOnly)
                                 {
                                     var result = new SearchResult()
@@ -206,7 +205,6 @@ namespace UnityFS.Editor
                                         bundleSplit = bundleSplit,
                                         bundleSlice = bundleSlice,
                                         assetPath = assetPath,
-                                        assetGuid = assetGuid,
                                     };
 
                                     _searchResults.Add(result);
@@ -252,7 +250,7 @@ namespace UnityFS.Editor
             {
                 if (_searchResults.Contains(searchMark))
                 {
-                    var markAttrs = _data.GetAssetAttributes(searchMark.assetGuid);
+                    var markAttrs = _data.GetAssetPathAttributes(searchMark.assetPath);
                     var bNew = markAttrs == null;
 
                     callback(bNew ? _newAttrs : markAttrs);
@@ -260,7 +258,7 @@ namespace UnityFS.Editor
                     {
                         if (_newAttrs.priority != 0 || _newAttrs.packer != AssetPacker.Auto)
                         {
-                            var newAttributes = _data.AddAssetAttributes(searchMark.assetGuid);
+                            var newAttributes = _data.AddAssetPathAttributes(searchMark.assetPath);
                             newAttributes.priority = _newAttrs.priority;
                             newAttributes.packer = _newAttrs.packer;
                             _newAttrs.priority = 0;
@@ -271,7 +269,7 @@ namespace UnityFS.Editor
                     {
                         if (markAttrs.priority == 0 && markAttrs.packer == AssetPacker.Auto)
                         {
-                            _data.RemoveAssetAttributes(searchMark.assetGuid);
+                            _data.RemoveAssetPathAttributes(searchMark.assetPath);
                         }
                     }
                 }
@@ -280,14 +278,12 @@ namespace UnityFS.Editor
 
         private static AssetAttributes DrawSearchResultAssetAttributes(Rect elementRect, BundleBuilderData data, SearchResult result, BundleBuilderWindow builder, bool batchMode)
         {
-            var assetGuid = result.assetGuid;
-            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+            var assetPath = result.assetPath;
             var fileInfoWidth = 60f;
-            var sliceInfoWidth = 200f;
+            var sliceInfoWidth = 260f;
             var fileInfo = new FileInfo(assetPath);
             var fileSize = fileInfo.Exists ? fileInfo.Length : 0L;
-            var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
-            var attrs = data.GetAssetAttributes(assetGuid);
+            var attrs = data.GetAssetPathAttributes(assetPath);
             var bNew = attrs == null;
 
             if (bNew)
@@ -304,7 +300,15 @@ namespace UnityFS.Editor
             iRect.x += iRect.width;
             iRect.width = 180f;
             iRect.height = elementRect.height - 4f;
-            EditorGUI.ObjectField(iRect, assetObject, typeof(Object), false);
+            if (assetPath.StartsWith("Assets/"))
+            {
+                var assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                EditorGUI.ObjectField(iRect, assetObject, typeof(Object), false);
+            }
+            else
+            {
+                EditorGUI.LabelField(iRect, "<External>");
+            }
             iRect.x += iRect.width;
             iRect.width = fileInfoWidth;
             iRect.height = elementRect.height - 2f;
@@ -367,13 +371,13 @@ namespace UnityFS.Editor
 
                 if (attrs.priority == 0 && attrs.packer == AssetPacker.Auto)
                 {
-                    data.RemoveAssetAttributes(assetGuid);
+                    data.RemoveAssetPathAttributes(assetPath);
                 }
                 else if (bNew)
                 {
                     if (attrs.priority != 0 || attrs.packer != AssetPacker.Auto)
                     {
-                        var newAttributes = data.AddAssetAttributes(assetGuid);
+                        var newAttributes = data.AddAssetPathAttributes(assetPath);
                         newAttributes.priority = attrs.priority;
                         newAttributes.packer = attrs.packer;
                     }
@@ -464,7 +468,6 @@ namespace UnityFS.Editor
                 {
                     var result = _searchResults[i];
                     var marked = _searchMarks.Contains(result);
-                    var assetGuid = result.assetGuid;
                     var headRect = new Rect(elementRect.x, elementRect.y, 20f, elementRect.height);
                     var nMarked = EditorGUI.Toggle(headRect, marked);
                     if (marked) // 批量修改模式

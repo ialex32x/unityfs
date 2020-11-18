@@ -21,8 +21,6 @@ namespace UnityFS.Editor
         static GUIContent kIconTextAsset = EditorGUIUtility.IconContent("TextAsset Icon");
         static GUIContent kIconTexture = EditorGUIUtility.IconContent("Texture Icon");
         static GUIContent kIconMaterial = EditorGUIUtility.IconContent("Material Icon");
-        // static Texture2D kIconDelete1 = EditorGUIUtility.FindTexture("d_AS Badge Delete");
-        // static GUIContent kIconDelete2 = EditorGUIUtility.IconContent("d_P4_DeletedLocal");
 
         private BundleBuilderData _data;
 
@@ -33,7 +31,7 @@ namespace UnityFS.Editor
         public BundleBuilderTreeView(TreeViewState state, MultiColumnHeader multiColumnHeader) : base(state, multiColumnHeader)
         {
             rowHeight = kRowHeights;
-            columnIndexForTreeFoldouts = 2;
+            columnIndexForTreeFoldouts = 1;
             showAlternatingRowBackgrounds = true;
             showBorder = true;
             customFoldoutYOffset = (kRowHeights - EditorGUIUtility.singleLineHeight) * 0.5f;
@@ -47,7 +45,7 @@ namespace UnityFS.Editor
             {
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByLabel"), "-"),
+                    headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByLabel"), "AssetPath"),
                     contextMenuText = "Asset",
                     headerTextAlignment = TextAlignment.Center,
                     sortedAscending = true,
@@ -60,38 +58,28 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
+                    headerContent = new GUIContent("Assets"),
+                    headerTextAlignment = TextAlignment.Left,
+                    sortedAscending = true,
+                    sortingArrowAlignment = TextAlignment.Center,
+                    width = 250,
+                    minWidth = 60,
+                    autoResize = true,
+                    allowToggleVisibility = false
+                },
+                new MultiColumnHeaderState.Column
+                {
                     headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByType"), "-"),
                     contextMenuText = "Type",
                     headerTextAlignment = TextAlignment.Center,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
-                    width = 30,
+                    width = 300,
                     minWidth = 30,
-                    maxWidth = 60,
-                    autoResize = false,
-                    allowToggleVisibility = true
-                },
-                new MultiColumnHeaderState.Column
-                {
-                    headerContent = new GUIContent("Assets"),
-                    headerTextAlignment = TextAlignment.Left,
-                    sortedAscending = true,
-                    sortingArrowAlignment = TextAlignment.Center,
-                    width = 150,
-                    minWidth = 60,
-                    autoResize = false,
+                    // maxWidth = 60,
+                    autoResize = true,
                     allowToggleVisibility = false
                 },
-                // new MultiColumnHeaderState.Column
-                // {
-                //     headerContent = new GUIContent("StreamingAssets"),
-                //     headerTextAlignment = TextAlignment.Left,
-                //     sortedAscending = true,
-                //     sortingArrowAlignment = TextAlignment.Left,
-                //     width = 110,
-                //     minWidth = 60,
-                //     autoResize = true
-                // },
                 new MultiColumnHeaderState.Column
                 {
                     headerContent = new GUIContent("StreamingAssets?/Load/Filter"),
@@ -187,11 +175,19 @@ namespace UnityFS.Editor
         {
             foreach (var target in bundleInfo.targets)
             {
-                var assetObject = target.target;
+                var targetPath = target.targetPath ?? "";
                 var name = "(null)";
-                if (assetObject != null)
+                if (targetPath.StartsWith("Assets/"))
                 {
-                    name = assetObject.name;
+                    var assetObject = AssetDatabase.LoadMainAssetAtPath(targetPath);
+                    if (assetObject != null)
+                    {
+                        name = assetObject.name;
+                    }
+                }
+                else
+                {
+                    name = targetPath;
                 }
                 var tv = new BundleBuilderTreeViewTarget(target.id, 1, name, target);
                 rows.Add(tv);
@@ -225,12 +221,13 @@ namespace UnityFS.Editor
                 if (treeViewRect.Contains(mousePos))
                 {
                     var menu = new GenericMenu();
-                    menu.AddItem(new GUIContent("查看资源报告"), false, OnContextMenuInspect);
+                    menu.AddItem(new GUIContent("添加资源"), false, OnContextMenuAddAsset);
+                    menu.AddItem(new GUIContent("删除"), false, OnContextMenuDelete);
+                    menu.AddSeparator("");
+                    menu.AddItem(new GUIContent("查看详细信息"), false, OnContextMenuInspect);
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent("全部展开"), false, OnContextMenuExpand);
                     menu.AddItem(new GUIContent("全部折叠"), false, OnContextMenuCollapse);
-                    menu.AddSeparator("");
-                    menu.AddItem(new GUIContent("删除"), false, OnContextMenuDelete);
                     menu.ShowAsContext();
                     evt.Use();
                 }
@@ -252,6 +249,37 @@ namespace UnityFS.Editor
             ShowBundleReport();
         }
 
+        private void OnContextMenuAddAsset()
+        {
+            var selectedBundles = new List<BundleBuilderData.BundleInfo>();
+            foreach (var bundle in _data.bundles)
+            {
+                if (this.IsSelected(bundle.id))
+                {
+                    selectedBundles.Add(bundle);
+                }
+            }
+
+            if (selectedBundles.Count != 0)
+            {
+                foreach (var bundle in selectedBundles)
+                {
+                    bundle.targets.Add(new BundleBuilderData.BundleAssetTarget()
+                    {
+                        enabled = true,
+                        targetPath = "",
+                    });
+                }
+
+                _data.MarkAsDirty();
+                this.Reload();
+            }
+            else
+            {
+                Debug.LogWarning("no bundle selected");
+            }
+        }
+
         private void OnContextMenuDelete()
         {
             DeleteSelectedItems();
@@ -268,6 +296,7 @@ namespace UnityFS.Editor
                     selectedBundles.Add(bundle);
                     continue;
                 }
+
                 foreach (var asset in bundle.targets)
                 {
                     if (this.IsSelected(asset.id))
@@ -277,6 +306,7 @@ namespace UnityFS.Editor
                     }
                 }
             }
+
             if (selectedBundles.Count != 0)
             {
                 BundleAssetsWindow.Inspect(_data, selectedBundles);
@@ -308,6 +338,7 @@ namespace UnityFS.Editor
                     }
                 }
             }
+
             if (bundlePending.Count == 0 && targetPending.Count == 0)
             {
                 if (EditorUtility.DisplayDialog("删除", "没有选中任何资源.", "确定"))
@@ -322,6 +353,7 @@ namespace UnityFS.Editor
                     {
                         _data.bundles.Remove(bundle);
                     }
+
                     foreach (var bundle in _data.bundles)
                     {
                         foreach (var target in targetPending)
@@ -329,6 +361,7 @@ namespace UnityFS.Editor
                             bundle.targets.Remove(target);
                         }
                     }
+
                     _data.MarkAsDirty();
                     this.Reload();
                 }
@@ -350,10 +383,6 @@ namespace UnityFS.Editor
                         {
                             GUI.DrawTexture(cellRect, kIconFavorite, ScaleMode.ScaleToFit);
                         }
-                        // else if (bundleInfo.type == BundleType.SceneBundle)
-                        // {
-                        //     GUI.DrawTexture(cellRect, kIconSceneAsset, ScaleMode.ScaleToFit);
-                        // }
                         else
                         {
                             GUI.DrawTexture(cellRect, kIconZipArchive, ScaleMode.ScaleToFit);
@@ -361,45 +390,6 @@ namespace UnityFS.Editor
                     }
                     break;
                 case 1:
-                    if (item.depth == 1)
-                    {
-                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        var assetObject = target.target;
-
-                        if (assetObject != null)
-                        {
-                            if (assetObject is GameObject)
-                            {
-                                GUI.DrawTexture(cellRect, kIconPrefab.image, ScaleMode.ScaleToFit);
-                            }
-                            else if (assetObject is TextAsset)
-                            {
-                                GUI.DrawTexture(cellRect, kIconTextAsset.image, ScaleMode.ScaleToFit);
-                            }
-                            else if (assetObject is Texture)
-                            {
-                                GUI.DrawTexture(cellRect, kIconTexture.image, ScaleMode.ScaleToFit);
-                            }
-                            else if (assetObject is Material)
-                            {
-                                GUI.DrawTexture(cellRect, kIconMaterial.image, ScaleMode.ScaleToFit);
-                            }
-                            else if (assetObject is SceneAsset)
-                            {
-                                GUI.DrawTexture(cellRect, kIconSceneAsset, ScaleMode.ScaleToFit);
-                            }
-                            else
-                            {
-                                var assetPath = AssetDatabase.GetAssetPath(assetObject);
-                                if (Directory.Exists(assetPath))
-                                {
-                                    GUI.DrawTexture(cellRect, kIconFolder, ScaleMode.ScaleToFit);
-                                }
-                            }
-                        }
-                    }
-                    break;
-                case 2:
                     // Do toggle
                     var toggleRect = cellRect;
                     var indent = GetContentIndent(item);
@@ -426,18 +416,58 @@ namespace UnityFS.Editor
                     }
                     else if (item.depth == 1)
                     {
-                        var assetTarget = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        var assetObject = assetTarget.target;
-                        var target = EditorGUI.ObjectField(cellRect, GUIContent.none, assetObject, typeof(Object), false);
-                        if (target != assetObject)
+                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        if (target.targetPath.StartsWith("Assets/"))
                         {
-                            assetTarget.target = target;
-                            _data.MarkAsDirty();
+                            var assetObject = AssetDatabase.LoadMainAssetAtPath(target.targetPath);
+                            var newAssetObject = EditorGUI.ObjectField(cellRect, GUIContent.none, assetObject, typeof(Object), false);
+                            if (newAssetObject != assetObject)
+                            {
+                                target.targetPath = newAssetObject != null ? AssetDatabase.GetAssetPath(newAssetObject) : string.Empty;
+                                _data.MarkAsDirty();
+                            }
+                        }
+                        else
+                        {
+                            var oldColor = GUI.color;
+                            var bundleInfo = (item.parent as BundleBuilderTreeViewBundle).bundleInfo;
+                            if (bundleInfo.type == Manifest.BundleType.ZipArchive)
+                            {
+                                if (Directory.Exists(target.targetPath) || File.Exists(target.targetPath))
+                                {
+                                    GUI.color = Color.yellow;
+                                    GUI.Label(cellRect, "<External>");
+                                }
+                                else
+                                {
+                                    GUI.color = Color.red;
+                                    GUI.Label(cellRect, "<Invalid>");
+                                }
+                            }
+                            else
+                            {
+                                GUI.color = Color.red;
+                                GUI.Label(cellRect, "<Not Supported>");
+                            }
+                            GUI.color = oldColor;
                         }
                     }
                     else
                     {
                         base.RowGUI(args);
+                    }
+                    break;
+                case 2:
+                    if (item.depth == 1)
+                    {
+                        var target = (item as BundleBuilderTreeViewTarget).assetTarget;
+                        var newTargetPath = GUI.TextField(cellRect, target.targetPath);
+
+                        if (newTargetPath != target.targetPath)
+                        {
+                            target.targetPath = newTargetPath;
+                            _data.MarkAsDirty();
+                        }
                     }
                     break;
                 case 3:
@@ -452,14 +482,6 @@ namespace UnityFS.Editor
                             bundleInfo.streamingAssets = streamingAssets;
                             _data.MarkAsDirty();
                         }
-//                        cellRect.x += cellRect.width;
-//                        cellRect.width = 20f;
-//                        var encrypted = EditorGUI.Toggle(cellRect, bundleInfo.encrypted);
-//                        if (encrypted != bundleInfo.encrypted)
-//                        {
-//                            bundleInfo.encrypted = encrypted;
-//                            _data.MarkAsDirty();
-//                        }
                         cellRect.x += cellRect.width;
                         cellRect.width = popupWidth;
                         var load = (Manifest.BundleLoad)EditorGUI.EnumPopup(cellRect, bundleInfo.load);
@@ -480,20 +502,6 @@ namespace UnityFS.Editor
                     }
                     else if (item.depth == 1)
                     {
-                        // var target = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        // if (target.target != null)
-                        // {
-                        //     var assetPath = AssetDatabase.GetAssetPath(target.target);
-                        //     if (Directory.Exists(assetPath))
-                        //     {
-                        //         var types = (BundleAssetTypes)EditorGUI.EnumFlagsField(cellRect, target.types);
-                        //         if (types != target.types)
-                        //         {
-                        //             target.types = types;
-                        //             _data.MarkAsDirty();
-                        //         }
-                        //     }
-                        // }
                     }
                     break;
                 case 4:
@@ -509,20 +517,6 @@ namespace UnityFS.Editor
                     }
                     else if (item.depth == 1)
                     {
-                        // var target = (item as BundleBuilderTreeViewTarget).assetTarget;
-                        // if (target.target != null)
-                        // {
-                        //     var assetPath = AssetDatabase.GetAssetPath(target.target);
-                        //     if (Directory.Exists(assetPath))
-                        //     {
-                        //         // var extensions = EditorGUI.TextField(cellRect, target.extensions);
-                        //         // if (extensions != target.extensions)
-                        //         // {
-                        //         //     target.extensions = extensions;
-                        //         //     _data.MarkAsDirty();
-                        //         // }
-                        //     }
-                        // }
                     }
                     break;
                 case 5:

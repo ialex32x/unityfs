@@ -13,7 +13,7 @@ namespace UnityFS
     public class AssetTimestamp
     {
         public float time;
-        public string guid;
+        public string assetPath;
     }
 
     [Serializable]
@@ -22,6 +22,7 @@ namespace UnityFS
         public float timeSeconds = 30f;
         public List<AssetTimestamp> timestamps = new List<AssetTimestamp>();
 
+        // assetPath set
         private HashSet<string> _keys = new HashSet<string>();
 
         public static void WriteTo(string filePath, AssetListData listData)
@@ -78,9 +79,9 @@ namespace UnityFS
         {
         }
 
-        public bool Contains(string guid)
+        public bool Contains(string assetPath)
         {
-            return _keys.Contains(guid);
+            return _keys.Contains(assetPath);
         }
 
         public bool AddObject(float time, string assetPath)
@@ -88,14 +89,13 @@ namespace UnityFS
 #if UNITY_EDITOR
             if (time < timeSeconds)
             {
-                var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
-                if (!string.IsNullOrEmpty(assetGuid))
+                if (!string.IsNullOrEmpty(assetPath))
                 {
-                    _keys.Add(assetGuid);
+                    _keys.Add(assetPath);
                     timestamps.Add(new AssetTimestamp()
                     {
                         time = time,
-                        guid = assetGuid,
+                        assetPath = assetPath,
                     });
                     return true;
                 }
@@ -113,7 +113,7 @@ namespace UnityFS
             _keys.Clear();
             for (var i = 0; i < timestamps.Count; i++)
             {
-                _keys.Add(timestamps[i].guid);
+                _keys.Add(timestamps[i].assetPath);
             }
         }
     }
