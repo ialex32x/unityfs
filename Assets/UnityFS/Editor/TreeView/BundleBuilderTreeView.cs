@@ -45,8 +45,8 @@ namespace UnityFS.Editor
             {
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByLabel"), "AssetPath"),
-                    contextMenuText = "Asset",
+                    headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByLabel"), "Category"),
+                    contextMenuText = "Category",
                     headerTextAlignment = TextAlignment.Center,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Right,
@@ -58,7 +58,8 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent("Assets"),
+                    headerContent = new GUIContent("Package -> AssetTarget"),
+                    contextMenuText = "Package",
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Center,
@@ -69,9 +70,9 @@ namespace UnityFS.Editor
                 },
                 new MultiColumnHeaderState.Column
                 {
-                    headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByType"), "-"),
-                    contextMenuText = "Type",
-                    headerTextAlignment = TextAlignment.Center,
+                    headerContent = new GUIContent("Asset Path"),
+                    // contextMenuText = "Type",
+                    headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
                     width = 300,
@@ -83,6 +84,7 @@ namespace UnityFS.Editor
                 new MultiColumnHeaderState.Column
                 {
                     headerContent = new GUIContent("StreamingAssets?/Load/Filter"),
+                    contextMenuText = "Option", 
                     headerTextAlignment = TextAlignment.Left,
                     sortedAscending = true,
                     sortingArrowAlignment = TextAlignment.Left,
