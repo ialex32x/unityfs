@@ -115,7 +115,7 @@ namespace UnityFS
             {
                 for (int i = 0, size = _denpendencies.Count; i < size; i++)
                 {
-                    if (!_denpendencies[i]._IsDependenciesLoaded())
+                    if (!_denpendencies[i].IsLoaded())
                     {
                         return false;
                     }
@@ -160,7 +160,7 @@ namespace UnityFS
                 return;
             }
 
-            if (_loaded && _IsDependenciesLoaded())
+            if (IsLoaded() && _IsDependenciesLoaded())
             {
                 OnLoaded();
             }
